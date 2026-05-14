@@ -1,0 +1,154 @@
+import { Edit, MapPin, Plus, Search, Trash2 } from "lucide-react"
+import { useState } from "react"
+import { toast } from "sonner"
+
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useCidades, useCreateCidade, useDeleteCidade, useUpdateCidade } from "@/hooks/useImoveis"
+import type { Cidade, CidadePayload } from "@/types/imovel"
+
+const EMPTY: CidadePayload = { nome: "", estado: "", codigo_ibge: "" }
+
+export function AdminCidadesPage() {
+  const { data: cidades = [], isLoading } = useCidades()
+  const createCidade = useCreateCidade()
+  const updateCidade = useUpdateCidade()
+  const deleteCidade = useDeleteCidade()
+  const [filter, setFilter] = useState("")
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editing, setEditing] = useState<Cidade | null>(null)
+  const [form, setForm] = useState<CidadePayload>(EMPTY)
+
+  const filtered = cidades.filter((cidade) =>
+    [cidade.nome, cidade.estado, cidade.codigo_ibge].join(" ").toLowerCase().includes(filter.toLowerCase()),
+  )
+  const saving = createCidade.isPending || updateCidade.isPending
+
+  function openCreate() {
+    setEditing(null)
+    setForm(EMPTY)
+    setDialogOpen(true)
+  }
+
+  function openEdit(cidade: Cidade) {
+    setEditing(cidade)
+    setForm({ nome: cidade.nome, estado: cidade.estado || "", codigo_ibge: cidade.codigo_ibge || "" })
+    setDialogOpen(true)
+  }
+
+  async function save() {
+    if (!form.nome || !form.estado) {
+      toast.error("Nome e UF são obrigatórios")
+      return
+    }
+    const payload = { ...form, estado: form.estado.toUpperCase().slice(0, 2) }
+    try {
+      if (editing) await updateCidade.mutateAsync({ id: editing.id, payload })
+      else await createCidade.mutateAsync(payload)
+      toast.success(editing ? "Cidade atualizada" : "Cidade cadastrada")
+      setDialogOpen(false)
+    } catch {
+      toast.error("Não foi possível salvar a cidade")
+    }
+  }
+
+  async function remove(cidade: Cidade) {
+    if (!confirm(`Excluir ${cidade.nome}?`)) return
+    try {
+      await deleteCidade.mutateAsync(cidade.id)
+      toast.success("Cidade removida")
+    } catch {
+      toast.error("Não foi possível remover a cidade")
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Painel administrativo</p>
+          <h1 className="mt-2 text-3xl font-semibold">Cidades</h1>
+          <p className="mt-2 text-muted-foreground">{cidades.length} cidades cadastradas</p>
+        </div>
+        <Button className="rounded-full" onClick={openCreate}><Plus className="size-4" />Nova cidade</Button>
+      </div>
+
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input className="h-11 rounded-full bg-white pl-9" placeholder="Buscar cidades..." value={filter} onChange={(event) => setFilter(event.target.value)} />
+      </div>
+
+      <div className="overflow-hidden rounded-[24px] border bg-white">
+        <table className="w-full min-w-[720px] text-sm">
+          <thead className="bg-secondary/70 text-muted-foreground">
+            <tr>
+              <th className="px-5 py-4 text-left font-medium">Cidade</th>
+              <th className="px-5 py-4 text-left font-medium">UF</th>
+              <th className="px-5 py-4 text-left font-medium">IBGE</th>
+              <th className="px-5 py-4 text-left font-medium">Latitude</th>
+              <th className="px-5 py-4 text-left font-medium">Longitude</th>
+              <th className="px-5 py-4" />
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? Array.from({ length: 4 }).map((_, index) => (
+              <tr key={index} className="border-t"><td colSpan={6} className="px-5 py-4"><Skeleton className="h-10 rounded-full" /></td></tr>
+            )) : filtered.map((cidade) => (
+              <tr key={cidade.id} className="border-t transition hover:bg-secondary/50">
+                <td className="px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-9 place-items-center rounded-full bg-primary/10 text-primary"><MapPin className="size-4" /></span>
+                    <span className="font-medium">{cidade.nome}</span>
+                  </div>
+                </td>
+                <td className="px-5 py-4 font-semibold uppercase">{cidade.estado}</td>
+                <td className="px-5 py-4">{cidade.codigo_ibge || "—"}</td>
+                <td className="px-5 py-4">{cidade.latitude || "Auto"}</td>
+                <td className="px-5 py-4">{cidade.longitude || "Auto"}</td>
+                <td className="px-5 py-4">
+                  <div className="flex justify-end gap-2">
+                    <Button size="icon" variant="ghost" className="rounded-full" onClick={() => openEdit(cidade)}><Edit className="size-4" /></Button>
+                    <Button size="icon" variant="ghost" className="rounded-full text-destructive" onClick={() => remove(cidade)}><Trash2 className="size-4" /></Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {!isLoading && filtered.length === 0 ? (
+              <tr><td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">Nenhuma cidade encontrada.</td></tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="!max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editing ? "Editar cidade" : "Nova cidade"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <Field label="Nome *">
+              <Input value={form.nome} onChange={(event) => setForm((current) => ({ ...current, nome: event.target.value }))} placeholder="São Paulo" />
+            </Field>
+            <Field label="UF *">
+              <Input value={form.estado} maxLength={2} onChange={(event) => setForm((current) => ({ ...current, estado: event.target.value.toUpperCase().slice(0, 2) }))} placeholder="SP" />
+            </Field>
+            <Field label="Código IBGE">
+              <Input value={form.codigo_ibge} onChange={(event) => setForm((current) => ({ ...current, codigo_ibge: event.target.value }))} placeholder="3550308" />
+            </Field>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-full" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button className="rounded-full" onClick={save} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <Label className="grid gap-2 text-sm font-medium">{label}{children}</Label>
+}
