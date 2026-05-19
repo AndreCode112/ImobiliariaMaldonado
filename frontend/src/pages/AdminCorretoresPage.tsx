@@ -1,4 +1,4 @@
-import { Edit, Plus, Search, Trash2, UploadCloud, X } from "lucide-react"
+import { BadgeCheck, Edit, Mail, Phone, Plus, Search, ShieldCheck, Trash2, UploadCloud, X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
@@ -160,11 +160,16 @@ export function AdminCorretoresPage() {
                     <span className="font-medium">{corretor.nome}</span>
                   </div>
                 </td>
-                <td className="px-5 py-4">{corretor.telefone || "—"}</td>
-                <td className="px-5 py-4">{corretor.whatsapp || "—"}</td>
-                <td className="px-5 py-4">{corretor.email || "—"}</td>
-                <td className="px-5 py-4">{corretor.creci || "—"}</td>
-                <td className="px-5 py-4">{corretor.ativo === false ? "Inativo" : "Ativo"}</td>
+                <td className="px-5 py-4"><TableBadge icon={Phone} value={corretor.telefone || "—"} /></td>
+                <td className="px-5 py-4"><TableBadge icon={Phone} value={corretor.whatsapp || "—"} tone="green" /></td>
+                <td className="px-5 py-4"><TableBadge icon={Mail} value={corretor.email || "—"} /></td>
+                <td className="px-5 py-4"><TableBadge icon={ShieldCheck} value={corretor.creci || "Sem CRECI"} tone="gold" /></td>
+                <td className="px-5 py-4">
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${corretor.ativo === false ? "bg-zinc-100 text-zinc-600" : "bg-emerald-50 text-emerald-700"}`}>
+                    <BadgeCheck className="size-3.5" />
+                    {corretor.ativo === false ? "Inativo" : "Ativo"}
+                  </span>
+                </td>
                 <td className="px-5 py-4">
                   <div className="flex justify-end gap-2">
                     <Button size="icon" variant="ghost" className="rounded-full" onClick={() => openEdit(corretor)}><Edit className="size-4" /></Button>
@@ -235,4 +240,19 @@ export function AdminCorretoresPage() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <Label className="grid gap-2 text-sm font-medium">{label}{children}</Label>
+}
+
+function TableBadge({ icon: Icon, value, tone = "neutral" }: { icon: typeof Phone; value: string; tone?: "neutral" | "green" | "gold" }) {
+  const toneClass = {
+    neutral: "bg-secondary text-foreground",
+    green: "bg-emerald-50 text-emerald-700",
+    gold: "bg-amber-50 text-amber-700",
+  }[tone]
+
+  return (
+    <span className={`inline-flex max-w-[220px] items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${toneClass}`}>
+      <Icon className="size-3.5 shrink-0" />
+      <span className="truncate">{value}</span>
+    </span>
+  )
 }

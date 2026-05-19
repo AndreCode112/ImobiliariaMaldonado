@@ -7,13 +7,16 @@ import { AdminCidadesPage } from "@/pages/AdminCidadesPage"
 import { AdminCorretoresPage } from "@/pages/AdminCorretoresPage"
 import { AdminDashboardPage } from "@/pages/AdminDashboardPage"
 import { AdminHomePage } from "@/pages/AdminHomePage"
+import { AdminLembretesPage } from "@/pages/AdminLembretesPage"
 import { AdminLoginPage } from "@/pages/AdminLoginPage"
 import { AdminPropertyFormPage } from "@/pages/AdminPropertyFormPage"
+import { AdminUsuariosPage } from "@/pages/AdminUsuariosPage"
 import { ContactPage } from "@/pages/ContactPage"
 import { FavoritesPage } from "@/pages/FavoritesPage"
 import { PropertiesPage } from "@/pages/PropertiesPage"
 import { PropertyDetailPage } from "@/pages/PropertyDetailPage"
 import { RegisterPage } from "@/pages/RegisterPage"
+import { ResetPasswordPage } from "@/pages/ResetPasswordPage"
 
 export default function App() {
   return (
@@ -25,7 +28,9 @@ export default function App() {
           <Route path="imoveis/novo" element={<AdminPropertyFormPage />} />
           <Route path="imoveis/:id/editar" element={<AdminPropertyFormPage />} />
           <Route path="corretores" element={<AdminCorretoresPage />} />
+          <Route path="usuarios" element={<AdminUsuariosPage />} />
           <Route path="cidades" element={<AdminCidadesPage />} />
+          <Route path="lembretes" element={<AdminLembretesPage />} />
         </Route>
       </Route>
 
@@ -37,6 +42,7 @@ export default function App() {
         <Route path="contato" element={<ContactPage />} />
         <Route path="cadastro" element={<RegisterPage />} />
         <Route path="login" element={<AdminLoginPage />} />
+        <Route path="resetar-senha/:uid/:token" element={<ResetPasswordPage />} />
       </Route>
     </Routes>
   )

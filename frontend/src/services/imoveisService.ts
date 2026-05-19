@@ -1,5 +1,6 @@
 import { axiosClient } from "@/api/axiosClient"
-import type { AdminStats, Cidade, CidadePayload, CorretorPayload, CorretorResumo, EnderecoResultado, Imovel, ImovelApi, ImovelPayload, PaginatedResults } from "@/types/imovel"
+import type { AdminUser, AdminUserPayload, PasswordResetLink } from "@/types/auth"
+import type { AdminStats, ApiHealthReport, Cidade, CidadePayload, CorretorPayload, CorretorResumo, EnderecoResultado, Imovel, ImovelApi, ImovelPayload, LembreteFavoritosPayload, LembreteFavoritosResponse, PaginatedResults } from "@/types/imovel"
 
 function numberFrom(value: string | number | undefined | null) {
   if (value === undefined || value === null || value === "") return 0
@@ -77,6 +78,21 @@ export const imoveisService = {
     return data
   },
 
+  async integracoesHealth(): Promise<ApiHealthReport> {
+    const { data } = await axiosClient.get<ApiHealthReport>("/imoveis/api/integracoes/health/")
+    return data
+  },
+
+  async lembreteFavoritos(): Promise<LembreteFavoritosResponse> {
+    const { data } = await axiosClient.get<LembreteFavoritosResponse>("/imoveis/api/lembrete-favoritos/")
+    return data
+  },
+
+  async updateLembreteFavoritos(payload: LembreteFavoritosPayload): Promise<LembreteFavoritosResponse> {
+    const { data } = await axiosClient.put<LembreteFavoritosResponse>("/imoveis/api/lembrete-favoritos/", payload)
+    return data
+  },
+
   async list(): Promise<Imovel[]> {
     const { data } = await axiosClient.get<PaginatedResults<ImovelApi>>("/imoveis/api/imoveis/")
     return data.results.map(normalizeImovel)
@@ -144,6 +160,21 @@ export const imoveisService = {
 
   async removeCorretor(id: number | string): Promise<void> {
     await axiosClient.delete(`/imoveis/api/corretores/${id}/`)
+  },
+
+  async usuarios(): Promise<AdminUser[]> {
+    const { data } = await axiosClient.get<PaginatedResults<AdminUser>>("/imoveis/api/usuarios/")
+    return data.results
+  },
+
+  async updateUsuario(id: number | string, payload: AdminUserPayload): Promise<AdminUser> {
+    const { data } = await axiosClient.put<AdminUser>(`/imoveis/api/usuarios/${id}/`, payload)
+    return data
+  },
+
+  async usuarioResetLink(id: number | string): Promise<PasswordResetLink> {
+    const { data } = await axiosClient.post<PasswordResetLink>(`/imoveis/api/usuarios/${id}/reset-link/`)
+    return data
   },
 
   async createCidade(payload: CidadePayload): Promise<Cidade> {

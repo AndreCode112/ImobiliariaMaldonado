@@ -1,7 +1,11 @@
 from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.http import JsonResponse
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -72,3 +76,33 @@ def register_view(request):
 @permission_classes([IsAuthenticated])
 def me_view(request):
     return JsonResponse({"user": _user_payload(request.user)}, status=200)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def password_reset_confirm_view(request):
+    uid = request.data.get("uid") or ""
+    token = request.data.get("token") or ""
+    password = request.data.get("password") or ""
+
+    if not uid or not token or not password:
+        return JsonResponse({"detail": "Link e nova senha são obrigatórios."}, status=400)
+
+    User = get_user_model()
+    try:
+        user_id = force_str(urlsafe_base64_decode(uid))
+        user = User.objects.get(pk=user_id)
+    except Exception:
+        return JsonResponse({"detail": "Link de redefinição inválido."}, status=400)
+
+    if not default_token_generator.check_token(user, token):
+        return JsonResponse({"detail": "Link de redefinição expirado ou inválido."}, status=400)
+
+    try:
+        validate_password(password, user)
+    except ValidationError as exc:
+        return JsonResponse({"detail": " ".join(exc.messages)}, status=400)
+
+    user.set_password(password)
+    user.save(update_fields=["password"])
+    return JsonResponse({"success": True}, status=200)

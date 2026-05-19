@@ -1,12 +1,37 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { imoveisService } from "@/services/imoveisService"
-import type { CidadePayload, CorretorPayload, ImovelPayload } from "@/types/imovel"
+import type { AdminUserPayload } from "@/types/auth"
+import type { CidadePayload, CorretorPayload, ImovelPayload, LembreteFavoritosPayload } from "@/types/imovel"
 
 export function useAdminStats() {
   return useQuery({
     queryKey: ["admin-stats"],
     queryFn: imoveisService.stats,
+  })
+}
+
+export function useIntegracoesHealth() {
+  return useQuery({
+    queryKey: ["integracoes-health"],
+    queryFn: imoveisService.integracoesHealth,
+    enabled: false,
+    refetchOnWindowFocus: false,
+  })
+}
+
+export function useLembreteFavoritos() {
+  return useQuery({
+    queryKey: ["lembrete-favoritos"],
+    queryFn: imoveisService.lembreteFavoritos,
+  })
+}
+
+export function useUpdateLembreteFavoritos() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: LembreteFavoritosPayload) => imoveisService.updateLembreteFavoritos(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lembrete-favoritos"] }),
   })
 }
 
@@ -93,6 +118,27 @@ export function useDeleteCorretor() {
       queryClient.invalidateQueries({ queryKey: ["corretores"] })
       queryClient.invalidateQueries({ queryKey: ["admin-stats"] })
     },
+  })
+}
+
+export function useUsuarios() {
+  return useQuery({
+    queryKey: ["usuarios"],
+    queryFn: imoveisService.usuarios,
+  })
+}
+
+export function useUpdateUsuario() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number | string; payload: AdminUserPayload }) => imoveisService.updateUsuario(id, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["usuarios"] }),
+  })
+}
+
+export function useUsuarioResetLink() {
+  return useMutation({
+    mutationFn: (id: number | string) => imoveisService.usuarioResetLink(id),
   })
 }
 

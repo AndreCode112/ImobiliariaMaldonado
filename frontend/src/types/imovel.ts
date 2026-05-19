@@ -172,6 +172,81 @@ export interface AdminStats {
   destaque: number
 }
 
+export interface ApiHealthCheck {
+  name: string
+  service: string
+  base_url: string
+  url: string
+  method: string
+  ok: boolean
+  configured: boolean
+  api_key_env?: string | null
+  api_key_masked: string
+  controllers: string[]
+  request_body: string
+  status_code: number | null
+  latency_ms: number | null
+  message: string
+  log: string
+}
+
+export interface ApiHealthReport {
+  success: boolean
+  checked_at: string
+  results: ApiHealthCheck[]
+}
+
+export interface LembreteFavoritosConfig {
+  horario: string
+  ativo: boolean
+  whatsapp_mensagem: string
+  whatsapp_destino: "corretor" | "manual"
+  whatsapp_corretor_id?: number | null
+  whatsapp_corretor?: CorretorResumo | null
+  whatsapp_numero_manual: string
+  whatsapp_numero_ativo?: string
+  cron_instalado: boolean
+  cron_linha: string
+  ultima_atualizacao_cron?: string | null
+  atualizado_em?: string | null
+}
+
+export interface LembreteTopImovel {
+  id: number
+  titulo: string
+  favoritos: number
+  clientes: Array<{
+    id: number
+    nome: string
+    email?: string
+  }>
+}
+
+export interface LembreteFavoritosStats {
+  favoritos_cadastrados: number
+  favoritos_disponiveis: number
+  clientes_com_favoritos: number
+  imoveis_favoritados: number
+  imoveis_disponiveis: number
+  top_imoveis: LembreteTopImovel[]
+}
+
+export interface LembreteFavoritosPayload {
+  horario: string
+  ativo: boolean
+  whatsapp_mensagem: string
+  whatsapp_destino: "corretor" | "manual"
+  whatsapp_corretor_id?: number | null
+  whatsapp_numero_manual: string
+}
+
+export interface LembreteFavoritosResponse {
+  config: LembreteFavoritosConfig
+  stats: LembreteFavoritosStats
+  cron_ok?: boolean
+  message?: string
+}
+
 export interface PaginatedResults<T> {
   results: T[]
 }

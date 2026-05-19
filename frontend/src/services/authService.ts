@@ -14,6 +14,11 @@ export const authService = {
     return data
   },
 
+  async confirmPasswordReset(payload: { uid: string; token: string; password: string }) {
+    const { data } = await axiosClient.post("/api/auth/password-reset/confirm/", payload)
+    return data
+  },
+
   logout() {
     authStore.clear()
   },

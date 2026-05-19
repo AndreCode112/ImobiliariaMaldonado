@@ -1,4 +1,4 @@
-import { Building2, Home, LayoutDashboard, LogOut, MapPin, PanelLeftClose, PanelLeftOpen, UserRound, Users } from "lucide-react"
+import { BellRing, Building2, Home, LayoutDashboard, LogOut, MapPin, PanelLeftClose, PanelLeftOpen, UserRound, Users } from "lucide-react"
 import { useState } from "react"
 import { NavLink, Outlet, useNavigate } from "react-router-dom"
 
@@ -23,8 +23,11 @@ const NAV = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/admin/imoveis", label: "Imóveis", icon: Building2 },
   { to: "/admin/corretores", label: "Corretores", icon: Users },
+  { to: "/admin/usuarios", label: "Usuários", icon: UserRound },
   { to: "/admin/cidades", label: "Cidades", icon: MapPin },
+  { to: "/admin/lembretes", label: "Lembretes", icon: BellRing },
 ]
+const LOGO_SRC = "/media/logo/logo-header.png"
 
 export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -35,17 +38,16 @@ export function AdminLayout() {
   const userInitial = username[0]?.toUpperCase() ?? "A"
 
   return (
-    <section className="flex min-h-svh bg-secondary">
+    <section className="flex h-svh overflow-hidden bg-secondary">
         <aside
           className={cn(
-            "hidden min-h-svh shrink-0 flex-col border-r bg-white transition-[width] duration-300 lg:flex",
+            "hidden h-svh shrink-0 flex-col border-r bg-white transition-[width] duration-300 lg:flex",
             sidebarOpen ? "w-64" : "w-[76px]",
           )}
         >
           <div className={cn("flex h-[74px] items-center border-b px-4", sidebarOpen ? "justify-between" : "justify-center")}>
-            <NavLink to="/" className={cn("flex min-w-0 items-center gap-2 text-sm font-semibold", !sidebarOpen && "sr-only")}>
-              <Home className="size-4 shrink-0" />
-              <span className="truncate">Maldonado Corretor</span>
+            <NavLink to="/" className={cn("flex min-w-0 items-center", !sidebarOpen && "sr-only")}>
+              <img src={LOGO_SRC} alt="Maldonado Imóveis" className="h-12 w-40 object-contain" />
             </NavLink>
             <Button variant="ghost" size="icon" className="size-10 shrink-0 rounded-full" onClick={() => setSidebarOpen((open) => !open)}>
               {sidebarOpen ? <PanelLeftClose className="size-4" /> : <PanelLeftOpen className="size-4" />}
@@ -110,7 +112,7 @@ export function AdminLayout() {
           </div>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <header className="flex h-16 shrink-0 items-center justify-between border-b bg-white px-4 md:px-6">
             <div className="flex gap-2 overflow-x-auto lg:hidden">
             {NAV.map(({ to, label, end }) => (
@@ -165,8 +167,8 @@ export function AdminLayout() {
             </div>
           </header>
 
-          <main className="min-w-0 flex-1 overflow-auto p-0">
-            <div className="p-5 md:p-6">
+          <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-0 premium-scrollbar">
+            <div className="min-h-full p-5 md:p-6">
               <Outlet />
             </div>
           </main>

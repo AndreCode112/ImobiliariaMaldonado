@@ -1,7 +1,18 @@
+from datetime import time
+from pyexpat import model
+
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
+
+
+
+
+class log(models.Model):
+    criado_em = models.DateTimeField("Criado em", auto_now_add=True)
+    route = models.CharField(max_length=200, blank=True, null=False)
+    erro = models.TextField()
 
 
 class TipoImovel(models.Model):
@@ -249,3 +260,88 @@ class FavoritoImovel(models.Model):
 
     def __str__(self):
         return f"{self.usuario} favoritou {self.imovel}"
+
+
+class LembreteFavoritosConfig(models.Model):
+    WHATSAPP_DESTINO_CHOICES = [
+        ("corretor", "Corretor selecionado"),
+        ("manual", "Numero manual"),
+    ]
+
+    whatsapp_mensagem = models.TextField(
+        "Mensagem do WhatsApp",
+        default="Ola, tenho interesse no imovel {titulo}: {url}",
+        help_text="Variaveis disponiveis: {titulo}, {url}, {preco}, {endereco}.",
+    )
+    whatsapp_destino = models.CharField(
+        "Destino do WhatsApp",
+        max_length=20,
+        choices=WHATSAPP_DESTINO_CHOICES,
+        default="corretor",
+    )
+    whatsapp_corretor = models.ForeignKey(
+        Corretor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Corretor do WhatsApp",
+    )
+    whatsapp_numero_manual = models.CharField("Numero manual do WhatsApp", max_length=30, blank=True)
+    horario = models.TimeField("Horario de envio", default=time(9, 0))
+    ativo = models.BooleanField("Agendamento ativo", default=False)
+    cron_instalado = models.BooleanField("Cron instalado", default=False)
+    cron_linha = models.TextField("Linha do cron", blank=True)
+    ultima_atualizacao_cron = models.DateTimeField("Ultima atualizacao do cron", null=True, blank=True)
+    atualizado_em = models.DateTimeField("Atualizado em", auto_now=True)
+
+    class Meta:
+        verbose_name = "Configuracao de Lembrete de Favoritos"
+        verbose_name_plural = "Configuracoes de Lembretes de Favoritos"
+
+    def __str__(self):
+        status = "ativo" if self.ativo else "inativo"
+        return f"Lembrete de favoritos {status} as {self.horario:%H:%M}"
+
+    @classmethod
+    def get_solo(cls):
+        config, _created = cls.objects.get_or_create(pk=1)
+        return config
+
+
+class EnderecoBuscaCache(models.Model):
+    provider = models.CharField("Provider", max_length=40, default="nominatim")
+    query_original = models.CharField("Query original", max_length=220)
+    query_normalizada = models.CharField("Query normalizada", max_length=220, db_index=True)
+    cache_key = models.CharField("Cache key", max_length=64, db_index=True)
+    result_index = models.PositiveSmallIntegerField("Ordem do resultado", default=0)
+    display_name = models.CharField("Nome exibido", max_length=500)
+    latitude = models.CharField("Latitude", max_length=40)
+    longitude = models.CharField("Longitude", max_length=40)
+    place_id = models.CharField("Place ID", max_length=80, blank=True)
+    tipo = models.CharField("Tipo", max_length=80, blank=True)
+    address = models.JSONField("Address", default=dict, blank=True)
+    raw_response = models.JSONField("Resposta original", default=dict, blank=True)
+    hits = models.PositiveIntegerField("Usos", default=0)
+    ultimo_uso_em = models.DateTimeField("Último uso em", null=True, blank=True)
+    expires_at = models.DateTimeField("Expira em", db_index=True)
+    criado_em = models.DateTimeField("Criado em", auto_now_add=True)
+    atualizado_em = models.DateTimeField("Atualizado em", auto_now=True)
+
+    class Meta:
+        verbose_name = "Cache de Busca de Endereco"
+        verbose_name_plural = "Caches de Busca de Endereco"
+        ordering = ["cache_key", "result_index"]
+        unique_together = ("provider", "cache_key", "result_index")
+
+    def __str__(self):
+        return f"{self.provider}: {self.query_normalizada}"
+
+    def to_result_dict(self):
+        return {
+            "display_name": self.display_name,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "place_id": self.place_id,
+            "type": self.tipo,
+            "address": self.address or {},
+        }

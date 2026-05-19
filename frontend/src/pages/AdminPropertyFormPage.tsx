@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { createPortal } from "react-dom"
 import { useNavigate, useParams } from "react-router-dom"
-import { ChevronLeft, ChevronRight, Home, Image as ImageIcon, Save, Search, UploadCloud, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Home, Image as ImageIcon, MapPin, Save, Search, UploadCloud, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { axiosClient } from "@/api/axiosClient"
@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { useCidades, useCorretores, useCreateImovel, useImovel, useUpdateImovel } from "@/hooks/useImoveis"
 import { cn } from "@/lib/utils"
-import type { Cidade, ImagemImovel, ImovelPayload } from "@/types/imovel"
+import type { Cidade, EnderecoResultado, ImagemImovel, ImovelPayload } from "@/types/imovel"
 
 const STATUS_OPTIONS = [
   { value: "disponivel", label: "Disponível" },
@@ -188,6 +188,9 @@ export function AdminPropertyFormPage() {
   const [dragActive, setDragActive] = useState(false)
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const [cepLoading, setCepLoading] = useState(false)
+  const [addressLoading, setAddressLoading] = useState(false)
+  const [addressDialogOpen, setAddressDialogOpen] = useState(false)
+  const [addressResult, setAddressResult] = useState<EnderecoResultado | null>(null)
   const imageFilesRef = useRef<ImageFilePreview[]>([])
 
   const visibleExistingImages = useMemo(
@@ -426,6 +429,43 @@ export function AdminPropertyFormPage() {
     }
   }
 
+  async function buscarCoordenadasEndereco() {
+    const query = form.endereco.trim()
+    if (query.length < 5) {
+      toast.error("Informe o endereço para buscar coordenadas")
+      return
+    }
+
+    setAddressLoading(true)
+    try {
+      const { data } = await axiosClient.get<{ results: EnderecoResultado[] }>("/imoveis/api/buscar-endereco/", {
+        params: { query },
+      })
+      const result = data.results?.[0]
+      if (!result) {
+        toast.error("Nenhuma coordenada encontrada para este endereço")
+        return
+      }
+      setAddressResult(result)
+      setAddressDialogOpen(true)
+    } catch {
+      toast.error("Erro ao buscar coordenadas do endereço")
+    } finally {
+      setAddressLoading(false)
+    }
+  }
+
+  function aplicarCoordenadasEndereco() {
+    if (!addressResult) return
+    setForm((current) => ({
+      ...current,
+      latitude: addressResult.latitude,
+      longitude: addressResult.longitude,
+    }))
+    setAddressDialogOpen(false)
+    toast.success("Latitude e longitude adicionadas")
+  }
+
   async function save() {
     if (!form.titulo || !form.preco) {
       toast.error("Título e preço são obrigatórios")
@@ -526,9 +566,6 @@ export function AdminPropertyFormPage() {
                     </Button>
                   </div>
                 </Field>
-                <Field label="Endereço">
-                  <Input className="h-11" value={form.endereco} onChange={(event) => setForm((current) => ({ ...current, endereco: event.target.value }))} placeholder="Rua, número, bairro" />
-                </Field>
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="Bairro">
                     <Input className="h-11" value={form.bairro_nome} onChange={(event) => setForm((current) => ({ ...current, bairro_nome: event.target.value }))} placeholder="Bairro" />
@@ -553,6 +590,15 @@ export function AdminPropertyFormPage() {
                 <p className="-mt-2 text-xs text-muted-foreground">
                   A cidade pode vir do CEP. O ponto do mapa usa latitude e longitude confirmadas.
                 </p>
+                <Field label="Endereço">
+                  <div className="flex gap-2">
+                    <Input className="h-11" value={form.endereco} onChange={(event) => setForm((current) => ({ ...current, endereco: event.target.value }))} placeholder="Rua, número" />
+                    <Button type="button" variant="outline" className="h-11 min-w-[118px]" onClick={buscarCoordenadasEndereco} disabled={addressLoading}>
+                      <MapPin className="h-4 w-4" />
+                      {addressLoading ? "Buscando..." : "Buscar"}
+                    </Button>
+                  </div>
+                </Field>
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="Latitude">
                     <Input className="h-11" value={form.latitude} onChange={(event) => setForm((current) => ({ ...current, latitude: event.target.value }))} placeholder="-23.5505200" />
@@ -732,6 +778,36 @@ export function AdminPropertyFormPage() {
         onPrevious={showPreviousPhoto}
         onNext={showNextPhoto}
       />
+      <Dialog open={addressDialogOpen} onOpenChange={setAddressDialogOpen}>
+        <DialogContent className="rounded-[28px] sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Coordenadas encontradas</DialogTitle>
+            <DialogDescription>
+              Confira no Maps se latitude e longitude correspondem ao imóvel antes de adicionar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-2xl border bg-secondary/50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Endereço retornado</p>
+            <p className="mt-2 text-sm leading-6 text-foreground">{addressResult?.display_name}</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Latitude">
+              <Input readOnly className="h-11 bg-secondary" value={addressResult?.latitude ?? ""} />
+            </Field>
+            <Field label="Longitude">
+              <Input readOnly className="h-11 bg-secondary" value={addressResult?.longitude ?? ""} />
+            </Field>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-full" onClick={() => setAddressDialogOpen(false)}>
+              Adicionar manual
+            </Button>
+            <Button className="rounded-full" onClick={aplicarCoordenadasEndereco}>
+              Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }

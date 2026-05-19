@@ -1,7 +1,7 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
 
 import { authService } from "@/services/authService"
-import { authStore } from "@/store/authStore"
+import { AUTH_SESSION_CHANGED_EVENT, authStore } from "@/store/authStore"
 import type { AuthSession, LoginCredentials } from "@/types/auth"
 
 interface AuthContextValue {
@@ -16,6 +16,20 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(() => authStore.getSession())
+
+  useEffect(() => {
+    function syncSession() {
+      setSession(authStore.getSession())
+    }
+
+    window.addEventListener(AUTH_SESSION_CHANGED_EVENT, syncSession)
+    window.addEventListener("storage", syncSession)
+
+    return () => {
+      window.removeEventListener(AUTH_SESSION_CHANGED_EVENT, syncSession)
+      window.removeEventListener("storage", syncSession)
+    }
+  }, [])
 
   const value = useMemo<AuthContextValue>(
     () => ({

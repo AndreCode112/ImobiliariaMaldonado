@@ -1,4 +1,4 @@
-import { Edit, MapPin, Plus, Search, Trash2 } from "lucide-react"
+import { Compass, Edit, Fingerprint, LocateFixed, MapPin, Plus, Search, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
@@ -104,10 +104,12 @@ export function AdminCidadesPage() {
                     <span className="font-medium">{cidade.nome}</span>
                   </div>
                 </td>
-                <td className="px-5 py-4 font-semibold uppercase">{cidade.estado}</td>
-                <td className="px-5 py-4">{cidade.codigo_ibge || "—"}</td>
-                <td className="px-5 py-4">{cidade.latitude || "Auto"}</td>
-                <td className="px-5 py-4">{cidade.longitude || "Auto"}</td>
+                <td className="px-5 py-4">
+                  <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase text-primary">{cidade.estado}</span>
+                </td>
+                <td className="px-5 py-4"><TableBadge icon={Fingerprint} value={cidade.codigo_ibge || "Sem IBGE"} /></td>
+                <td className="px-5 py-4"><TableBadge icon={LocateFixed} value={cidade.latitude || "Auto"} tone="blue" /></td>
+                <td className="px-5 py-4"><TableBadge icon={Compass} value={cidade.longitude || "Auto"} tone="blue" /></td>
                 <td className="px-5 py-4">
                   <div className="flex justify-end gap-2">
                     <Button size="icon" variant="ghost" className="rounded-full" onClick={() => openEdit(cidade)}><Edit className="size-4" /></Button>
@@ -151,4 +153,14 @@ export function AdminCidadesPage() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <Label className="grid gap-2 text-sm font-medium">{label}{children}</Label>
+}
+
+function TableBadge({ icon: Icon, value, tone = "neutral" }: { icon: typeof Fingerprint; value: string; tone?: "neutral" | "blue" }) {
+  const toneClass = tone === "blue" ? "bg-sky-50 text-sky-700" : "bg-secondary text-foreground"
+  return (
+    <span className={`inline-flex max-w-[180px] items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${toneClass}`}>
+      <Icon className="size-3.5 shrink-0" />
+      <span className="truncate">{value}</span>
+    </span>
+  )
 }

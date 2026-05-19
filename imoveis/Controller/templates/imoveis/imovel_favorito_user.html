@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f7f7f7;
+            color: #222222;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .email-wrapper {
+            width: 100%;
+            padding: 14px 0;
+            background: #f7f7f7;
+        }
+
+        .email-card {
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+            overflow: hidden;
+            background: #ffffff;
+            border-radius: 14px 14px 0 0;
+        }
+
+        .brand-header {
+            padding: 50px 28px;
+            background: #222222;
+            text-align: center;
+        }
+
+        .brand-logo {
+            display: block;
+            width: 210px;
+            height: 145px;
+            max-width: 70%;
+            margin: 0 auto;
+            object-fit: cover;
+            object-position: center 58%;
+            border: 0;
+        }
+
+        .intro {
+            padding: 30px 40px 18px;
+        }
+
+        .intro h1 {
+            margin: 0 0 14px;
+            color: #222222;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 33px;
+            line-height: 1.1;
+            font-weight: 700;
+        }
+
+        .intro h1 span {
+            color: #ff385c;
+        }
+
+        .intro p {
+            margin: 0;
+            color: #3f3f3f;
+            font-size: 16px;
+            line-height: 1.45;
+        }
+
+        .intro strong {
+            color: #ff385c;
+        }
+
+        .content {
+            padding: 0 34px 26px;
+        }
+
+        .property-card {
+            overflow: hidden;
+            background: #ffffff;
+            border: 1px solid #dddddd;
+            border-radius: 14px;
+        }
+
+        .image-wrap {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .property-image {
+            display: block;
+            width: 100%;
+            height: 310px;
+            object-fit: cover;
+            object-fit: cover;
+            border: 0;
+        }
+
+        .favorite-badge {
+            display: inline-block;
+            padding: 11px 18px;
+            border-radius: 50%;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1;
+            position: relative;
+            bottom: 301px;
+        }
+
+        .icon-img {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 0;
+            vertical-align: -4px;
+        }
+
+        .property-body {
+            padding: 0px 27px 20px;
+        }
+
+        .title {
+            margin: 0 0 10px;
+            color: #222222;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 27px;
+            line-height: 1.15;
+            font-weight: 700;
+        }
+
+        .address {
+            margin: 0 0 15px;
+            color: #6a6a6a;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .divider {
+            width: 28px;
+            height: 2px;
+            margin: 0 0 18px;
+            background: #ff385c;
+        }
+
+        .price {
+            margin: 0 0 20px;
+            color: #222222;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .details {
+            width: 100%;
+            margin: 0 0 20px;
+            border-collapse: separate;
+            border-spacing: 10px 0;
+            table-layout: fixed;
+        }
+
+        .detail-item {
+            width: 25%;
+            padding: 15px 7px;
+            border: 1px solid #dddddd;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #222222;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.3;
+        }
+
+        .detail-icon {
+            display: block;
+            margin-bottom: 8px;
+            color: #222222;
+        }
+
+        .detail-icon img {
+            display: block;
+            width: 24px;
+            height: 24px;
+            margin: 0 auto;
+            border: 0;
+        }
+
+        .whatsapp-button,
+        .property-link {
+            display: block;
+            box-sizing: border-box;
+            width: 100%;
+            border-radius: 8px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .whatsapp-button {
+            margin: 0 0 12px;
+            padding: 15px 18px;
+            background: #ff385c;
+            color: #ffffff !important;
+        }
+
+        .whatsapp-button img {
+            width: 20px;
+            height: 20px;
+            margin-right: 6px;
+            border: 0;
+            vertical-align: -5px;
+        }
+
+        .property-link {
+            padding: 14px 18px;
+            border: 1px solid #dddddd;
+            background: #ffffff;
+            color: #222222 !important;
+        }
+
+        .notice {
+            padding: 24px 40px;
+            background: #f7f7f7;
+        }
+
+        .notice-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .notice-icon {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: #f2f2f2;
+            color: #222222;
+            text-align: center;
+            line-height: 58px;
+        }
+
+        .notice-text {
+            padding-left: 18px;
+            color: #3f3f3f;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .notice-text strong {
+            color: #222222;
+        }
+
+        .footer {
+            padding: 26px 40px 28px;
+            text-align: center;
+            background: #222222;
+        }
+
+        .socials {
+            margin-bottom: 16px;
+            color: #222222;
+        }
+
+        .footer-brand {
+            margin: 0 0 12px;
+        }
+
+        .footer-logo {
+            width: 181px;
+            height: 140px;
+            object-fit: cover;
+            object-position: center 58%;
+            border: 0;
+        }
+
+        .tagline {
+            margin: 0;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .tagline span {
+            color: #ff385c;
+        }
+
+        @media (max-width: 620px) {
+            .intro,
+            .content,
+            .notice,
+            .footer {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+
+            .intro h1 {
+                font-size: 30px;
+            }
+
+            .property-image {
+                height: 240px;
+            }
+
+            .details {
+                border-spacing: 4px 0;
+            }
+
+            .detail-item {
+                padding: 12px 4px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="email-wrapper">
+    <div class="email-card">
+        <div class="brand-header">
+            <img src="{{ logo_src }}" alt="Maldonado Imóveis" class="brand-logo">
+        </div>
+
+        <div class="intro">
+            <h1>Olá, <span>{{ usuario_nome }}</span>!</h1>
+            <p>
+                Seus imóveis favoritos ainda estão disponíveis.<br>
+                Se algum deles combina com o que você procura,<br>
+                fale conosco para <strong>agendar uma visita.</strong>
+            </p>
+        </div>
+
+        <div class="content">
+            {% for item in imoveis %}
+                <div class="property-card">
+	                    {% if item.imagem_src %}
+	                        <div class="image-wrap">
+	                            <a href="{{ item.imovel_url }}" target="_blank">
+	                                <img
+	                                    src="{{ item.imagem_src }}"
+                                    alt="Foto do imóvel {{ item.titulo }}"
+	                                    class="property-image"
+	                                >
+	                            </a>
+	                            <div class="favorite-badge">
+	                                <img src="{{ icons.favorito }}" alt="" class="icon-img">
+	                            </div>
+	                        </div>
+	                    {% endif %}
+
+                    <div class="property-body">
+                        <h2 class="title">{{ item.titulo }}</h2>
+                        <p class="address">
+                            {{ item.endereco }}
+                        </p>
+                        <div class="divider"></div>
+                        <p class="price">{{ item.preco }}</p>
+
+                        <table class="details" role="presentation">
+                            <tr>
+                                <td class="detail-item">
+                                    <span class="detail-icon"><img src="{{ icons.quarto }}" alt=""></span>
+                                    {{ item.quartos }} quartos
+                                </td>
+                                <td class="detail-item">
+                                    <span class="detail-icon"><img src="{{ icons.banheiro }}" alt=""></span>
+                                    {{ item.banheiros }} banheiro{% if item.banheiros != 1 %}s{% endif %}
+                                </td>
+                                <td class="detail-item">
+                                    <span class="detail-icon"><img src="{{ icons.estacionamento }}" alt=""></span>
+                                    {{ item.vagas }} vaga{% if item.vagas != 1 %}s{% endif %}
+                                </td>
+                                <td class="detail-item">
+                                    <span class="detail-icon"><img src="{{ icons.tamanho_da_casa }}" alt=""></span>
+                                    {{ item.area }} m²
+                                </td>
+                            </tr>
+                        </table>
+
+                        <a href="{{ item.whatsapp_link }}" target="_blank" class="whatsapp-button">
+                            <img src="{{ icons.whatsapp }}" alt="">
+                            Perguntar pelo WhatsApp
+                        </a>
+
+                        <a href="{{ item.imovel_url }}" target="_blank" class="property-link">
+                            Ver imóvel no site ›
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+
+        <div class="footer">
+            <div class="footer-line"></div>
+            <p class="footer-brand">
+                <img src="{{ logo_src }}" alt="Maldonado Imóveis" class="footer-logo">
+            </p>
+            <p class="tagline">
+                Conectando você ao <span>lugar dos seus sonhos.</span>
+            </p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

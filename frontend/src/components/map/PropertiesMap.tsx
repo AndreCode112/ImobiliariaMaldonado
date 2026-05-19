@@ -1,10 +1,10 @@
-import { Bath, BedDouble, Camera, Car, Home, LocateFixed, MapPin, MapPinned, Maximize2, Ruler, RotateCcw, ShoppingCart, Store, TreePine, Utensils } from "lucide-react"
+import { Bath, BedDouble, Camera, Car, Home, MapPin, MapPinned, Ruler, ShoppingCart, Store, TreePine, Utensils } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 
 import { FavoriteButton } from "@/components/properties/FavoriteButton"
 import { Button } from "@/components/ui/button"
-import { Map, MapControlContainer, MapMarker, MapMarkerClusterGroup, MapPopup, MapTileLayer, MapTooltip, MapZoomControl, useMap } from "@/components/ui/map"
+import { Map, MapMarker, MapPopup, MapTileLayer, MapTooltip, MapZoomControl, useMap } from "@/components/ui/map"
 import type { EnderecoResultado, Imovel, PontoInteresse } from "@/types/imovel"
 
 interface PropertiesMapProps {
@@ -12,13 +12,15 @@ interface PropertiesMapProps {
   selectedId?: number
   selectedAddress?: EnderecoResultado | null
   scrollWheelZoom?: boolean
+  showPointsOfInterest?: boolean
   onSelect: (imovel: Imovel) => void
 }
 
 const DEFAULT_CENTER: [number, number] = [-23.55052, -46.633308]
 
-export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWheelZoom = true, onSelect }: PropertiesMapProps) {
+export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWheelZoom = true, showPointsOfInterest = false, onSelect }: PropertiesMapProps) {
   const [isHoveringMap, setIsHoveringMap] = useState(false)
+  const [showPontosInteresse, setShowPontosInteresse] = useState(false)
   const visibleImoveis = imoveis.filter((imovel) => imovel.latitude !== null && imovel.longitude !== null)
   const pontosInteresse = useMemo(() => {
     const unique = new globalThis.Map<string, PontoInteresse>()
@@ -43,14 +45,18 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
       onMouseEnter={() => setIsHoveringMap(true)}
       onMouseLeave={() => setIsHoveringMap(false)}
     >
-      <Map center={center} zoom={visibleImoveis.length ? 13 : 11} className="size-full rounded-none" scrollWheelZoom={false}>
+      <Map center={center} zoom={visibleImoveis.length === 1 ? 15 : visibleImoveis.length ? 13 : 11} className="size-full rounded-none" scrollWheelZoom={false}>
         <MapTileLayer
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO'
         />
         <MapWheelZoomController enabled={scrollWheelZoom && isHoveringMap} />
-        <MapZoomControl position="top-5 right-5" className="rounded-full border bg-white/90 shadow-lg backdrop-blur" />
-        <MapFitControls imoveis={visibleImoveis} selectedAddress={selectedAddress} />
+        <MapPointsOfInterestZoomGate onChange={setShowPontosInteresse} />
+        <MapExternalControls imoveis={visibleImoveis} selectedAddress={selectedAddress} />
+        <MapZoomControl
+          position="bottom-5 right-5 md:bottom-6 md:right-6"
+          className="rounded-full bg-white/90 shadow-[0_14px_36px_rgba(0,0,0,0.14)] backdrop-blur-xl"
+        />
         {selectedAddress ? <MapFlyTo address={selectedAddress} /> : null}
         {selectedAddress ? (
           <MapMarker
@@ -64,45 +70,40 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
             </MapTooltip>
           </MapMarker>
         ) : null}
-        {pontosInteresse.map((ponto) => (
+        {showPointsOfInterest && showPontosInteresse ? (
+          pontosInteresse.map((ponto) => (
+            <MapMarker
+              key={`${ponto.categoria}-${ponto.id}`}
+              position={[ponto.lat, ponto.lng]}
+              icon={<PontoInteressePin categoria={ponto.categoria} />}
+              iconAnchor={[12, 24]}
+              tooltipAnchor={[0, -22]}
+            >
+              <MapTooltip className="rounded-full border-0 bg-foreground px-3 py-1 font-medium text-background shadow-lg" sideOffset={12}>
+                {ponto.nome}
+              </MapTooltip>
+            </MapMarker>
+          ))
+        ) : null}
+        {visibleImoveis.map((imovel) => (
           <MapMarker
-            key={`${ponto.categoria}-${ponto.id}`}
-            position={[ponto.lat, ponto.lng]}
-            icon={<PontoInteressePin categoria={ponto.categoria} />}
-            iconAnchor={[8, 8]}
-            tooltipAnchor={[0, -8]}
+            key={imovel.id}
+            position={[imovel.latitude as number, imovel.longitude as number]}
+            icon={<HomePin />}
+            iconAnchor={[21, 42]}
+            popupAnchor={[0, -42]}
+            eventHandlers={{ popupopen: () => onSelect(imovel) }}
           >
-            <MapTooltip className="rounded-full border-0 bg-foreground px-3 py-1 font-medium text-background shadow-lg" sideOffset={12}>
-              {ponto.nome}
-            </MapTooltip>
+            <MapPopup
+              closeButton={false}
+              closeOnClick
+              className="property-map-popup w-[320px] rounded-[28px] border-0 bg-white p-0 shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
+            >
+              <Preview imovel={imovel} />
+            </MapPopup>
           </MapMarker>
         ))}
-        <MapMarkerClusterGroup icon={(count) => <ClusterPin count={count} />}>
-          {visibleImoveis.map((imovel) => (
-            <MapMarker
-              key={imovel.id}
-              position={[imovel.latitude as number, imovel.longitude as number]}
-              icon={<HomePin />}
-              iconAnchor={[21, 42]}
-              popupAnchor={[0, -42]}
-              eventHandlers={{ popupopen: () => onSelect(imovel) }}
-            >
-              <MapPopup
-                closeButton={false}
-                closeOnClick
-                className="property-map-popup w-[320px] rounded-[28px] border-0 bg-white p-0 shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
-              >
-                <Preview imovel={imovel} />
-              </MapPopup>
-            </MapMarker>
-          ))}
-        </MapMarkerClusterGroup>
       </Map>
-      {scrollWheelZoom && isHoveringMap ? (
-        <div className="pointer-events-none absolute bottom-6 left-1/2 z-[650] hidden -translate-x-1/2 rounded-full border border-white/70 bg-white/90 px-4 py-2 text-xs font-semibold text-foreground shadow-[0_12px_34px_rgba(0,0,0,0.12)] backdrop-blur-xl md:block">
-          Use o scroll para aproximar ou afastar
-        </div>
-      ) : null}
       {!visibleImoveis.length && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center bg-white/55 p-6 backdrop-blur-sm">
           <div className="max-w-sm rounded-[28px] border bg-white p-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.08)]">
@@ -114,6 +115,25 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
       )}
     </div>
   )
+}
+
+function MapPointsOfInterestZoomGate({ onChange }: { onChange: (visible: boolean) => void }) {
+  const map = useMap()
+
+  useEffect(() => {
+    const minZoomToShowPoints = 15
+    const syncVisibility = () => {
+      onChange(map.getZoom() >= minZoomToShowPoints)
+    }
+
+    syncVisibility()
+    map.on("zoomend", syncVisibility)
+    return () => {
+      map.off("zoomend", syncVisibility)
+    }
+  }, [map, onChange])
+
+  return null
 }
 
 function MapWheelZoomController({ enabled }: { enabled: boolean }) {
@@ -135,70 +155,45 @@ function MapWheelZoomController({ enabled }: { enabled: boolean }) {
   return null
 }
 
-function MapFitControls({ imoveis, selectedAddress }: { imoveis: Imovel[]; selectedAddress?: EnderecoResultado | null }) {
+function MapExternalControls({ imoveis, selectedAddress }: { imoveis: Imovel[]; selectedAddress?: EnderecoResultado | null }) {
   const map = useMap()
 
-  function fitImoveis() {
-    const bounds = imoveis
-      .filter((imovel) => imovel.latitude !== null && imovel.longitude !== null)
-      .map((imovel) => [imovel.latitude as number, imovel.longitude as number] as [number, number])
+  useEffect(() => {
+    const fitImoveis = () => {
+      const bounds = imoveis
+        .filter((imovel) => imovel.latitude !== null && imovel.longitude !== null)
+        .map((imovel) => [imovel.latitude as number, imovel.longitude as number] as [number, number])
 
-    if (!bounds.length) return
-    if (bounds.length === 1) {
-      map.flyTo(bounds[0], Math.max(map.getZoom(), 15), { duration: 0.9 })
-      return
+      if (!bounds.length) return
+      if (bounds.length === 1) {
+        map.flyTo(bounds[0], 16, { duration: 0.8 })
+        return
+      }
+      map.fitBounds(bounds, { animate: true, duration: 0.8, padding: [120, 120], maxZoom: 15 })
     }
-    map.fitBounds(bounds, { animate: true, duration: 0.9, padding: [84, 84], maxZoom: 15 })
-  }
+    const zoomIn = () => map.zoomIn()
+    const zoomOut = () => map.zoomOut()
+    const flyToAddress = () => {
+      if (!selectedAddress) return
+      const latitude = Number(selectedAddress.latitude)
+      const longitude = Number(selectedAddress.longitude)
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return
+      map.flyTo([latitude, longitude], Math.max(map.getZoom(), 15), { duration: 0.8 })
+    }
 
-  function flyToAddress() {
-    if (!selectedAddress) return
-    const latitude = Number(selectedAddress.latitude)
-    const longitude = Number(selectedAddress.longitude)
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return
-    map.flyTo([latitude, longitude], Math.max(map.getZoom(), 15), { duration: 0.9 })
-  }
+    window.addEventListener("maldonado:fit-imoveis", fitImoveis)
+    window.addEventListener("maldonado:zoom-in", zoomIn)
+    window.addEventListener("maldonado:zoom-out", zoomOut)
+    window.addEventListener("maldonado:fly-address", flyToAddress)
+    return () => {
+      window.removeEventListener("maldonado:fit-imoveis", fitImoveis)
+      window.removeEventListener("maldonado:zoom-in", zoomIn)
+      window.removeEventListener("maldonado:zoom-out", zoomOut)
+      window.removeEventListener("maldonado:fly-address", flyToAddress)
+    }
+  }, [imoveis, map, selectedAddress])
 
-  return (
-    <MapControlContainer className="bottom-24 right-6 flex flex-col gap-2 md:bottom-28 md:right-8">
-      <Button
-        type="button"
-        size="icon-sm"
-        variant="secondary"
-        className="rounded-full border bg-white/92 shadow-[0_12px_34px_rgba(0,0,0,0.14)] backdrop-blur"
-        onClick={fitImoveis}
-        disabled={!imoveis.length}
-        aria-label="Centralizar imóveis"
-        title="Centralizar imóveis"
-      >
-        <LocateFixed className="size-4" />
-      </Button>
-      {selectedAddress ? (
-        <Button
-          type="button"
-          size="icon-sm"
-          variant="secondary"
-          className="rounded-full border bg-white/92 shadow-[0_12px_34px_rgba(0,0,0,0.14)] backdrop-blur"
-          onClick={flyToAddress}
-          aria-label="Voltar ao endereço buscado"
-          title="Voltar ao endereço buscado"
-        >
-          <RotateCcw className="size-4" />
-        </Button>
-      ) : null}
-      <Button
-        type="button"
-        size="icon-sm"
-        variant="secondary"
-        className="rounded-full border bg-white/92 shadow-[0_12px_34px_rgba(0,0,0,0.14)] backdrop-blur md:hidden"
-        onClick={() => map.toggleFullscreen()}
-        aria-label="Abrir mapa em tela cheia"
-        title="Abrir mapa em tela cheia"
-      >
-        <Maximize2 className="size-4" />
-      </Button>
-    </MapControlContainer>
-  )
+  return null
 }
 
 function MapFlyTo({ address }: { address: EnderecoResultado }) {
@@ -238,29 +233,22 @@ function HomePin() {
   )
 }
 
-function ClusterPin({ count }: { count: number }) {
-  return (
-    <div className="grid size-11 place-items-center rounded-full border-4 border-white bg-primary text-sm font-bold text-white shadow-[0_18px_46px_rgba(255,56,92,0.34)]">
-      {count}
-    </div>
-  )
-}
-
 function PontoInteressePin({ categoria }: { categoria: string }) {
   const category = categoria || "servico"
   const config = {
-    restaurante: { icon: Utensils, className: "bg-amber-500 text-white shadow-amber-500/25" },
-    mercado: { icon: ShoppingCart, className: "bg-emerald-500 text-white shadow-emerald-500/25" },
-    loja: { icon: Store, className: "bg-sky-500 text-white shadow-sky-500/25" },
-    turismo: { icon: Camera, className: "bg-violet-500 text-white shadow-violet-500/25" },
-    parque: { icon: TreePine, className: "bg-lime-600 text-white shadow-lime-600/25" },
-    servico: { icon: MapPinned, className: "bg-zinc-700 text-white shadow-zinc-700/25" },
-  }[category] ?? { icon: MapPinned, className: "bg-zinc-700 text-white shadow-zinc-700/25" }
+    restaurante: { icon: Utensils },
+    mercado: { icon: ShoppingCart },
+    loja: { icon: Store },
+    turismo: { icon: Camera },
+    parque: { icon: TreePine },
+    servico: { icon: MapPinned },
+  }[category] ?? { icon: MapPinned }
   const Icon = config.icon
 
   return (
-    <div className={`grid size-4 place-items-center rounded-full border border-white shadow-[0_8px_18px_var(--tw-shadow-color)] ${config.className}`}>
-      <Icon className="size-2.5" />
+    <div className="relative grid size-6 place-items-center rounded-full border-2 border-white bg-[#0071c2] text-white shadow-[0_10px_24px_rgba(0,113,194,0.32)]">
+      <Icon className="size-3" />
+      <span className="absolute -bottom-1 left-1/2 size-2 -translate-x-1/2 rotate-45 rounded-[2px] bg-[#0071c2]" />
     </div>
   )
 }

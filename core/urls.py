@@ -20,7 +20,7 @@ from django.conf.urls.static import static
 from django.urls import include, path
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from imoveis.auth_views import login_view, me_view, register_view
+from imoveis.auth_views import login_view, me_view, password_reset_confirm_view, register_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -28,8 +28,10 @@ urlpatterns = [
     path('api/auth/login/', login_view, name='auth_login'),
     path('api/auth/register/', register_view, name='auth_register'),
     path('api/auth/me/', me_view, name='auth_me'),
+    path('api/auth/password-reset/confirm/', password_reset_confirm_view, name='auth_password_reset_confirm'),
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='auth_refresh'),
 ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    

@@ -19,11 +19,25 @@ axiosClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 let refreshPromise: Promise<string | null> | null = null
 
+function isAuthRefreshRequest(url?: string) {
+  return Boolean(url?.includes("/api/auth/refresh/"))
+}
+
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined
-    if (!originalRequest || error.response?.status !== 401 || originalRequest._retry) {
+    if (
+      !originalRequest ||
+      error.response?.status !== 401 ||
+      originalRequest._retry ||
+      isAuthRefreshRequest(originalRequest.url)
+    ) {
+      return Promise.reject(error)
+    }
+
+    if (!authStore.isSuperuser()) {
+      authStore.clear()
       return Promise.reject(error)
     }
 
@@ -40,7 +54,8 @@ axiosClient.interceptors.response.use(
         authStore.setAccessToken(response.data.access)
         return response.data.access
       })
-      .catch(() => {
+      .catch((refreshError) => {
+        console.error("Falha ao renovar access token.", refreshError)
         authStore.clear()
         return null
       })

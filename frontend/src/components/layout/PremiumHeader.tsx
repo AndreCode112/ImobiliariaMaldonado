@@ -1,19 +1,10 @@
-import { Building2, Heart, LoaderCircle, LogIn, LogOut, MapPin, Menu, Search, Shield, UserRound, X } from "lucide-react"
-import { useEffect, useState } from "react"
-import { Link, NavLink, useNavigate } from "react-router-dom"
+import { AnimatePresence, motion } from "framer-motion"
+import { Heart, LoaderCircle, LogIn, LogOut, MapPin, Search, Shield, UserPlus, UserRound, X } from "lucide-react"
+import type { ReactNode } from "react"
+import { useEffect, useRef, useState } from "react"
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/components/ui/popover"
 import { useAuth } from "@/contexts/AuthContext"
@@ -22,22 +13,29 @@ import { cn } from "@/lib/utils"
 import { imoveisService } from "@/services/imoveisService"
 import type { CorretorResumo, EnderecoResultado } from "@/types/imovel"
 
+const LOGO_SRC = "/media/logo/logo-header.png"
+const HEADER_VISIBILITY_EVENT = "maldonado:premium-header-visibility"
+const SCROLL_TO_MAP_EVENT = "maldonado:scroll-to-map"
+
 export function PremiumHeader() {
-  const [scrolled, setScrolled] = useState(false)
+  const [visible, setVisible] = useState(true)
   const [search, setSearch] = useState("")
   const [addressResults, setAddressResults] = useState<EnderecoResultado[]>([])
   const [isSearchingAddress, setIsSearchingAddress] = useState(false)
   const [hasSearchedAddress, setHasSearchedAddress] = useState(false)
-  const { isAuthenticated, isSuperuser, logout, session } = useAuth()
   const { data: corretores = [] } = useCorretores()
   const navigate = useNavigate()
+  const location = useLocation()
   const activeCorretores = corretores.filter((corretor) => corretor.ativo !== false && normalizeWhatsappNumber(corretor.whatsapp || corretor.telefone))
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8)
-    onScroll()
-    window.addEventListener("scroll", onScroll)
-    return () => window.removeEventListener("scroll", onScroll)
+    const onVisibilityChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ visible?: boolean }>).detail
+      setVisible(detail?.visible !== false)
+    }
+
+    window.addEventListener(HEADER_VISIBILITY_EVENT, onVisibilityChange)
+    return () => window.removeEventListener(HEADER_VISIBILITY_EVENT, onVisibilityChange)
   }, [])
 
   useEffect(() => {
@@ -72,6 +70,24 @@ export function PremiumHeader() {
     }
   }, [search])
 
+  function goToMap() {
+    const isPropertiesRoute = location.pathname === "/" || location.pathname === "/imoveis"
+    if (!isPropertiesRoute) {
+      navigate("/imoveis?map=1")
+      return
+    }
+
+    const params = new URLSearchParams(location.search)
+    if (params.get("map") !== "1") {
+      params.set("map", "1")
+      navigate(`${location.pathname}?${params.toString()}`)
+    }
+
+    window.requestAnimationFrame(() => {
+      window.dispatchEvent(new Event(SCROLL_TO_MAP_EVENT))
+    })
+  }
+
   function goToTextSearch() {
     const query = search.trim()
     if (!query) return
@@ -100,30 +116,26 @@ export function PremiumHeader() {
   return (
     <header
       className={cn(
-        "fixed inset-x-0 top-0 z-[900] border-b border-transparent bg-white/92 transition-all duration-300",
-        scrolled && "border-border/70 shadow-[0_10px_42px_rgba(0,0,0,0.05)] backdrop-blur-xl",
+        "pointer-events-none fixed inset-x-0 top-0 z-[900] bg-transparent px-3 transition-all duration-500 ease-out md:px-8 xl:px-14",
+        visible ? "translate-y-0 opacity-100 blur-0" : "-translate-y-[calc(100%+24px)] opacity-0 blur-[6px]",
       )}
     >
-      <div className="mx-auto flex h-[88px] max-w-[1520px] items-center gap-5 px-4 md:px-8">
-        <Link to="/" className="flex min-w-fit items-center gap-2.5">
-          <span className="grid size-10 place-items-center rounded-full bg-primary text-white shadow-[0_12px_28px_rgba(255,56,92,0.22)]">
-            <Building2 className="size-5" />
-          </span>
-          <span className="hidden text-[17px] font-semibold tracking-tight text-foreground sm:block">Maldonado Corretor</span>
+      <div className="pointer-events-auto mx-auto mt-3 flex h-16 max-w-[calc(100vw-1rem)] items-center gap-3 rounded-[20px] border border-white/60 bg-white/84 px-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-2xl sm:max-w-[calc(100vw-2rem)] md:mt-5 md:h-[76px] md:gap-5 md:px-8 xl:max-w-[calc(100vw-7rem)] xl:px-12">
+        <Link to="/" className="flex min-w-fit items-center">
+          <img src={LOGO_SRC} alt="Maldonado Imóveis" className="h-[46px] w-[168px] object-contain sm:w-[190px] md:h-[54px] md:w-[224px]" />
         </Link>
 
-        <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex">
-          <HeaderLink to="/imoveis?map=1">Comprar imóveis</HeaderLink>
-          <HeaderLink to="/imoveis?destaque=1&map=1">Imóveis em destaque</HeaderLink>
+        <nav className="hidden flex-1 items-center justify-center gap-3 xl:flex">
+          <HeaderAction onClick={goToMap}>Imóveis</HeaderAction>
           <HeaderLink to="/favoritos">Favoritos</HeaderLink>
           <HeaderLink to="/contato">Contato</HeaderLink>
         </nav>
 
-        <div className="relative hidden min-w-[300px] max-w-[390px] flex-1 md:block">
-          <div className="flex h-12 items-center rounded-full border border-border/80 bg-white px-3 shadow-[0_12px_34px_rgba(15,23,42,0.07)] transition duration-200 focus-within:border-primary/35 focus-within:shadow-[0_16px_44px_rgba(15,23,42,0.11)] focus-within:ring-4 focus-within:ring-primary/8">
+        <div className="relative ml-auto hidden w-[min(345px,24vw)] min-w-[270px] flex-none lg:block">
+          <div className="flex h-11 items-center rounded-full border border-border/60 bg-white/88 px-3 shadow-[0_8px_24px_rgba(15,23,42,0.07)] transition duration-200 focus-within:border-primary/35 focus-within:bg-white focus-within:shadow-[0_14px_36px_rgba(15,23,42,0.1)] focus-within:ring-4 focus-within:ring-primary/8">
             <Search className="ml-1 size-4 shrink-0 text-muted-foreground" />
             <Input
-              className="h-full border-0 bg-transparent px-2 text-[15px] shadow-none placeholder:text-muted-foreground/85 focus-visible:ring-0"
+              className="h-full border-0 bg-transparent px-2 text-[15px] shadow-none placeholder:text-muted-foreground/82 focus-visible:ring-0"
               placeholder="Busque por cidade ou bairro"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
@@ -195,7 +207,7 @@ export function PremiumHeader() {
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button className="hidden rounded-full px-5 md:inline-flex">
+            <Button className="hidden h-10 rounded-full px-4 text-sm shadow-[0_10px_24px_rgba(255,56,92,0.18)] lg:inline-flex">
               <WhatsappIcon className="size-4" />
               Fale conosco
             </Button>
@@ -240,62 +252,93 @@ export function PremiumHeader() {
           </PopoverContent>
         </Popover>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="rounded-full px-3">
-              <Menu className="size-4" />
-              <UserRound className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="z-[1000] w-56 rounded-2xl p-2">
-            <DropdownMenuLabel>{session?.user?.username ?? "Configurações"}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {!isAuthenticated && (
-              <DropdownMenuItem onClick={() => navigate("/login")}>
-                <LogIn className="size-4" />
-                Entrar
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onClick={() => navigate("/favoritos")}>
-              <Heart className="size-4" />
-              Favoritos
-            </DropdownMenuItem>
-            {isSuperuser && (
-              <DropdownMenuItem onClick={() => navigate("/admin")}>
-                <Shield className="size-4" />
-                Painel admin
-              </DropdownMenuItem>
-            )}
-            {isAuthenticated && (
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <LogOut className="size-4" />
-                  Sair
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent sideOffset={8} className="z-[1001] w-56 rounded-2xl p-2">
-                  <div className="px-2 py-2">
-                    <p className="text-sm font-semibold text-foreground">Deseja sair?</p>
-                    <p className="mt-1 text-xs leading-5 text-muted-foreground">Sua sessão será encerrada neste dispositivo.</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 p-1">
-                    <DropdownMenuItem className="justify-center rounded-full border bg-white text-center">Não</DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="justify-center rounded-full bg-primary text-center text-primary-foreground focus:bg-primary focus:text-primary-foreground"
-                      onClick={() => {
-                        logout()
-                        navigate("/")
-                      }}
-                    >
-                      Sim
-                    </DropdownMenuItem>
-                  </div>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <AccountMenuButton />
       </div>
     </header>
+  )
+}
+
+export function AccountMenuButton({ className, menuClassName }: { className?: string; menuClassName?: string }) {
+  const [accountOpen, setAccountOpen] = useState(false)
+  const { isAuthenticated, isSuperuser, logout } = useAuth()
+  const navigate = useNavigate()
+  const accountRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!accountOpen) return
+
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!accountRef.current?.contains(event.target as Node)) {
+        setAccountOpen(false)
+      }
+    }
+
+    window.addEventListener("pointerdown", closeOnOutsideClick)
+    return () => window.removeEventListener("pointerdown", closeOnOutsideClick)
+  }, [accountOpen])
+
+  return (
+    <div ref={accountRef} className="relative hidden lg:block">
+      <Button
+        variant="outline"
+        className={cn("hidden size-11 rounded-full border-border/80 bg-white/72 px-0 shadow-none hover:bg-white lg:inline-flex", className)}
+        onClick={() => setAccountOpen((open) => !open)}
+        aria-label="Minha conta"
+      >
+        <UserRound className="size-4" />
+      </Button>
+      <AnimatePresence>
+        {accountOpen ? (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.96, filter: "blur(6px)" }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: 8, scale: 0.96, filter: "blur(6px)" }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            className={cn("absolute right-0 top-[calc(100%+12px)] z-[1001] w-56 origin-top-right overflow-hidden rounded-[20px] border border-border/70 bg-white/95 p-2 shadow-[0_24px_70px_rgba(15,23,42,0.16)] backdrop-blur-xl", menuClassName)}
+          >
+            {!isAuthenticated ? (
+              <>
+                <AccountMenuItem icon={LogIn} onClick={() => {
+                  setAccountOpen(false)
+                  navigate("/login")
+                }}>
+                  Entrar
+                </AccountMenuItem>
+                <AccountMenuItem icon={UserPlus} onClick={() => {
+                  setAccountOpen(false)
+                  navigate("/cadastro")
+                }}>
+                  Registrar
+                </AccountMenuItem>
+              </>
+            ) : null}
+            <AccountMenuItem icon={Heart} onClick={() => {
+              setAccountOpen(false)
+              navigate("/favoritos")
+            }}>
+              Favoritos
+            </AccountMenuItem>
+            {isSuperuser ? (
+              <AccountMenuItem icon={Shield} onClick={() => {
+                setAccountOpen(false)
+                navigate("/admin")
+              }}>
+                Painel admin
+              </AccountMenuItem>
+            ) : null}
+            {isAuthenticated ? (
+              <AccountMenuItem icon={LogOut} onClick={() => {
+                setAccountOpen(false)
+                logout()
+                navigate("/")
+              }}>
+                Sair
+              </AccountMenuItem>
+            ) : null}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
   )
 }
 
@@ -344,13 +387,38 @@ function WhatsappIcon({ className }: { className?: string }) {
   )
 }
 
-function HeaderLink({ to, children }: { to: string; children: React.ReactNode }) {
+function AccountMenuItem({ icon: Icon, onClick, children }: { icon: typeof Heart; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      className="flex w-full items-center gap-3 rounded-[14px] px-3 py-2.5 text-left text-sm font-medium text-foreground transition hover:bg-secondary focus:bg-secondary focus:outline-none"
+      onClick={onClick}
+    >
+      <Icon className="size-4 text-muted-foreground" />
+      {children}
+    </button>
+  )
+}
+
+function HeaderAction({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      className="rounded-full px-3.5 py-2 text-[15px] font-medium text-foreground/78 transition hover:bg-white/70 hover:text-foreground"
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  )
+}
+
+function HeaderLink({ to, children }: { to: string; children: ReactNode }) {
   return (
     <NavLink
       to={to}
       className={({ isActive }) =>
         cn(
-          "rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground",
+          "rounded-full px-3.5 py-2 text-[15px] font-medium text-foreground/78 transition hover:bg-white/70 hover:text-foreground",
           isActive && "text-foreground",
         )
       }

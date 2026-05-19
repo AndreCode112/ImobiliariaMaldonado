@@ -1,5 +1,5 @@
-import { Bath, BedDouble, Car, ChevronLeft, ChevronRight, Home, Images, MapPin, Ruler } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
+import { Bath, BedDouble, Car, ChevronLeft, Eye, Filter, Home, Images, MapPin, Ruler } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { FavoriteButton } from "@/components/properties/FavoriteButton"
@@ -14,30 +14,63 @@ interface PropertiesSidebarProps {
   open: boolean
   selectedId?: number
   onOpenChange: (open: boolean) => void
+  onOpenFilters: () => void
+  showPointsOfInterest: boolean
+  onTogglePoints: () => void
   onFocus: (imovel: Imovel) => void
 }
 
-export function PropertiesSidebar({ imoveis, isLoading, open, selectedId, onOpenChange, onFocus }: PropertiesSidebarProps) {
+export function PropertiesSidebar({
+  imoveis,
+  isLoading,
+  open,
+  selectedId,
+  onOpenChange,
+  onOpenFilters,
+  showPointsOfInterest,
+  onTogglePoints,
+  onFocus,
+}: PropertiesSidebarProps) {
   return (
-    <>
+    <div className="h-full">
       <AnimatePresence>
         {open && (
           <motion.aside
-            initial={{ x: -28, opacity: 0, filter: "blur(8px)" }}
-            animate={{ x: 0, opacity: 1, filter: "blur(0px)" }}
-            exit={{ x: -28, opacity: 0, filter: "blur(8px)" }}
+            initial={{ opacity: 0, x: -22, filter: "blur(8px)" }}
+            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, x: -22, filter: "blur(8px)" }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-y-[88px] left-0 z-[700] w-full max-w-[460px] border-r border-white/70 bg-white/92 shadow-[16px_0_80px_rgba(0,0,0,0.08)] backdrop-blur-xl md:left-4 md:top-[104px] md:bottom-4 md:rounded-[28px] md:border"
+            className="fixed inset-x-0 bottom-0 z-[820] max-h-[76svh] rounded-t-[30px] border border-white/70 bg-white/94 shadow-[0_-18px_70px_rgba(0,0,0,0.16)] backdrop-blur-xl md:relative md:inset-auto md:z-auto md:h-full md:max-h-none md:w-full md:rounded-none md:border-y-0 md:border-l-0 md:border-r md:border-border/70 md:bg-white/92 md:shadow-[16px_0_80px_rgba(0,0,0,0.06)]"
           >
             <div className="flex h-full flex-col">
-              <div className="flex items-start justify-between gap-4 border-b border-border/70 p-5">
-                <div>
-                  <h2 className="mt-1 text-xl font-semibold">Imóveis à venda</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">{imoveis.length} oportunidades disponíveis na área selecionada</p>
+              <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-border md:hidden" />
+              <div className="border-b border-border/70 p-5 pt-4 md:p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="mt-1 text-xl font-semibold tracking-normal">Imóveis encontrados</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">{imoveis.length} {imoveis.length === 1 ? "imóvel encontrado" : "imóveis encontrados"}</p>
+                  </div>
+                  <Button variant="outline" className="hidden h-10 rounded-full bg-white px-4 text-sm md:inline-flex" onClick={() => onOpenChange(false)}>
+                    Ocultar lista
+                  </Button>
+                  <Button variant="ghost" size="icon" className="rounded-full md:hidden" onClick={() => onOpenChange(false)}>
+                    <ChevronLeft className="size-4" />
+                  </Button>
                 </div>
-                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => onOpenChange(false)}>
-                  <ChevronLeft className="size-4" />
-                </Button>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <Button variant="outline" className="h-10 rounded-full bg-white text-sm" onClick={onOpenFilters}>
+                    <Filter className="size-4" />
+                    Filtros
+                  </Button>
+                  <Button
+                    variant={showPointsOfInterest ? "default" : "outline"}
+                    className="h-10 rounded-full text-sm"
+                    onClick={onTogglePoints}
+                  >
+                    <Eye className="size-4" />
+                    Pontos próximos
+                  </Button>
+                </div>
               </div>
               <div className="premium-scrollbar flex-1 overflow-y-auto">
                 {isLoading ? <SidebarSkeleton /> : null}
@@ -54,16 +87,7 @@ export function PropertiesSidebar({ imoveis, isLoading, open, selectedId, onOpen
           </motion.aside>
         )}
       </AnimatePresence>
-      {!open && (
-        <Button
-          className="fixed bottom-6 left-6 z-[800] rounded-full bg-white px-5 text-foreground shadow-[0_18px_44px_rgba(0,0,0,0.16)] hover:bg-white md:left-8"
-          onClick={() => onOpenChange(true)}
-        >
-          Ver imóveis
-          <ChevronRight className="size-4" />
-        </Button>
-      )}
-    </>
+    </div>
   )
 }
 
@@ -91,15 +115,12 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
   return (
     <motion.article
       layout
-      className={cn(
-        "group bg-white transition hover:bg-secondary/45",
-        active && "bg-primary/[0.035]",
-      )}
+      className={cn("group bg-white transition duration-200 hover:bg-secondary/65", active && "bg-primary/[0.04]")}
       onMouseEnter={() => onFocus(imovel)}
       onFocus={() => onFocus(imovel)}
     >
-      <Link to={`/imoveis/${imovel.id}`} className="grid grid-cols-[124px_minmax(0,1fr)] gap-3 p-3" onClick={() => onFocus(imovel)}>
-        <div className="relative h-32 overflow-hidden rounded-[12px] bg-secondary">
+      <Link to={`/imoveis/${imovel.id}`} className="grid grid-cols-[112px_minmax(0,1fr)] gap-3 p-3" onClick={() => onFocus(imovel)}>
+        <div className="relative h-28 overflow-hidden rounded-[14px] bg-secondary">
           {image ? (
             <img src={image} alt={imovel.title} loading="lazy" className="size-full object-cover transition duration-700 group-hover:scale-[1.04]" />
           ) : (
@@ -111,21 +132,21 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
 
         <div className="relative min-w-0 pr-8">
           <FavoriteButton id={imovel.id} className="absolute right-0 top-0 size-8 border border-border bg-white shadow-none" />
-          <h3 className="line-clamp-2 pr-2 text-[15px] font-semibold leading-5 text-primary">{imovel.title}</h3>
+          <h3 className="line-clamp-2 pr-2 text-sm font-semibold leading-5 text-foreground">{imovel.title}</h3>
           <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
             <MapPin className="size-3.5 shrink-0" />
             <span className="truncate">{[imovel.neighborhood, imovel.city].filter(Boolean).join(", ") || "Localização sob consulta"}</span>
           </p>
-          <div className="mt-2 flex items-baseline justify-between gap-3">
-            <span className="text-[15px] font-semibold text-foreground">{imovel.priceLabel}</span>
-            <span className="truncate text-xs text-muted-foreground">{imovel.type}</span>
-          </div>
+          <span className="mt-1 inline-flex rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold text-foreground">
+            {imovel.type || "Residencial"}
+          </span>
           <div className="mt-3 grid grid-cols-4 gap-1.5 text-[11px] text-muted-foreground">
             <Mini icon={Ruler} label={`${imovel.area || 0} m²`} />
             <Mini icon={BedDouble} label={`${imovel.bedrooms}`} />
             <Mini icon={Bath} label={`${imovel.bathrooms}`} />
             <Mini icon={Car} label={`${imovel.parking}`} />
           </div>
+          <p className="mt-2 text-sm font-bold text-primary">{imovel.priceLabel}</p>
         </div>
       </Link>
     </motion.article>
