@@ -23,7 +23,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from imoveis.auth_views import login_view, me_view, password_reset_confirm_view, register_view
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path(getattr(settings, "DJANGO_ADMIN_URL", "admin/"), admin.site.urls),
     path('imoveis/', include('imoveis.urls')),
     path('api/auth/login/', login_view, name='auth_login'),
     path('api/auth/register/', register_view, name='auth_register'),

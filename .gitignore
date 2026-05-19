@@ -60,6 +60,9 @@ cover/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+staticfiles/
+media/imoveis/
+media/corretores/
 
 # Flask stuff:
 instance/
@@ -203,6 +206,10 @@ cython_debug/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
 # Ruff stuff:
 .ruff_cache/
 
@@ -216,3 +223,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+/deploy/**
+
