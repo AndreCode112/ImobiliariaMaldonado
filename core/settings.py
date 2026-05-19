@@ -25,7 +25,11 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in {"1", "true", "yes", "on"}
 
-ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
+ALLOWED_HOSTS = ['maldonadocorretorimoveis.com.br', 'www.maldonadocorretorimoveis.com.br']
+CORS_ALLOWED_ORIGINS = ['https://maldonadocorretorimoveis.com.br', 'https://www.maldonadocorretorimoveis.com.br']
+CSRF_TRUSTED_ORIGINS = ['https://maldonadocorretorimoveis.com.br', 'https://www.maldonadocorretorimoveis.com.br']
+CORS_ALLOW_CREDENTIALS = True
+
 
 APPEND_SLASH = False
 
@@ -155,9 +159,7 @@ SIMPLE_JWT = {
 }
 
 
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv("CORS_ALLOWED_ORIGINS", FRONTEND_BASE_URL).split(",") if origin.strip()]
-CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()]
-CORS_ALLOW_CREDENTIALS = True
+
 
 SECURE_SSL_REDIRECT = os.getenv("DJANGO_SECURE_SSL_REDIRECT", "True").lower() in {"1", "true", "yes", "on"}
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
