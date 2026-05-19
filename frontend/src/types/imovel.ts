@@ -49,13 +49,14 @@ export interface EnderecoResultado {
   display_name: string
   latitude: string
   longitude: string
-  place_id: number
+  place_id: number | string
   type?: string
   address?: Record<string, string>
 }
 
 export interface ImovelApi {
   id: number
+  uuid: string
   titulo: string
   descricao: string
   preco: string
@@ -84,6 +85,7 @@ export interface ImovelApi {
 
 export interface Imovel {
   id: number
+  uuid: string
   title: string
   city: string
   neighborhood: string
@@ -194,6 +196,29 @@ export interface ApiHealthReport {
   success: boolean
   checked_at: string
   results: ApiHealthCheck[]
+}
+
+export interface SystemLog {
+  id: number
+  route: string
+  message: string
+  criado_em?: string | null
+}
+
+export interface SystemLogFilters {
+  query?: string
+  route?: string
+  date?: string
+  time?: string
+  order?: "recent" | "oldest"
+  limit?: number
+}
+
+export interface SystemLogsResponse {
+  results: SystemLog[]
+  routes: string[]
+  total: number
+  order: "recent" | "oldest"
 }
 
 export interface LembreteFavoritosConfig {

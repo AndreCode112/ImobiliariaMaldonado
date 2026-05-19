@@ -1,7 +1,7 @@
-import { ArrowRight, Shield, UserPlus } from "lucide-react"
+import { ArrowLeft, ArrowRight, Shield, UserPlus } from "lucide-react"
 import { motion } from "framer-motion"
 import { useState, type FormEvent } from "react"
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom"
+import { Link, Navigate, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -12,8 +12,8 @@ import { useAuth } from "@/contexts/AuthContext"
 export function AdminLoginPage() {
   const { isAuthenticated, isSuperuser, login } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   if (isAuthenticated) return <Navigate to={isSuperuser ? "/admin" : "/"} replace />
 
@@ -29,10 +29,10 @@ export function AdminLoginPage() {
       toast.success("Login realizado", {
         description: "Bem-vindo de volta.",
       })
-      const from = (location.state as { from?: { pathname?: string; search?: string } } | null)?.from
-      const target = from?.pathname ? `${from.pathname}${from.search ?? ""}` : undefined
-      const safeTarget = target?.startsWith("/admin") && !session.user.is_superuser ? "/" : target
-      navigate(session.user.is_superuser ? safeTarget ?? "/admin" : safeTarget ?? "/", { replace: true })
+      setIsRedirecting(true)
+      window.setTimeout(() => {
+        navigate(session.user.is_superuser ? "/admin" : "/", { replace: true })
+      }, 240)
     } catch {
       toast.error("Não foi possível entrar", {
         description: "Confira usuário e senha e tente novamente.",
@@ -43,14 +43,23 @@ export function AdminLoginPage() {
   }
 
   return (
-    <section className="grid min-h-[calc(100svh-88px)] place-items-center bg-secondary px-6 py-12">
+    <section className="relative grid min-h-dvh items-start justify-items-center bg-secondary px-4 pb-8 pt-24 sm:px-6 md:place-items-center md:py-12">
+      <Button
+        asChild
+        variant="outline"
+        className="absolute left-4 top-4 size-11 rounded-full border-border/80 bg-white/82 px-0 shadow-[0_18px_50px_rgba(0,0,0,0.10)] backdrop-blur-xl hover:bg-white md:left-8 md:top-8"
+      >
+        <Link to="/" aria-label="Voltar para a página inicial">
+          <ArrowLeft className="size-4" />
+        </Link>
+      </Button>
       <motion.form
         onSubmit={onSubmit}
         initial={{ opacity: 0, y: 18, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        animate={isRedirecting ? { opacity: 0, y: -14, scale: 0.985, filter: "blur(6px)" } : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
         exit={{ opacity: 0, y: -12, scale: 0.98 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-md rounded-[32px] border bg-white p-8 shadow-[0_24px_80px_rgba(0,0,0,0.08)]"
+        className="w-full max-w-md rounded-[24px] border bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,0.08)] sm:rounded-[32px] sm:p-8"
       >
         <div className="mb-8 text-center">
           <span className="mx-auto grid size-12 place-items-center rounded-full bg-primary text-white">
@@ -68,8 +77,8 @@ export function AdminLoginPage() {
             Senha
             <Input name="password" type="password" autoComplete="current-password" required />
           </Label>
-          <Button type="submit" className="mt-2 h-12 rounded-full" disabled={isSubmitting}>
-            {isSubmitting ? "Entrando..." : "Entrar"}
+          <Button type="submit" className="mt-2 h-12 rounded-full" disabled={isSubmitting || isRedirecting}>
+            {isSubmitting || isRedirecting ? "Entrando..." : "Entrar"}
           </Button>
           <div className="mt-3 rounded-2xl bg-secondary p-4 text-center">
             <p className="text-sm font-medium">Ainda não tem conta?</p>

@@ -1,4 +1,4 @@
-import { Bath, BedDouble, Car, ChevronLeft, ChevronRight, Copy, Images, MapPin, Ruler, Send, Share2, X } from "lucide-react"
+import { ArrowLeft, Bath, BedDouble, Car, ChevronLeft, ChevronRight, Copy, Images, MapPin, Ruler, Send, Share2, X } from "lucide-react"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
@@ -6,26 +6,26 @@ import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
 import { pageTransition } from "@/animations/page"
+import { AccountMenuButton } from "@/components/layout/PremiumHeader"
 import { FavoriteButton } from "@/components/properties/FavoriteButton"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/components/ui/popover"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useCorretores, useImovel, useImoveis } from "@/hooks/useImoveis"
+import { useCorretores, useImovel } from "@/hooks/useImoveis"
 import type { CorretorResumo, Imovel } from "@/types/imovel"
 
 export function PropertyDetailPage() {
-  const { id } = useParams()
-  const { data: imovel, isLoading } = useImovel(id)
-  const { data: imoveis = [] } = useImoveis()
+  const { uuid } = useParams()
+  const publicUuid = uuid && isUuidParam(uuid) ? uuid : undefined
+  const { data: imovel, isLoading } = useImovel(publicUuid)
   const { data: corretores = [] } = useCorretores()
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
-  const similares = imoveis.filter((item) => item.id !== imovel?.id && item.city === imovel?.city).slice(0, 3)
   const previewImage = previewIndex !== null ? imovel?.images[previewIndex] : null
   const realtor = imovel?.realtor?.whatsapp || imovel?.realtor?.telefone
     ? imovel.realtor
     : corretores.find((corretor) => corretor.id === imovel?.realtor?.id) ?? corretores.find((corretor) => corretor.ativo !== false) ?? imovel?.realtor ?? null
   const whatsappHref = imovel && realtor ? buildWhatsappLink(imovel, realtor) : null
-  const shareUrl = imovel ? buildPropertyUrl(imovel.id) : ""
+  const shareUrl = imovel ? buildPropertyUrl(imovel.uuid) : ""
 
   function closePreview(event?: React.MouseEvent | KeyboardEvent) {
     event?.preventDefault()
@@ -98,10 +98,19 @@ export function PropertyDetailPage() {
     return () => window.removeEventListener("keydown", handleKeyDown)
   })
 
-  if (isLoading) return <DetailSkeleton />
+  if (isLoading) {
+    return (
+      <div className="relative min-h-svh bg-white">
+        <DetailTopControls />
+        <DetailSkeleton />
+      </div>
+    )
+  }
+
   if (!imovel) {
     return (
-      <section className="mx-auto max-w-3xl px-6 py-24 text-center">
+      <section className="relative min-h-svh bg-white px-6 py-24 text-center">
+        <DetailTopControls />
         <h1 className="text-3xl font-semibold">Imóvel não encontrado</h1>
         <Button asChild className="mt-6 rounded-full">
           <Link to="/imoveis">Voltar aos imóveis</Link>
@@ -111,8 +120,9 @@ export function PropertyDetailPage() {
   }
 
   return (
-    <motion.section {...pageTransition} className="bg-white">
-      <div className="mx-auto max-w-[1280px] px-4 py-8 md:px-8">
+    <motion.section {...pageTransition} className="relative min-h-svh bg-white">
+      <DetailTopControls />
+      <div className="mx-auto max-w-[1280px] px-4 pb-8 pt-24 md:px-8 md:pt-28">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="max-w-4xl text-3xl font-semibold tracking-tight md:text-5xl">{imovel.title}</h1>
@@ -189,7 +199,7 @@ export function PropertyDetailPage() {
         <div className="grid gap-10 py-10 lg:grid-cols-[1fr_380px]">
           <article className="space-y-12">
             <nav className="sticky top-[104px] z-20 -mx-1 flex gap-2 overflow-x-auto rounded-full border bg-white/88 p-1 shadow-[0_12px_36px_rgba(0,0,0,0.08)] backdrop-blur-xl">
-              {["Sobre", "Estrutura", "Localização", "Similares"].map((item) => (
+              {["Sobre", "Estrutura", "Localização"].map((item) => (
                 <a key={item} href={`#${item.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`} className="shrink-0 rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground">
                   {item}
                 </a>
@@ -222,24 +232,6 @@ export function PropertyDetailPage() {
                 <p className="mt-1 text-sm text-muted-foreground">{[imovel.neighborhood, imovel.city].filter(Boolean).join(", ")}</p>
               </div>
             </Section>
-
-            {similares.length ? (
-              <Section id="similares" title="Imóveis similares">
-                <div className="grid gap-4 md:grid-cols-3">
-                  {similares.map((item) => (
-                    <Link key={item.id} to={`/imoveis/${item.id}`} className="group overflow-hidden rounded-[22px] border p-2 transition hover:shadow-lg">
-                      <div className="aspect-[1.2] overflow-hidden rounded-[18px] bg-secondary">
-                        {item.images[0] ? <img src={item.images[0]} alt={item.title} className="size-full object-cover transition group-hover:scale-105" /> : null}
-                      </div>
-                      <div className="p-3">
-                        <p className="line-clamp-1 font-semibold">{item.title}</p>
-                        <p className="text-sm text-muted-foreground">{item.priceLabel}</p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </Section>
-            ) : null}
           </article>
 
           <aside className="lg:sticky lg:top-28 lg:self-start">
@@ -288,9 +280,34 @@ export function PropertyDetailPage() {
   )
 }
 
-function buildPropertyUrl(id: number) {
-  if (typeof window === "undefined") return `/imoveis/${id}`
-  return `${window.location.origin}/imoveis/${id}`
+function buildPropertyUrl(uuid: string) {
+  if (typeof window === "undefined") return `/imoveis/${uuid}`
+  return `${window.location.origin}/imoveis/${uuid}`
+}
+
+function DetailTopControls() {
+  return (
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-[80] flex items-center justify-between px-4 py-4 md:px-8">
+      <Button
+        asChild
+        variant="outline"
+        className="pointer-events-auto size-11 rounded-full border-border/80 bg-white/82 px-0 shadow-[0_18px_50px_rgba(0,0,0,0.10)] backdrop-blur-xl hover:bg-white"
+      >
+        <Link to="/" aria-label="Voltar para a página inicial">
+          <ArrowLeft className="size-4" />
+        </Link>
+      </Button>
+      <AccountMenuButton
+        wrapperClassName="pointer-events-auto block"
+        className="inline-flex border-border/80 bg-white/82 shadow-[0_18px_50px_rgba(0,0,0,0.10)] backdrop-blur-xl hover:bg-white"
+        menuClassName="top-[calc(100%+10px)]"
+      />
+    </div>
+  )
+}
+
+function isUuidParam(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }
 
 function buildWhatsappLink(imovel: Imovel, realtor: CorretorResumo) {

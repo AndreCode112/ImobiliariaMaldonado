@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import Bairro, Cidade, Corretor, FavoritoImovel, ImagemImovel, Imovel, PontoInteresse, TipoImovel
+from .models import Bairro, Cidade, Corretor, FavoritoImovel, ImagemImovel, Imovel, PontoInteresse, TipoImovel, log
 
 
 @admin.register(TipoImovel)
@@ -109,3 +109,11 @@ class PontoInteresseAdmin(admin.ModelAdmin):
     list_filter = ("categoria", "cidade")
     search_fields = ("nome", "cidade__nome", "osm_id")
     autocomplete_fields = ("cidade",)
+
+
+@admin.register(log)
+class LogAdmin(admin.ModelAdmin):
+    list_display = ("route", "criado_em")
+    search_fields = ("route", "erro")
+    date_hierarchy = "criado_em"
+    readonly_fields = ("route", "erro", "criado_em")

@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import HttpRequest
 from rest_framework import status
 
@@ -53,6 +54,7 @@ def _ponto_interesse_dict(ponto):
 def _imovel_dict(imovel):
     return {
         "id": imovel.pk,
+        "uuid": str(imovel.uuid),
         "titulo": imovel.titulo,
         "descricao": imovel.descricao,
         "preco": str(imovel.preco),
@@ -100,6 +102,14 @@ def _get_imovel_for_response(pk):
         Imovel.objects.select_related("tipo", "cidade", "bairro", "corretor")
         .prefetch_related("imagens", "cidade__pontos_interesse")
         .get(pk=pk)
+    )
+
+
+def _get_imovel_by_uuid_for_response(public_uuid):
+    return (
+        Imovel.objects.select_related("tipo", "cidade", "bairro", "corretor")
+        .prefetch_related("imagens", "cidade__pontos_interesse")
+        .get(uuid=public_uuid)
     )
 
 
@@ -353,6 +363,42 @@ def _sync_imovel_pontos_interesse(imovel, *, force=False):
         return 0
 
 
+def _filter_imoveis_search(qs, query):
+    query = (query or "").strip()
+    if len(query) < 2:
+        return qs
+
+    tokens = [token for token in query.split() if len(token) >= 2]
+    search_filter = Q()
+    for token in tokens or [query]:
+        search_filter &= (
+            Q(titulo__icontains=token)
+            | Q(tipo__nome__icontains=token)
+            | Q(cidade__nome__icontains=token)
+            | Q(bairro__nome__icontains=token)
+            | Q(endereco__icontains=token)
+            | Q(descricao__icontains=token)
+            | Q(cep__icontains=token)
+        )
+
+    return (
+        qs.filter(search_filter)
+        .annotate(
+            search_rank=Case(
+                When(titulo__istartswith=query, then=Value(0)),
+                When(tipo__nome__istartswith=query, then=Value(1)),
+                When(cidade__nome__istartswith=query, then=Value(2)),
+                When(titulo__icontains=query, then=Value(3)),
+                When(tipo__nome__icontains=query, then=Value(4)),
+                default=Value(5),
+                output_field=IntegerField(),
+            )
+        )
+        .order_by("search_rank", "-destaque", "-criado_em", "pk")
+        .distinct()
+    )
+
+
 class ApiStats(BaseController):
     def execute(self, request: HttpRequest) -> bool:
         return self.success(
@@ -369,11 +415,14 @@ class ApiStats(BaseController):
 class ApiImoveis(BaseController):
     def execute(self, request: HttpRequest) -> bool:
         if request.method == "GET":
+            query = request.GET.get("q") or request.GET.get("search") or ""
             qs = (
                 Imovel.objects.select_related("tipo", "cidade", "bairro", "corretor")
                 .prefetch_related("imagens", "cidade__pontos_interesse")
                 .all()
             )
+            if query:
+                qs = _filter_imoveis_search(qs, query)[:24]
             return self.success({"results": [_imovel_dict(imovel) for imovel in qs]}, status.HTTP_200_OK)
 
         try:
@@ -416,13 +465,9 @@ class ApiImoveis(BaseController):
 
 
 class ApiImovelDetail(BaseController):
-    def execute(self, request: HttpRequest, pk: int) -> bool:
+    def execute(self, request: HttpRequest, pk: int | None = None, public_uuid=None) -> bool:
         try:
-            imovel = (
-                Imovel.objects.select_related("tipo", "cidade", "bairro", "corretor")
-                .prefetch_related("imagens", "cidade__pontos_interesse")
-                .get(pk=pk)
-            )
+            imovel = _get_imovel_by_uuid_for_response(public_uuid) if public_uuid else _get_imovel_for_response(pk)
         except Imovel.DoesNotExist:
             return self.error("Not found", status.HTTP_404_NOT_FOUND, {"error": "Not found"})
 

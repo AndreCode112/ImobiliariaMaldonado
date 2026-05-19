@@ -32,11 +32,24 @@ from .Controller.api_cadastro_imoveis import (
 )
 from .Controller.lembrete_favoritos_scheduler import sync_crontab
 from .models import Corretor, FavoritoImovel, Imovel, LembreteFavoritosConfig, PontoInteresse
+from .Controller.logs import ApiLogs, InsertLogs
 
 
 def _json_response(controller):
+    if controller.status != 200:
+        try:
+            log_controller = InsertLogs()
+            log_controller.execute(route=str(controller.__class__.__name__), message=controller.response)
+        except Exception:
+            pass
     
     return JsonResponse(controller.response, status=controller.status)
+
+
+def _superuser_unauthorized_response(request):
+    if request.user and request.user.is_authenticated and request.user.is_superuser:
+        return None
+    return JsonResponse({"message": "Acesso restrito ao superadmin."}, status=401)
 
 
 class IsSuperUserOrReadOnly(BasePermission):
@@ -67,6 +80,17 @@ def ApiStatsView(request):
     return _json_response(controller)
 
 
+@api_view(["GET", "DELETE"])
+def ApiLogsView(request):
+    unauthorized = _superuser_unauthorized_response(request)
+    if unauthorized:
+        return unauthorized
+
+    controller = ApiLogs()
+    controller.execute(request)
+    return _json_response(controller)
+
+
 @api_view(["GET", "POST"])
 @permission_classes([IsSuperUserOrReadOnly])
 def ApiImoveisView(request):
@@ -76,10 +100,18 @@ def ApiImoveisView(request):
 
 
 @api_view(["GET", "PUT", "DELETE"])
-@permission_classes([IsSuperUserOrReadOnly])
+@permission_classes([IsSuperUser])
 def ApiImovelDetailView(request, pk):
     controller = ApiImovelDetail()
     controller.execute(request, pk)
+    return _json_response(controller)
+
+
+@api_view(["GET"])
+@permission_classes([IsSuperUserOrReadOnly])
+def ApiImovelUuidDetailView(request, uuid):
+    controller = ApiImovelDetail()
+    controller.execute(request, public_uuid=uuid)
     return _json_response(controller)
 
 
@@ -133,6 +165,14 @@ def ApiBuscarPontosInteresseView(request):
 def ApiBuscarEnderecoView(request):
     controller = NominatimSearch()
     controller.search(request)
+    return _json_response(controller)
+
+
+@api_view(["GET"])
+@permission_classes([IsSuperUserOrReadOnly])
+def ApiReverseEnderecoView(request):
+    controller = NominatimSearch()
+    controller.reverse(request)
     return _json_response(controller)
 
 

@@ -16,11 +16,17 @@ export const defaultFilters: ImoveisFilters = {
 }
 
 function matchesNumber(value: number, minimum?: string, maximum?: string) {
-  const min = minimum ? Number(minimum) : null
-  const max = maximum ? Number(maximum) : null
+  const min = minimum ? numberFromFilter(minimum) : null
+  const max = maximum ? numberFromFilter(maximum) : null
   if (min !== null && value < min) return false
   if (max !== null && value > max) return false
   return true
+}
+
+function numberFromFilter(value: string) {
+  const normalized = value.replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", ".")
+  const parsed = Number(normalized)
+  return Number.isFinite(parsed) ? parsed : 0
 }
 
 export function filterImoveis(imoveis: Imovel[], filters: ImoveisFilters) {

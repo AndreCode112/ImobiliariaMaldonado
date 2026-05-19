@@ -1,4 +1,4 @@
-import { Bath, BedDouble, Camera, Car, Home, MapPin, MapPinned, Ruler, ShoppingCart, Store, TreePine, Utensils } from "lucide-react"
+import { Bath, BedDouble, Camera, Car, Home, MapPin, MapPinned, Ruler, ShoppingCart, Store, TreePine, Utensils, X } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 
@@ -14,14 +14,17 @@ interface PropertiesMapProps {
   scrollWheelZoom?: boolean
   showPointsOfInterest?: boolean
   onSelect: (imovel: Imovel) => void
+  onClearSelect?: () => void
 }
 
 const DEFAULT_CENTER: [number, number] = [-23.55052, -46.633308]
 
-export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWheelZoom = true, showPointsOfInterest = false, onSelect }: PropertiesMapProps) {
+export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWheelZoom = true, showPointsOfInterest = false, onSelect, onClearSelect }: PropertiesMapProps) {
   const [isHoveringMap, setIsHoveringMap] = useState(false)
   const [showPontosInteresse, setShowPontosInteresse] = useState(false)
+  const [isMobileLayout, setIsMobileLayout] = useState(false)
   const visibleImoveis = imoveis.filter((imovel) => imovel.latitude !== null && imovel.longitude !== null)
+  const selectedImovel = visibleImoveis.find((imovel) => imovel.id === selectedId)
   const pontosInteresse = useMemo(() => {
     const unique = new globalThis.Map<string, PontoInteresse>()
     visibleImoveis.forEach((imovel) => {
@@ -39,6 +42,14 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
     return DEFAULT_CENTER
   }, [selectedId, visibleImoveis])
 
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)")
+    const sync = () => setIsMobileLayout(media.matches)
+    sync()
+    media.addEventListener("change", sync)
+    return () => media.removeEventListener("change", sync)
+  }, [])
+
   return (
     <div
       className="relative size-full overflow-hidden rounded-none bg-secondary"
@@ -54,7 +65,7 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
         <MapPointsOfInterestZoomGate onChange={setShowPontosInteresse} />
         <MapExternalControls imoveis={visibleImoveis} selectedAddress={selectedAddress} />
         <MapZoomControl
-          position="bottom-5 right-5 md:bottom-6 md:right-6"
+          position="bottom-24 right-3 md:bottom-6 md:right-6"
           className="rounded-full bg-white/90 shadow-[0_14px_36px_rgba(0,0,0,0.14)] backdrop-blur-xl"
         />
         {selectedAddress ? <MapFlyTo address={selectedAddress} /> : null}
@@ -92,27 +103,21 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
             icon={<HomePin />}
             iconAnchor={[21, 42]}
             popupAnchor={[0, -42]}
-            eventHandlers={{ popupopen: () => onSelect(imovel) }}
+            eventHandlers={{ click: () => onSelect(imovel), popupopen: () => onSelect(imovel) }}
           >
-            <MapPopup
-              closeButton={false}
-              closeOnClick
-              className="property-map-popup w-[320px] rounded-[28px] border-0 bg-white p-0 shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
-            >
-              <Preview imovel={imovel} />
-            </MapPopup>
+            {!isMobileLayout ? (
+              <MapPopup
+                closeButton={false}
+                closeOnClick
+                className="property-map-popup w-[320px] rounded-[28px] border-0 bg-white p-0 shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
+              >
+                <Preview imovel={imovel} />
+              </MapPopup>
+            ) : null}
           </MapMarker>
         ))}
       </Map>
-      {!visibleImoveis.length && (
-        <div className="pointer-events-none absolute inset-0 grid place-items-center bg-white/55 p-6 backdrop-blur-sm">
-          <div className="max-w-sm rounded-[28px] border bg-white p-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.08)]">
-            <Home className="mx-auto mb-3 size-8 text-primary" />
-            <h3 className="text-lg font-semibold">Nenhum imóvel com mapa</h3>
-            <p className="mt-1 text-sm text-muted-foreground">Assim que a API retornar imóveis com latitude e longitude, os pins aparecem aqui.</p>
-          </div>
-        </div>
-      )}
+      {isMobileLayout && selectedImovel ? <MobilePreview imovel={selectedImovel} onClose={onClearSelect} /> : null}
     </div>
   )
 }
@@ -276,8 +281,47 @@ function Preview({ imovel }: { imovel: Imovel }) {
           <Mini icon={Car} label={`${imovel.parking}`} />
         </div>
         <Button asChild className="h-11 w-full rounded-full">
-          <Link to={`/imoveis/${imovel.id}`}>Ver detalhes</Link>
+          <Link to={`/imoveis/${imovel.uuid}`}>Ver detalhes</Link>
         </Button>
+      </div>
+    </div>
+  )
+}
+
+function MobilePreview({ imovel, onClose }: { imovel: Imovel; onClose?: () => void }) {
+  return (
+    <div className="absolute inset-x-3 bottom-4 z-[620] overflow-hidden rounded-[24px] border border-border/70 bg-white/96 shadow-[0_24px_80px_rgba(0,0,0,0.18)] backdrop-blur-xl md:hidden">
+      <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3 p-3">
+        <div className="relative h-28 overflow-hidden rounded-[18px] bg-secondary">
+          {imovel.images[0] ? <img src={imovel.images[0]} alt={imovel.title} className="size-full object-cover" /> : null}
+        </div>
+        <div className="relative min-w-0 pr-8">
+          {onClose ? (
+            <button
+              type="button"
+              className="absolute right-0 top-0 grid size-8 place-items-center rounded-full border border-border bg-white text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+              onClick={onClose}
+              aria-label="Fechar imóvel selecionado"
+            >
+              <X className="size-4" />
+            </button>
+          ) : null}
+          <h3 className="line-clamp-2 pr-1 text-sm font-semibold leading-5">{imovel.title}</h3>
+          <p className="mt-1 truncate text-xs text-muted-foreground">{[imovel.neighborhood, imovel.city].filter(Boolean).join(", ")}</p>
+          <p className="mt-2 text-sm font-bold text-primary">{imovel.priceLabel}</p>
+          <div className="mt-2 grid grid-cols-4 gap-1 text-[11px] text-muted-foreground">
+            <Mini icon={Ruler} label={`${imovel.area} m²`} />
+            <Mini icon={BedDouble} label={`${imovel.bedrooms}`} />
+            <Mini icon={Bath} label={`${imovel.bathrooms}`} />
+            <Mini icon={Car} label={`${imovel.parking}`} />
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-[1fr_auto] gap-2 border-t border-border/70 p-3">
+        <Button asChild className="h-11 rounded-full">
+          <Link to={`/imoveis/${imovel.uuid}`}>Ver detalhes</Link>
+        </Button>
+        <FavoriteButton id={imovel.id} className="size-11 border border-border bg-white shadow-none" />
       </div>
     </div>
   )

@@ -119,21 +119,21 @@ export function AdminCorretoresPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
+      <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Painel administrativo</p>
           <h1 className="mt-2 text-3xl font-semibold">Corretores</h1>
           <p className="mt-2 text-muted-foreground">{corretores.length} corretores cadastrados</p>
         </div>
-        <Button className="rounded-full" onClick={openCreate}><Plus className="size-4" />Novo corretor</Button>
+        <Button className="w-full rounded-full sm:w-auto" onClick={openCreate}><Plus className="size-4" />Novo corretor</Button>
       </div>
 
-      <div className="relative max-w-sm">
+      <div className="relative min-w-0 w-full max-w-sm">
         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input className="h-11 rounded-full bg-white pl-9" placeholder="Buscar corretores..." value={filter} onChange={(event) => setFilter(event.target.value)} />
+        <Input className="h-11 w-full rounded-full bg-white pl-9" placeholder="Buscar corretores..." value={filter} onChange={(event) => setFilter(event.target.value)} />
       </div>
 
-      <div className="overflow-hidden rounded-[24px] border bg-white">
+      <div className="max-w-full overflow-x-auto rounded-[24px] border bg-white premium-scrollbar">
         <table className="w-full min-w-[820px] text-sm">
           <thead className="bg-secondary/70 text-muted-foreground">
             <tr>
@@ -186,14 +186,14 @@ export function AdminCorretoresPage() {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="!max-w-2xl">
+        <DialogContent className="max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] overflow-y-auto rounded-[28px] sm:!max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editing ? "Editar corretor" : "Novo corretor"}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-5 md:grid-cols-[1fr_220px]">
-            <div className="grid gap-4">
+          <div className="grid min-w-0 gap-5 md:grid-cols-[minmax(0,1fr)_220px]">
+            <div className="grid min-w-0 gap-4">
               <Field label="Nome *"><Input value={form.nome} onChange={(event) => setForm((current) => ({ ...current, nome: event.target.value }))} /></Field>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid min-w-0 gap-4 md:grid-cols-2">
                 <Field label="Telefone"><Input value={form.telefone} onChange={(event) => setForm((current) => ({ ...current, telefone: event.target.value }))} /></Field>
                 <Field label="WhatsApp"><Input value={form.whatsapp} onChange={(event) => setForm((current) => ({ ...current, whatsapp: event.target.value }))} /></Field>
               </div>
@@ -204,7 +204,7 @@ export function AdminCorretoresPage() {
                 Corretor ativo
               </Label>
             </div>
-            <div>
+            <div className="min-w-0">
               <Label className="text-sm font-semibold">Foto</Label>
               <label
                 onDragEnter={(event) => { event.preventDefault(); setDragActive(true) }}
@@ -228,9 +228,9 @@ export function AdminCorretoresPage() {
               ) : null}
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" className="rounded-full" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button className="rounded-full" onClick={save} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
+          <DialogFooter className="grid grid-cols-1 gap-2 sm:flex">
+            <Button variant="outline" className="w-full rounded-full sm:w-auto" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button className="w-full rounded-full sm:w-auto" onClick={save} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -239,7 +239,7 @@ export function AdminCorretoresPage() {
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <Label className="grid gap-2 text-sm font-medium">{label}{children}</Label>
+  return <Label className="grid min-w-0 gap-2 text-sm font-medium">{label}{children}</Label>
 }
 
 function TableBadge({ icon: Icon, value, tone = "neutral" }: { icon: typeof Phone; value: string; tone?: "neutral" | "green" | "gold" }) {

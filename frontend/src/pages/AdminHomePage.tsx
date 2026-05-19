@@ -39,20 +39,20 @@ export function AdminHomePage() {
         <p className="mt-2 text-muted-foreground">Visão geral do sistema.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
         {cards.map(({ label, value, icon: Icon, color }) => (
-          <Card key={label} className="overflow-hidden rounded-[24px] border-border/80 bg-white shadow-none">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-              <span className="grid size-11 place-items-center rounded-2xl bg-secondary">
+          <Card key={label} className="min-w-0 overflow-hidden rounded-[24px] border-border/80 bg-white shadow-none">
+            <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-3">
+              <CardTitle className="min-w-0 text-sm font-medium leading-5 text-muted-foreground">{label}</CardTitle>
+              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-secondary">
                 <Icon className={`size-5 ${color}`} />
               </span>
             </CardHeader>
             <CardContent className="pt-0">
               {isLoading ? <Skeleton className="h-10 w-24 rounded-full" /> : (
-                <div className="flex items-end justify-between gap-3">
-                  <div className="text-4xl font-semibold tracking-tight">{value ?? "—"}</div>
-                  <span className="mb-1 rounded-full bg-secondary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Total</span>
+                <div className="flex min-w-0 items-end justify-between gap-3">
+                  <div className="min-w-0 text-3xl font-semibold tracking-tight sm:text-4xl">{value ?? "—"}</div>
+                  <span className="mb-1 shrink-0 rounded-full bg-secondary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Total</span>
                 </div>
               )}
             </CardContent>
@@ -62,33 +62,33 @@ export function AdminHomePage() {
 
       <Card className="rounded-[28px] border-border/80 bg-white shadow-none">
         <CardHeader className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-lg">
+          <div className="min-w-0">
+            <CardTitle className="flex min-w-0 items-center gap-2 text-lg">
               <ServerCog className="size-5 text-primary" />
-              Testes de APIs externas
+              <span className="min-w-0">Testes de APIs externas</span>
             </CardTitle>
             <p className="mt-2 text-sm text-muted-foreground">
               Checagem dos serviços usados por busca de endereço, CEP e pontos próximos.
             </p>
           </div>
-          <Button variant="outline" className="h-10 rounded-full" onClick={() => refetch()} disabled={isFetchingHealth}>
+          <Button variant="outline" className="h-10 w-full rounded-full bg-white md:w-auto" onClick={() => refetch()} disabled={isFetchingHealth}>
             <RefreshCw className={`size-4 ${isFetchingHealth ? "animate-spin" : ""}`} />
             Testar agora
           </Button>
         </CardHeader>
         <CardContent>
           {isLoadingHealth ? (
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid min-w-0 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
               {Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} className="h-32 rounded-[22px]" />)}
             </div>
           ) : (
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid min-w-0 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
               {healthChecks.map((check) => {
                 const tested = check.tested
                 return (
                 <div
                   key={check.name}
-                  className="rounded-[22px] border border-border/80 bg-secondary/40 p-4 transition hover:border-primary/25 hover:bg-white"
+                  className="min-w-0 rounded-[22px] border border-border/80 bg-secondary/40 p-4 transition hover:border-primary/25 hover:bg-white"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -121,7 +121,7 @@ export function AdminHomePage() {
                     <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Base URL</p>
                     <p className="mt-1 truncate text-xs font-medium text-foreground" title={check.base_url}>{check.base_url}</p>
                   </div>
-                  <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span>{tested ? `HTTP ${check.status_code ?? "sem resposta"}` : "Aguardando teste"}</span>
                     <span className="size-1 rounded-full bg-muted-foreground/40" />
                     <span>{tested ? check.latency_ms ? `${check.latency_ms}ms` : "sem latência" : "sem requisição inicial"}</span>
@@ -160,9 +160,9 @@ export function AdminHomePage() {
             </DialogTitle>
             <DialogDescription>{selectedCheck?.service}</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)]">
+          <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)]">
             <div className="grid content-start gap-3">
-              <div className="grid gap-3 text-sm md:grid-cols-3">
+              <div className="grid min-w-0 gap-3 text-sm sm:grid-cols-2 xl:grid-cols-3">
                 <InfoPill label="Método" value={selectedCheck?.method ?? "—"} />
                 <InfoPill label="Status" value={selectedCheck?.status_code ? `HTTP ${selectedCheck.status_code}` : "Sem resposta"} />
                 <InfoPill label="Latência" value={selectedCheck?.latency_ms ? `${selectedCheck.latency_ms}ms` : "—"} />
@@ -197,13 +197,13 @@ export function AdminHomePage() {
               {selectedCheck?.request_body ? (
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Corpo da request teste</p>
-                  <pre className="max-h-48 overflow-auto rounded-2xl bg-[#111827] p-4 text-xs leading-5 text-white [scrollbar-color:#9ca3af_transparent] [scrollbar-width:thin]">
+                  <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-2xl bg-[#111827] p-4 text-xs leading-5 text-white [scrollbar-color:#9ca3af_transparent] [scrollbar-width:thin]">
                     {selectedCheck.request_body}
                   </pre>
                 </div>
               ) : null}
             </div>
-            <pre className="min-h-[420px] overflow-auto rounded-2xl bg-[#111827] p-4 text-xs leading-5 text-white [scrollbar-color:#9ca3af_transparent] [scrollbar-width:thin] lg:max-h-[calc(100svh-12rem)]">
+            <pre className="min-h-[260px] overflow-auto whitespace-pre-wrap break-words rounded-2xl bg-[#111827] p-4 text-xs leading-5 text-white [scrollbar-color:#9ca3af_transparent] [scrollbar-width:thin] lg:min-h-[420px] lg:max-h-[calc(100svh-12rem)]">
               {selectedCheck?.log || "Sem log disponível."}
             </pre>
           </div>

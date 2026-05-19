@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router-dom"
 
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute"
+import { TermsConsentModal } from "@/components/legal/TermsConsentModal"
 import { AdminLayout } from "@/layouts/AdminLayout"
 import { AppLayout } from "@/layouts/AppLayout"
 import { AdminCidadesPage } from "@/pages/AdminCidadesPage"
@@ -9,6 +10,7 @@ import { AdminDashboardPage } from "@/pages/AdminDashboardPage"
 import { AdminHomePage } from "@/pages/AdminHomePage"
 import { AdminLembretesPage } from "@/pages/AdminLembretesPage"
 import { AdminLoginPage } from "@/pages/AdminLoginPage"
+import { AdminLogsPage } from "@/pages/AdminLogsPage"
 import { AdminPropertyFormPage } from "@/pages/AdminPropertyFormPage"
 import { AdminUsuariosPage } from "@/pages/AdminUsuariosPage"
 import { ContactPage } from "@/pages/ContactPage"
@@ -20,30 +22,34 @@ import { ResetPasswordPage } from "@/pages/ResetPasswordPage"
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<ProtectedRoute />}>
-        <Route path="admin" element={<AdminLayout />}>
-          <Route index element={<AdminHomePage />} />
-          <Route path="imoveis" element={<AdminDashboardPage />} />
-          <Route path="imoveis/novo" element={<AdminPropertyFormPage />} />
-          <Route path="imoveis/:id/editar" element={<AdminPropertyFormPage />} />
-          <Route path="corretores" element={<AdminCorretoresPage />} />
-          <Route path="usuarios" element={<AdminUsuariosPage />} />
-          <Route path="cidades" element={<AdminCidadesPage />} />
-          <Route path="lembretes" element={<AdminLembretesPage />} />
+    <>
+      <Routes>
+        <Route element={<ProtectedRoute />}>
+          <Route path="admin" element={<AdminLayout />}>
+            <Route index element={<AdminHomePage />} />
+            <Route path="imoveis" element={<AdminDashboardPage />} />
+            <Route path="imoveis/novo" element={<AdminPropertyFormPage />} />
+            <Route path="imoveis/:id/editar" element={<AdminPropertyFormPage />} />
+            <Route path="corretores" element={<AdminCorretoresPage />} />
+            <Route path="usuarios" element={<AdminUsuariosPage />} />
+            <Route path="cidades" element={<AdminCidadesPage />} />
+            <Route path="lembretes" element={<AdminLembretesPage />} />
+            <Route path="logs" element={<AdminLogsPage />} />
+          </Route>
         </Route>
-      </Route>
 
-      <Route element={<AppLayout />}>
-        <Route index element={<PropertiesPage />} />
-        <Route path="imoveis" element={<PropertiesPage />} />
-        <Route path="imoveis/:id" element={<PropertyDetailPage />} />
-        <Route path="favoritos" element={<FavoritesPage />} />
-        <Route path="contato" element={<ContactPage />} />
-        <Route path="cadastro" element={<RegisterPage />} />
-        <Route path="login" element={<AdminLoginPage />} />
-        <Route path="resetar-senha/:uid/:token" element={<ResetPasswordPage />} />
-      </Route>
-    </Routes>
+        <Route element={<AppLayout />}>
+          <Route index element={<PropertiesPage />} />
+          <Route path="imoveis" element={<PropertiesPage />} />
+          <Route path="imoveis/:uuid" element={<PropertyDetailPage />} />
+          <Route path="favoritos" element={<FavoritesPage />} />
+          <Route path="contato" element={<ContactPage />} />
+          <Route path="cadastro" element={<RegisterPage />} />
+          <Route path="login" element={<AdminLoginPage />} />
+          <Route path="resetar-senha/:uid/:token" element={<ResetPasswordPage />} />
+        </Route>
+      </Routes>
+      <TermsConsentModal />
+    </>
   )
 }

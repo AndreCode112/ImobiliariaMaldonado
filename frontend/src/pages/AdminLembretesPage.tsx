@@ -91,30 +91,30 @@ export function AdminLembretesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
+      <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Painel administrativo</p>
           <h1 className="mt-2 text-3xl font-semibold">Lembretes de favoritos</h1>
           <p className="mt-2 text-muted-foreground">Agende a rotina diária e personalize a mensagem enviada pelo WhatsApp.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" className="rounded-full bg-white" onClick={() => setMessageOpen(true)}>
+        <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto md:flex-wrap">
+          <Button variant="outline" className="w-full rounded-full bg-white sm:w-auto" onClick={() => setMessageOpen(true)}>
             <MessageCircle className="size-4" />
             Editar WhatsApp
           </Button>
-          <Button className="rounded-full" onClick={() => setScheduleOpen(true)}>
+          <Button className="w-full rounded-full sm:w-auto" onClick={() => setScheduleOpen(true)}>
             <CalendarClock className="size-4" />
             Agendar rotina
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
         {cards.map(({ label, value, icon: Icon }) => (
-          <Card key={label} className="rounded-[24px] border-border/80 bg-white shadow-none">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-              <Icon className="size-5 text-primary" />
+          <Card key={label} className="min-w-0 rounded-[24px] border-border/80 bg-white shadow-none">
+            <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-2">
+              <CardTitle className="min-w-0 text-sm font-medium leading-5 text-muted-foreground">{label}</CardTitle>
+              <Icon className="size-5 shrink-0 text-primary" />
             </CardHeader>
             <CardContent>
               {isLoading ? <Skeleton className="h-9 w-20 rounded-full" /> : <div className="text-3xl font-semibold">{value ?? 0}</div>}
@@ -123,15 +123,15 @@ export function AdminLembretesPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <Card className="rounded-[28px] border-border/80 bg-white shadow-none">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Clock className="size-5 text-primary" />
-              Agendamento no servidor
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <Card className="min-w-0 max-w-full overflow-hidden rounded-[28px] border-border/80 bg-white shadow-none">
+          <CardHeader className="px-4 sm:px-6">
+            <CardTitle className="flex min-w-0 items-center gap-2 text-base sm:text-lg">
+              <Clock className="size-5 shrink-0 text-primary" />
+              <span className="min-w-0 break-words">Agendamento no servidor</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="min-w-0 space-y-4 px-4 sm:px-6">
             {isLoading ? (
               <Skeleton className="h-40 rounded-3xl" />
             ) : (
@@ -139,7 +139,7 @@ export function AdminLembretesPage() {
                 <InfoRow label="Status" value={config?.ativo ? "Ativo" : "Inativo"} />
                 <InfoRow label="Horário diário" value={config?.horario ?? "09:00"} />
                 <InfoRow label="Cron instalado" value={config?.cron_instalado ? "Sim" : "Não"} />
-                <div className="rounded-2xl border bg-secondary/50 p-4">
+                <div className="min-w-0 rounded-2xl border bg-secondary/50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Comando no Ubuntu</p>
                   <p className="mt-2 break-all font-mono text-xs leading-5 text-foreground">{config?.cron_linha || "Nenhuma rotina instalada."}</p>
                 </div>
@@ -148,35 +148,35 @@ export function AdminLembretesPage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-[28px] border-border/80 bg-white shadow-none">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <MessageCircle className="size-5 text-primary" />
-              Mensagem do WhatsApp
+        <Card className="min-w-0 max-w-full overflow-hidden rounded-[28px] border-border/80 bg-white shadow-none">
+          <CardHeader className="px-4 sm:px-6">
+            <CardTitle className="flex min-w-0 items-center gap-2 text-base sm:text-lg">
+              <MessageCircle className="size-5 shrink-0 text-primary" />
+              <span className="min-w-0 break-words">Mensagem do WhatsApp</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="min-w-0 space-y-4 px-4 sm:px-6">
             {isLoading ? (
               <Skeleton className="h-40 rounded-3xl" />
             ) : (
               <>
-                <div className="rounded-2xl border bg-secondary/50 p-4">
+                <div className="min-w-0 rounded-2xl border bg-secondary/50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Template</p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{config?.whatsapp_mensagem}</p>
+                  <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-foreground">{config?.whatsapp_mensagem}</p>
                 </div>
-                <div className="rounded-2xl border bg-white p-4">
+                <div className="min-w-0 rounded-2xl border bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Prévia</p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{preview}</p>
+                  <p className="mt-2 whitespace-pre-wrap break-all text-sm leading-6 text-muted-foreground">{preview}</p>
                 </div>
-                <div className="rounded-2xl border bg-white p-4">
-                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    <Phone className="size-4 text-primary" />
-                    Corretor do WhatsApp
+                <div className="min-w-0 rounded-2xl border bg-white p-4">
+                  <p className="flex min-w-0 items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    <Phone className="size-4 shrink-0 text-primary" />
+                    <span className="min-w-0 break-words">Corretor do WhatsApp</span>
                   </p>
-                  <p className="mt-2 text-sm font-semibold text-foreground">{whatsappDestinoLabel}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{whatsappNumeroAtivo ? formatWhatsappNumber(whatsappNumeroAtivo) : "Selecione um corretor para usar o telefone cadastrado."}</p>
+                  <p className="mt-2 break-words text-sm font-semibold text-foreground">{whatsappDestinoLabel}</p>
+                  <p className="mt-1 break-words text-sm text-muted-foreground">{whatsappNumeroAtivo ? formatWhatsappNumber(whatsappNumeroAtivo) : "Selecione um corretor para usar o telefone cadastrado."}</p>
                 </div>
-                <p className="text-xs leading-5 text-muted-foreground">
+                <p className="break-words text-xs leading-5 text-muted-foreground">
                   Variáveis aceitas: <code>{"{titulo}"}</code>, <code>{"{url}"}</code>, <code>{"{preco}"}</code>, <code>{"{endereco}"}</code>.
                 </p>
               </>
@@ -190,7 +190,7 @@ export function AdminLembretesPage() {
           <CardTitle className="text-lg">Imóveis mais favoritados</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-hidden rounded-[22px] border">
+          <div className="max-w-full overflow-x-auto rounded-[22px] border premium-scrollbar">
             <table className="w-full min-w-[760px] text-sm">
               <thead className="bg-secondary/70 text-muted-foreground">
                 <tr>
@@ -205,7 +205,7 @@ export function AdminLembretesPage() {
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <span className="grid size-9 place-items-center rounded-full bg-primary/10 text-primary"><Home className="size-4" /></span>
-                        <span className="font-semibold">{item.titulo}</span>
+                        <span className="min-w-0 break-words font-semibold">{item.titulo}</span>
                       </div>
                     </td>
                     <td className="px-5 py-4">
@@ -237,23 +237,23 @@ export function AdminLembretesPage() {
       </Card>
 
       <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
-        <DialogContent className="rounded-[28px] sm:max-w-lg">
+        <DialogContent className="max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] overflow-y-auto rounded-[28px] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><CalendarClock className="size-5 text-primary" />Agendar rotina</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4">
-            <Label className="grid gap-2 text-sm font-medium">
+          <div className="grid min-w-0 gap-4">
+            <Label className="grid min-w-0 gap-2 text-sm font-medium">
               Horário diário
-              <Input type="time" value={form.horario} onChange={(event) => setForm((current) => ({ ...current, horario: event.target.value }))} />
+              <Input className="w-full" type="time" value={form.horario} onChange={(event) => setForm((current) => ({ ...current, horario: event.target.value }))} />
             </Label>
             <Label className="flex items-center gap-3 rounded-2xl border bg-secondary/50 p-4 text-sm font-medium">
               <input type="checkbox" checked={form.ativo} onChange={(event) => setForm((current) => ({ ...current, ativo: event.target.checked }))} />
               Ativar envio diário no cron do Ubuntu
             </Label>
           </div>
-          <DialogFooter>
-            <Button variant="outline" className="rounded-full" onClick={() => setScheduleOpen(false)}>Cancelar</Button>
-            <Button className="rounded-full" onClick={() => save()} disabled={update.isPending}>
+          <DialogFooter className="grid grid-cols-1 gap-2 sm:flex">
+            <Button variant="outline" className="w-full rounded-full sm:w-auto" onClick={() => setScheduleOpen(false)}>Cancelar</Button>
+            <Button className="w-full rounded-full sm:w-auto" onClick={() => save()} disabled={update.isPending}>
               <Save className="size-4" />
               {update.isPending ? "Salvando..." : "Salvar"}
             </Button>
@@ -262,12 +262,12 @@ export function AdminLembretesPage() {
       </Dialog>
 
       <Dialog open={messageOpen} onOpenChange={setMessageOpen}>
-        <DialogContent className="rounded-[28px] sm:max-w-2xl">
+        <DialogContent className="max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] overflow-y-auto rounded-[28px] sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Pencil className="size-5 text-primary" />Editar mensagem do WhatsApp</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4">
-            <Label className="grid gap-2 text-sm font-medium">
+          <div className="grid min-w-0 gap-4">
+            <Label className="grid min-w-0 gap-2 text-sm font-medium">
               Corretor do WhatsApp
               <Select value={whatsappSelectValue} onValueChange={changeWhatsappCorretor}>
                 <SelectTrigger className="h-11 w-full">
@@ -304,18 +304,18 @@ export function AdminLembretesPage() {
                 Selecione um corretor para definir o número usado nos links de WhatsApp do lembrete.
               </div>
             )}
-            <Label className="grid gap-2 text-sm font-medium">
+            <Label className="grid min-w-0 gap-2 text-sm font-medium">
               Mensagem
               <Textarea rows={5} value={form.whatsapp_mensagem} onChange={(event) => setForm((current) => ({ ...current, whatsapp_mensagem: event.target.value }))} />
             </Label>
-            <div className="rounded-2xl border bg-secondary/50 p-4">
+            <div className="min-w-0 rounded-2xl border bg-secondary/50 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Prévia</p>
               <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{preview}</p>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" className="rounded-full" onClick={() => setMessageOpen(false)}>Cancelar</Button>
-            <Button className="rounded-full" onClick={() => save()} disabled={update.isPending}>
+          <DialogFooter className="grid grid-cols-1 gap-2 sm:flex">
+            <Button variant="outline" className="w-full rounded-full sm:w-auto" onClick={() => setMessageOpen(false)}>Cancelar</Button>
+            <Button className="w-full rounded-full sm:w-auto" onClick={() => save()} disabled={update.isPending}>
               <Save className="size-4" />
               {update.isPending ? "Salvando..." : "Salvar"}
             </Button>
@@ -328,9 +328,9 @@ export function AdminLembretesPage() {
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border bg-white p-4">
+    <div className="flex min-w-0 flex-col gap-1 rounded-2xl border bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-right text-sm font-semibold text-foreground">{value}</span>
+      <span className="min-w-0 break-words text-sm font-semibold text-foreground sm:text-right">{value}</span>
     </div>
   )
 }

@@ -1,6 +1,6 @@
-import { BellRing, Building2, Home, LayoutDashboard, LogOut, MapPin, PanelLeftClose, PanelLeftOpen, UserRound, Users } from "lucide-react"
+import { BellRing, Building2, FileWarning, Home, LayoutDashboard, LogOut, MapPin, MoreVertical, PanelLeftClose, PanelLeftOpen, UserRound, Users } from "lucide-react"
 import { useState } from "react"
-import { NavLink, Outlet, useNavigate } from "react-router-dom"
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -26,6 +26,7 @@ const NAV = [
   { to: "/admin/usuarios", label: "Usuários", icon: UserRound },
   { to: "/admin/cidades", label: "Cidades", icon: MapPin },
   { to: "/admin/lembretes", label: "Lembretes", icon: BellRing },
+  { to: "/admin/logs", label: "Logs", icon: FileWarning },
 ]
 const LOGO_SRC = "/media/logo/logo-header.png"
 
@@ -34,11 +35,13 @@ export function AdminLayout() {
   const [logoutPopoverOpen, setLogoutPopoverOpen] = useState(false)
   const { logout, session } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const username = session?.user?.username ?? "Admin"
   const userInitial = username[0]?.toUpperCase() ?? "A"
+  const activeNav = NAV.find((item) => item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)) ?? NAV[0]
 
   return (
-    <section className="flex h-svh overflow-hidden bg-secondary">
+    <section className="flex h-svh min-w-0 overflow-hidden bg-secondary">
         <aside
           className={cn(
             "hidden h-svh shrink-0 flex-col border-r bg-white transition-[width] duration-300 lg:flex",
@@ -113,15 +116,38 @@ export function AdminLayout() {
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="flex h-16 shrink-0 items-center justify-between border-b bg-white px-4 md:px-6">
-            <div className="flex gap-2 overflow-x-auto lg:hidden">
-            {NAV.map(({ to, label, end }) => (
-              <Button key={to} asChild variant="outline" className="rounded-full bg-white">
-                <NavLink to={to} end={end}>{label}</NavLink>
-              </Button>
-            ))}
-          </div>
-            <div className="ml-auto">
+          <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b bg-white px-3 sm:px-4 md:px-6">
+            <div className="flex min-w-0 items-center gap-3 lg:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="size-11 shrink-0 rounded-full bg-white" aria-label="Abrir menu do painel">
+                    <MoreVertical className="size-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="z-[9020] w-64 rounded-2xl p-2">
+                  <DropdownMenuLabel>Navegação</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {NAV.map(({ to, label, icon: Icon, end }) => {
+                    const isActive = end ? location.pathname === to : location.pathname.startsWith(to)
+                    return (
+                      <DropdownMenuItem
+                        key={to}
+                        className={cn("rounded-xl", isActive && "bg-primary text-primary-foreground focus:bg-primary focus:text-primary-foreground")}
+                        onClick={() => navigate(to)}
+                      >
+                        <Icon className="size-4" />
+                        {label}
+                      </DropdownMenuItem>
+                    )
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">{activeNav.label}</p>
+                <p className="truncate text-xs text-muted-foreground">Painel administrativo</p>
+              </div>
+            </div>
+            <div className="ml-auto shrink-0">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button type="button" className="flex items-center gap-2 rounded-full border bg-white p-1 pr-3 text-sm font-medium shadow-sm transition hover:bg-secondary">
@@ -168,7 +194,7 @@ export function AdminLayout() {
           </header>
 
           <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-0 premium-scrollbar">
-            <div className="min-h-full p-5 md:p-6">
+            <div className="min-h-full min-w-0 px-3 py-4 sm:p-4 md:p-6">
               <Outlet />
             </div>
           </main>

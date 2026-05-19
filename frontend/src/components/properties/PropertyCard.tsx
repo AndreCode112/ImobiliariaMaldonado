@@ -28,7 +28,7 @@ export function PropertyCard({ imovel, active, onFocus }: PropertyCardProps) {
       )}
       onMouseEnter={() => onFocus?.(imovel)}
     >
-      <Link to={`/imoveis/${imovel.id}`} className="block" onClick={() => onFocus?.(imovel)}>
+      <Link to={`/imoveis/${imovel.uuid}`} className="block" onClick={() => onFocus?.(imovel)}>
         <div className="relative aspect-[1.28] overflow-hidden rounded-[18px] bg-secondary">
           {image ? (
             <img

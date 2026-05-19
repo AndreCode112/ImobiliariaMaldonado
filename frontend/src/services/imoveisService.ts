@@ -1,6 +1,6 @@
 import { axiosClient } from "@/api/axiosClient"
 import type { AdminUser, AdminUserPayload, PasswordResetLink } from "@/types/auth"
-import type { AdminStats, ApiHealthReport, Cidade, CidadePayload, CorretorPayload, CorretorResumo, EnderecoResultado, Imovel, ImovelApi, ImovelPayload, LembreteFavoritosPayload, LembreteFavoritosResponse, PaginatedResults } from "@/types/imovel"
+import type { AdminStats, ApiHealthReport, Cidade, CidadePayload, CorretorPayload, CorretorResumo, EnderecoResultado, Imovel, ImovelApi, ImovelPayload, LembreteFavoritosPayload, LembreteFavoritosResponse, PaginatedResults, SystemLogFilters, SystemLogsResponse } from "@/types/imovel"
 
 function numberFrom(value: string | number | undefined | null) {
   if (value === undefined || value === null || value === "") return 0
@@ -24,6 +24,7 @@ export function normalizeImovel(api: ImovelApi): Imovel {
 
   return {
     id: api.id,
+    uuid: api.uuid,
     title: api.titulo,
     city: api.cidade?.nome ?? "",
     neighborhood: api.bairro?.nome ?? "",
@@ -83,6 +84,27 @@ export const imoveisService = {
     return data
   },
 
+  async logs(filters: SystemLogFilters = {}): Promise<SystemLogsResponse> {
+    const { data } = await axiosClient.get<SystemLogsResponse>("/imoveis/api/logs/", {
+      params: {
+        query: filters.query || undefined,
+        route: filters.route || undefined,
+        date: filters.date || undefined,
+        time: filters.time || undefined,
+        order: filters.order || "recent",
+        limit: filters.limit,
+      },
+    })
+    return data
+  },
+
+  async deleteLogs(ids: number[]): Promise<{ deleted: number; ids: number[] }> {
+    const { data } = await axiosClient.delete<{ deleted: number; ids: number[] }>("/imoveis/api/logs/", {
+      data: { ids },
+    })
+    return data
+  },
+
   async lembreteFavoritos(): Promise<LembreteFavoritosResponse> {
     const { data } = await axiosClient.get<LembreteFavoritosResponse>("/imoveis/api/lembrete-favoritos/")
     return data
@@ -98,12 +120,27 @@ export const imoveisService = {
     return data.results.map(normalizeImovel)
   },
 
+  async search(query: string, signal?: AbortSignal): Promise<Imovel[]> {
+    const { data } = await axiosClient.get<PaginatedResults<ImovelApi>>("/imoveis/api/imoveis/", {
+      params: { q: query },
+      signal,
+    })
+    return data.results.map(normalizeImovel)
+  },
+
   async buscarEndereco(query: string, signal?: AbortSignal): Promise<EnderecoResultado[]> {
     const { data } = await axiosClient.get<{ results: EnderecoResultado[] }>("/imoveis/api/buscar-endereco/", {
       params: { query },
       signal,
     })
     return data.results
+  },
+
+  async buscarEnderecoReverso(latitude: number, longitude: number): Promise<EnderecoResultado | null> {
+    const { data } = await axiosClient.get<{ results: EnderecoResultado[] }>("/imoveis/api/reverse-endereco/", {
+      params: { latitude, longitude },
+    })
+    return data.results[0] ?? null
   },
 
   async get(id: number | string): Promise<Imovel> {

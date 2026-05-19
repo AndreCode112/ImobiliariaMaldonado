@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useMotionValueEvent, useScroll, useTransform } from "framer-motion"
-import { ChevronDown, ChevronLeft, ChevronRight, LoaderCircle, LocateFixed, MapPin, Search, SlidersHorizontal, X } from "lucide-react"
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, LoaderCircle, LocateFixed, MapPin, Search, SlidersHorizontal, X } from "lucide-react"
 import type { ReactNode } from "react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "react-router-dom"
@@ -8,11 +8,13 @@ import { AccountMenuButton } from "@/components/layout/PremiumHeader"
 import { PropertiesMap } from "@/components/map/PropertiesMap"
 import { PropertiesSidebar } from "@/components/properties/PropertiesSidebar"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { defaultFilters, filterImoveis } from "@/features/filters/filterImoveis"
 import { useImoveis } from "@/hooks/useImoveis"
+import { cn } from "@/lib/utils"
 import { imoveisService } from "@/services/imoveisService"
 import type { EnderecoResultado, Imovel, ImoveisFilters } from "@/types/imovel"
 
@@ -28,16 +30,25 @@ export function PropertiesPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isMobileLayout, setIsMobileLayout] = useState(false)
   const [selected, setSelected] = useState<Imovel | null>(null)
-  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [filtersPopover, setFiltersPopover] = useState<"map" | "sidebar" | null>(null)
   const [showPointsOfInterest, setShowPointsOfInterest] = useState(true)
   const [mapSearch, setMapSearch] = useState(buscaParam)
+  const [userLocationAddress, setUserLocationAddress] = useState<EnderecoResultado | null>(null)
   const [addressResults, setAddressResults] = useState<EnderecoResultado[]>([])
   const [isSearchingAddress, setIsSearchingAddress] = useState(false)
   const [hasSearchedAddress, setHasSearchedAddress] = useState(false)
+  const [propertySearch, setPropertySearch] = useState("")
+  const [propertySearchResults, setPropertySearchResults] = useState<Imovel[]>([])
+  const [isSearchingProperties, setIsSearchingProperties] = useState(false)
+  const [hasSearchedProperties, setHasSearchedProperties] = useState(false)
   const [controlsVisible, setControlsVisible] = useState(false)
   const [mapInteractive, setMapInteractive] = useState(false)
+  const [resultsLoading, setResultsLoading] = useState(false)
   const transitionRef = useRef<HTMLDivElement | null>(null)
   const autoScrollRef = useRef(false)
+  const geolocationRequestedRef = useRef(false)
+  const mapRegionActiveRef = useRef(false)
+  const resultsLoadingTimeoutRef = useRef<number | null>(null)
   const { scrollYProgress } = useScroll({
     target: transitionRef,
     offset: ["start start", "end end"],
@@ -56,12 +67,22 @@ export function PropertiesPage() {
     ...defaultFilters,
     search: buscaParam,
   })
+  const propertySearchQuery = propertySearch.trim()
+  const propertySearchActive = propertySearchQuery.length >= 2
 
   const filtered = useMemo(() => {
     const onlyFeatured = destaqueParam === "1"
     const base = onlyFeatured ? imoveis.filter((imovel) => imovel.isFeatured) : imoveis
     return filterImoveis(base, filters)
   }, [destaqueParam, filters, imoveis])
+
+  const visibleImoveis = useMemo(() => {
+    if (!propertySearchActive) return filtered
+    const base = destaqueParam === "1"
+      ? propertySearchResults.filter((imovel) => imovel.isFeatured)
+      : propertySearchResults
+    return filterImoveis(base, { ...filters, search: "" })
+  }, [destaqueParam, filtered, filters, propertySearchActive, propertySearchResults])
 
   const selectedAddress = useMemo<EnderecoResultado | null>(() => {
     const latitude = searchParams.get("endereco_lat")
@@ -77,8 +98,40 @@ export function PropertiesPage() {
   }, [searchParams])
 
   const activeFilterCount = useMemo(() => {
-    return Object.values(filters).filter(Boolean).length + (selectedAddress ? 1 : 0) + (destaqueParam === "1" ? 1 : 0)
+    const countableFilters = [
+      filters.search,
+      filters.cidade,
+      filters.valorMin,
+      filters.valorMax,
+      filters.tipo,
+      filters.quartos,
+      filters.banheiros,
+      filters.vagas,
+      filters.areaMin,
+      filters.areaMax,
+    ]
+    return countableFilters.filter(Boolean).length + (selectedAddress ? 1 : 0) + (destaqueParam === "1" ? 1 : 0)
   }, [destaqueParam, filters, selectedAddress])
+
+  const resultsLoadingKey = useMemo(() => {
+    return JSON.stringify({
+      filters,
+      destaque: destaqueParam === "1",
+      propertySearch: propertySearchActive ? propertySearchQuery : "",
+      selectedAddress: selectedAddress ? `${selectedAddress.latitude}:${selectedAddress.longitude}` : "",
+    })
+  }, [destaqueParam, filters, propertySearchActive, propertySearchQuery, selectedAddress])
+
+  const showResultsLoading = useCallback((duration = 720) => {
+    setResultsLoading(true)
+    if (resultsLoadingTimeoutRef.current) {
+      window.clearTimeout(resultsLoadingTimeoutRef.current)
+    }
+    resultsLoadingTimeoutRef.current = window.setTimeout(() => {
+      setResultsLoading(false)
+      resultsLoadingTimeoutRef.current = null
+    }, duration)
+  }, [])
 
   function selectAddress(address: EnderecoResultado) {
     const title = addressTitle(address)
@@ -127,6 +180,10 @@ export function PropertiesPage() {
 
   useMotionValueEvent(scrollYProgress, "change", (value) => {
     const mapRegionActive = value > 0.74
+    if (mapRegionActive && !mapRegionActiveRef.current) {
+      showResultsLoading(900)
+    }
+    mapRegionActiveRef.current = mapRegionActive
     setControlsVisible(mapRegionActive)
     setMapInteractive(value > 0.82)
     window.dispatchEvent(new CustomEvent(HEADER_VISIBILITY_EVENT, { detail: { visible: !mapRegionActive } }))
@@ -135,13 +192,13 @@ export function PropertiesPage() {
   const scrollToMap = useCallback(() => {
     const transition = transitionRef.current
     if (!transition) return
-    const top = transition.offsetTop + transition.offsetHeight * 0.82
+    const top = transition.offsetTop + transition.offsetHeight * (isMobileLayout ? 0.78 : 0.82)
     window.scrollTo({ top, behavior: "smooth" })
     setSearchParams((params) => {
       params.set("map", "1")
       return params
     })
-  }, [setSearchParams])
+  }, [isMobileLayout, setSearchParams])
 
   useEffect(() => {
     window.addEventListener(SCROLL_TO_MAP_EVENT, scrollToMap)
@@ -192,6 +249,106 @@ export function PropertiesPage() {
   }, [mapSearch])
 
   useEffect(() => {
+    const query = propertySearch.trim()
+    if (query.length < 2) {
+      setPropertySearchResults([])
+      setHasSearchedProperties(false)
+      setIsSearchingProperties(false)
+      return
+    }
+
+    const controller = new AbortController()
+    setIsSearchingProperties(true)
+    setHasSearchedProperties(false)
+
+    const timeout = window.setTimeout(async () => {
+      try {
+        const results = await imoveisService.search(query, controller.signal)
+        setPropertySearchResults(results)
+        setHasSearchedProperties(true)
+      } catch {
+        if (!controller.signal.aborted) {
+          setPropertySearchResults([])
+          setHasSearchedProperties(true)
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsSearchingProperties(false)
+      }
+    }, 280)
+
+    return () => {
+      controller.abort()
+      window.clearTimeout(timeout)
+    }
+  }, [propertySearch])
+
+  useEffect(() => {
+    if (!controlsVisible) return
+    showResultsLoading()
+  }, [controlsVisible, resultsLoadingKey, showResultsLoading])
+
+  useEffect(() => {
+    if (isLoading || !controlsVisible || geolocationRequestedRef.current || typeof navigator === "undefined" || !navigator.geolocation) return
+    geolocationRequestedRef.current = true
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const latitude = position.coords.latitude
+        const longitude = position.coords.longitude
+        showResultsLoading(1100)
+
+        let address: EnderecoResultado = {
+          display_name: "Sua localização atual",
+          latitude: String(latitude),
+          longitude: String(longitude),
+          place_id: "current-location",
+          type: "current_location",
+          address: {},
+        }
+
+        try {
+          address = await imoveisService.buscarEnderecoReverso(latitude, longitude) ?? address
+        } catch {
+          // Mantem a localização bruta caso o reverse geocode não responda.
+        }
+
+        const userCity = cityFromAddress(address)
+        const matchedCity = findMatchingCity(userCity, imoveis)
+        setUserLocationAddress({
+          ...address,
+          display_name: address.display_name || matchedCity || userCity || "Sua localização atual",
+          latitude: String(address.latitude || latitude),
+          longitude: String(address.longitude || longitude),
+        })
+        setFilters((current) => ({
+          ...current,
+          cidade: matchedCity || current.cidade,
+          bairro: "",
+        }))
+        setSearchParams((params) => {
+          params.delete("bairro")
+          params.set("map", "1")
+          return params
+        })
+      },
+      () => undefined,
+      {
+        enableHighAccuracy: true,
+        maximumAge: 1000 * 60 * 8,
+        timeout: 9000,
+      },
+    )
+  }, [controlsVisible, imoveis, isLoading, setSearchParams, showResultsLoading])
+
+  useEffect(() => {
+    return () => {
+      if (resultsLoadingTimeoutRef.current) {
+        window.clearTimeout(resultsLoadingTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
     const media = window.matchMedia("(max-width: 767px)")
     const syncSidebar = () => {
       setIsMobileLayout(media.matches)
@@ -201,6 +358,24 @@ export function PropertiesPage() {
     media.addEventListener("change", syncSidebar)
     return () => media.removeEventListener("change", syncSidebar)
   }, [])
+
+  useEffect(() => {
+    if (!isMobileLayout || !sidebarOpen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isMobileLayout, sidebarOpen])
+
+  const clearPropertySearch = useCallback(() => {
+    setPropertySearch("")
+    setPropertySearchResults([])
+    setHasSearchedProperties(false)
+    setIsSearchingProperties(false)
+  }, [])
+
+  const resultsAreLoading = isLoading || resultsLoading || (propertySearchActive && isSearchingProperties)
 
   useEffect(() => {
     const syncHeaderVisibility = () => {
@@ -220,7 +395,7 @@ export function PropertiesPage() {
     <section className="relative bg-secondary">
       <div
         ref={transitionRef}
-        className="relative h-[190vh] bg-black"
+        className="relative h-[165svh] bg-black md:h-[190vh]"
         onWheel={(event) => {
           if (event.deltaY <= 0 || autoScrollRef.current) return
           const progress = scrollYProgress.get()
@@ -234,7 +409,7 @@ export function PropertiesPage() {
       >
         <motion.section
           style={{ scale: heroScale, opacity: heroOpacity, filter: heroBlur }}
-          className="sticky top-0 h-svh min-h-[620px] origin-center overflow-hidden bg-black md:min-h-[700px]"
+          className="sticky top-0 h-dvh min-h-[560px] origin-center overflow-hidden bg-black md:min-h-[700px]"
         >
           <video
             className="absolute inset-0 size-full object-cover"
@@ -276,19 +451,37 @@ export function PropertiesPage() {
 
         <motion.div
           style={{ y: mapY, borderTopLeftRadius: mapRadius, borderTopRightRadius: mapRadius, boxShadow: mapShadow }}
-          className="sticky top-0 z-10 -mt-[100svh] h-svh scroll-mt-0 overflow-hidden bg-secondary"
+          className="sticky top-0 z-10 -mt-[100svh] h-dvh scroll-mt-0 overflow-hidden bg-secondary"
         >
           <div
             className="grid size-full transition-[grid-template-columns] duration-500 ease-out"
             style={{ gridTemplateColumns: sidebarOpen && !isMobileLayout ? "clamp(320px, 29vw, 430px) minmax(0, 1fr)" : "0px minmax(0, 1fr)" }}
           >
             <PropertiesSidebar
-              imoveis={filtered}
-              isLoading={isLoading}
+              imoveis={visibleImoveis}
+              isLoading={resultsAreLoading}
               open={sidebarOpen}
               selectedId={selected?.id}
+              searchValue={propertySearch}
+              isSearchingProperties={propertySearchActive && isSearchingProperties}
+              hasSearchedProperties={hasSearchedProperties}
               onOpenChange={setSidebarOpen}
-              onOpenFilters={() => setFiltersOpen(true)}
+              onSearchChange={setPropertySearch}
+              onSearchClear={clearPropertySearch}
+              filtersControl={(
+                <MapFiltersPopover
+                  filters={filters}
+                  setFilters={setFilters}
+                  imoveis={imoveis}
+                  open={filtersPopover === "sidebar"}
+                  activeCount={activeFilterCount}
+                  onOpenChange={(open) => setFiltersPopover(open ? "sidebar" : null)}
+                  triggerClassName="h-10 w-full rounded-full bg-white text-sm"
+                  contentSide="right"
+                  contentAlign="start"
+                  isMobile={isMobileLayout}
+                />
+              )}
               showPointsOfInterest={showPointsOfInterest}
               onTogglePoints={() => setShowPointsOfInterest((show) => !show)}
               onFocus={setSelected}
@@ -296,13 +489,15 @@ export function PropertiesPage() {
 
             <div className="relative min-w-0 overflow-hidden">
               <PropertiesMap
-                imoveis={filtered}
+                imoveis={visibleImoveis}
                 selectedId={selected?.id}
-                selectedAddress={selectedAddress}
+                selectedAddress={selectedAddress ?? userLocationAddress}
                 scrollWheelZoom={mapInteractive}
                 showPointsOfInterest={showPointsOfInterest}
                 onSelect={setSelected}
+                onClearSelect={() => setSelected(null)}
               />
+              <MapLoadingOverlay visible={controlsVisible && resultsAreLoading} />
 
               {controlsVisible ? (
                 <>
@@ -314,9 +509,10 @@ export function PropertiesPage() {
                     filters={filters}
                     setFilters={setFilters}
                     imoveis={imoveis}
-                    filtersOpen={filtersOpen}
+                    filtersOpen={filtersPopover === "map"}
                     activeFilterCount={activeFilterCount}
-                    onFiltersOpenChange={setFiltersOpen}
+                    isMobile={isMobileLayout}
+                    onFiltersOpenChange={(open) => setFiltersPopover(open ? "map" : null)}
                     onChange={setMapSearch}
                     onSubmit={submitMapSearch}
                     onSelectAddress={selectAddress}
@@ -331,32 +527,31 @@ export function PropertiesPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="absolute left-4 top-1/2 z-[760] h-11 -translate-y-1/2 rounded-full border-border/70 bg-white/94 px-4 text-sm shadow-[0_18px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl md:left-5"
+                    className="absolute left-4 top-1/2 z-[760] hidden h-11 -translate-y-1/2 rounded-full border-border/70 bg-white/94 px-4 text-sm shadow-[0_18px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl md:inline-flex md:left-5"
                     onClick={() => setSidebarOpen((open) => !open)}
                     aria-label={sidebarOpen ? "Ocultar lista" : "Ver imóveis"}
                   >
                     {sidebarOpen ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}
                     <span className="hidden sm:inline">{sidebarOpen ? "Ocultar lista" : "Ver imóveis"}</span>
                   </Button>
+
+                  {!sidebarOpen ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="absolute bottom-5 left-1/2 z-[760] h-12 -translate-x-1/2 rounded-full border-border/70 bg-white/94 px-5 text-sm shadow-[0_18px_50px_rgba(0,0,0,0.14)] backdrop-blur-xl md:hidden"
+                      onClick={() => setSidebarOpen(true)}
+                    >
+                      Ver lista
+                      <span className="grid min-w-6 place-items-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-bold text-white">{visibleImoveis.length}</span>
+                    </Button>
+                  ) : null}
                 </>
               ) : null}
             </div>
           </div>
         </motion.div>
 
-        <AnimatePresence>
-          {controlsVisible && sidebarOpen ? (
-            <motion.button
-              type="button"
-              aria-label="Fechar lista"
-              className="fixed inset-0 z-[810] bg-black/25 backdrop-blur-[2px] md:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSidebarOpen(false)}
-            />
-          ) : null}
-        </AnimatePresence>
       </div>
     </section>
   )
@@ -372,6 +567,7 @@ function MapFloatingTop({
   imoveis,
   filtersOpen,
   activeFilterCount,
+  isMobile,
   onFiltersOpenChange,
   onChange,
   onSubmit,
@@ -388,6 +584,7 @@ function MapFloatingTop({
   imoveis: Imovel[]
   filtersOpen: boolean
   activeFilterCount: number
+  isMobile: boolean
   onFiltersOpenChange: (open: boolean) => void
   onChange: (value: string) => void
   onSubmit: () => void
@@ -398,13 +595,13 @@ function MapFloatingTop({
   const showResults = value.trim().length >= 3 && (results.length > 0 || hasSearched || isSearching)
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-4 z-[780] flex justify-center px-4 md:top-5">
-      <div className="pointer-events-auto flex w-full max-w-[760px] items-center gap-2">
+    <div className="pointer-events-none absolute inset-x-0 top-3 z-[780] flex justify-center px-3 md:top-5 md:px-4">
+      <div className="pointer-events-auto flex w-full max-w-[760px] flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1">
-          <div className="flex h-11 items-center rounded-full border border-border/70 bg-white px-3 transition duration-200 focus-within:border-primary/40 focus-within:shadow-[0_10px_28px_rgba(0,0,0,0.08)] focus-within:ring-4 focus-within:ring-primary/10 md:focus-within:scale-[1.01]">
+          <div className="flex h-12 items-center rounded-full border border-border/70 bg-white px-3 transition duration-200 focus-within:border-primary/40 focus-within:shadow-[0_10px_28px_rgba(0,0,0,0.08)] focus-within:ring-4 focus-within:ring-primary/10 sm:h-11 md:focus-within:scale-[1.01]">
             <Search className="ml-1 size-4 shrink-0 text-muted-foreground" />
             <Input
-              className="h-full border-0 bg-transparent px-2 text-sm shadow-none placeholder:text-muted-foreground/80 focus-visible:ring-0"
+              className="h-full border-0 bg-transparent px-2 text-base shadow-none placeholder:text-muted-foreground/80 focus-visible:ring-0 sm:text-sm"
               placeholder="Pesquisar endereço, bairro ou cidade"
               value={value}
               onChange={(event) => onChange(event.target.value)}
@@ -442,20 +639,50 @@ function MapFloatingTop({
           ) : null}
         </div>
 
-        <MapFiltersPopover
-          filters={filters}
-          setFilters={setFilters}
-          imoveis={imoveis}
-          open={filtersOpen}
-          activeCount={activeFilterCount}
-          onOpenChange={onFiltersOpenChange}
-        />
-        <Button type="button" variant="outline" className="h-11 rounded-full border-border/70 bg-white px-3 text-sm shadow-none hover:bg-secondary sm:px-4" onClick={onCenter}>
-          <LocateFixed className="size-4" />
-          <span className="hidden sm:inline">Centralizar</span>
-        </Button>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+          <MapFiltersPopover
+            filters={filters}
+            setFilters={setFilters}
+            imoveis={imoveis}
+            open={filtersOpen}
+            activeCount={activeFilterCount}
+            isMobile={isMobile}
+            onOpenChange={onFiltersOpenChange}
+            triggerClassName="h-11 w-full sm:w-auto"
+          />
+          <Button type="button" variant="outline" className="h-11 rounded-full border-border/70 bg-white px-3 text-sm shadow-none hover:bg-secondary sm:px-4" onClick={onCenter}>
+            <LocateFixed className="size-4" />
+            <span>Centralizar</span>
+          </Button>
+        </div>
       </div>
     </div>
+  )
+}
+
+function MapLoadingOverlay({ visible }: { visible: boolean }) {
+  return (
+    <AnimatePresence>
+      {visible ? (
+        <motion.div
+          className="pointer-events-none absolute inset-0 z-[720] grid place-items-center bg-white/58 backdrop-blur-[1px]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <motion.div
+            className="grid size-12 place-items-center rounded-full bg-white/86 shadow-[0_18px_52px_rgba(15,23,42,0.12)] ring-1 ring-border/60 backdrop-blur-xl"
+            initial={{ scale: 0.92, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.92, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <span className="size-7 animate-spin rounded-full border-[3px] border-border border-t-primary" />
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   )
 }
 
@@ -466,6 +693,10 @@ function MapFiltersPopover({
   open,
   activeCount,
   onOpenChange,
+  triggerClassName,
+  contentSide = "bottom",
+  contentAlign = "end",
+  isMobile = false,
 }: {
   filters: ImoveisFilters
   setFilters: (filters: ImoveisFilters) => void
@@ -473,73 +704,122 @@ function MapFiltersPopover({
   open: boolean
   activeCount: number
   onOpenChange: (open: boolean) => void
+  triggerClassName?: string
+  contentSide?: "top" | "right" | "bottom" | "left"
+  contentAlign?: "start" | "center" | "end"
+  isMobile?: boolean
 }) {
   const cidades = unique(imoveis.map((item) => item.city).filter(Boolean))
-  const bairros = unique(imoveis.map((item) => item.neighborhood).filter(Boolean))
   const tipos = unique(imoveis.map((item) => item.type).filter(Boolean))
   const update = (key: keyof ImoveisFilters, value: string) => setFilters({ ...filters, [key]: value })
+  const trigger = (
+    <Button type="button" variant="outline" className={cn("h-11 rounded-full border-border/70 bg-white px-3 text-sm shadow-none hover:bg-secondary sm:px-4", triggerClassName)}>
+      <SlidersHorizontal className="size-4" />
+      <span>Filtros</span>
+      {activeCount ? <span className="grid min-w-5 place-items-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-bold text-white">{activeCount}</span> : null}
+    </Button>
+  )
+
+  if (isMobile) {
+    return (
+      <>
+        <Button
+          type="button"
+          variant="outline"
+          className={cn("h-11 rounded-full border-border/70 bg-white px-3 text-sm shadow-none hover:bg-secondary", triggerClassName)}
+          onClick={() => onOpenChange(true)}
+        >
+          <SlidersHorizontal className="size-4" />
+          <span>Filtros</span>
+          {activeCount ? <span className="grid min-w-5 place-items-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-bold text-white">{activeCount}</span> : null}
+        </Button>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <DialogContent className="bottom-0 left-0 top-auto max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-b-none rounded-t-[28px] p-0 md:hidden">
+            <DialogHeader className="border-b border-border/70 px-5 py-4 text-left">
+              <DialogTitle>Filtros</DialogTitle>
+              <DialogDescription>Refine os imóveis exibidos no mapa.</DialogDescription>
+            </DialogHeader>
+            <FiltersPanel
+              filters={filters}
+              update={update}
+              cidades={cidades}
+              tipos={tipos}
+              onClear={() => setFilters(defaultFilters)}
+              onApply={() => onOpenChange(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      </>
+    )
+  }
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" className="h-11 rounded-full border-border/70 bg-white px-3 text-sm shadow-none hover:bg-secondary sm:px-4">
-          <SlidersHorizontal className="size-4" />
-          <span className="hidden sm:inline">Filtros</span>
-          {activeCount ? <span className="grid min-w-5 place-items-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-bold text-white">{activeCount}</span> : null}
-        </Button>
+        {trigger}
       </PopoverTrigger>
-      <PopoverContent align="end" className="z-[900] w-[min(420px,calc(100vw-2rem))] rounded-[20px] p-0">
+      <PopoverContent side={contentSide} align={contentAlign} className="z-[900] w-[min(420px,calc(100vw-2rem))] rounded-[20px] p-0">
         <div className="border-b border-border/60 px-5 py-4">
           <h2 className="text-base font-semibold">Filtros</h2>
           <p className="mt-1 text-sm text-muted-foreground">Refine os imóveis exibidos no mapa.</p>
         </div>
-        <div className="premium-scrollbar grid max-h-[58svh] grid-cols-2 gap-3 overflow-y-auto p-5">
-          <Field label="Cidade">
-            <select className="h-10 rounded-[14px] border border-input bg-white px-3 text-sm" value={filters.cidade} onChange={(event) => update("cidade", event.target.value)}>
-              <option value="">Todas</option>
-              {cidades.map((cidade) => <option key={cidade}>{cidade}</option>)}
-            </select>
-          </Field>
-          <Field label="Bairro">
-            <select className="h-10 rounded-[14px] border border-input bg-white px-3 text-sm" value={filters.bairro} onChange={(event) => update("bairro", event.target.value)}>
-              <option value="">Todos</option>
-              {bairros.map((bairro) => <option key={bairro}>{bairro}</option>)}
-            </select>
-          </Field>
-          <Field label="Valor minimo">
-            <Input className="h-10 rounded-[14px]" inputMode="numeric" value={filters.valorMin} onChange={(event) => update("valorMin", event.target.value)} />
-          </Field>
-          <Field label="Valor maximo">
-            <Input className="h-10 rounded-[14px]" inputMode="numeric" value={filters.valorMax} onChange={(event) => update("valorMax", event.target.value)} />
-          </Field>
-          <Field label="Tipo">
-            <select className="h-10 rounded-[14px] border border-input bg-white px-3 text-sm" value={filters.tipo} onChange={(event) => update("tipo", event.target.value)}>
-              <option value="">Todos</option>
-              {tipos.map((tipo) => <option key={tipo}>{tipo}</option>)}
-            </select>
-          </Field>
-          <Field label="Quartos">
-            <Input className="h-10 rounded-[14px]" inputMode="numeric" value={filters.quartos} onChange={(event) => update("quartos", event.target.value)} />
-          </Field>
-          <Field label="Banheiros">
-            <Input className="h-10 rounded-[14px]" inputMode="numeric" value={filters.banheiros} onChange={(event) => update("banheiros", event.target.value)} />
-          </Field>
-          <Field label="Garagem">
-            <Input className="h-10 rounded-[14px]" inputMode="numeric" value={filters.vagas} onChange={(event) => update("vagas", event.target.value)} />
-          </Field>
-          <Field label="Area minima">
-            <Input className="h-10 rounded-[14px]" inputMode="numeric" value={filters.areaMin} onChange={(event) => update("areaMin", event.target.value)} />
-          </Field>
-          <Field label="Area maxima">
-            <Input className="h-10 rounded-[14px]" inputMode="numeric" value={filters.areaMax} onChange={(event) => update("areaMax", event.target.value)} />
-          </Field>
-        </div>
-        <div className="flex justify-between gap-3 border-t border-border/60 p-4">
-          <Button type="button" variant="ghost" className="rounded-full" onClick={() => setFilters(defaultFilters)}>Limpar</Button>
-          <Button type="button" className="rounded-full px-5" onClick={() => onOpenChange(false)}>Aplicar</Button>
-        </div>
+        <FiltersPanel
+          filters={filters}
+          update={update}
+          cidades={cidades}
+          tipos={tipos}
+          onClear={() => setFilters(defaultFilters)}
+          onApply={() => onOpenChange(false)}
+        />
       </PopoverContent>
     </Popover>
+  )
+}
+
+function FiltersPanel({
+  filters,
+  update,
+  cidades,
+  tipos,
+  onClear,
+  onApply,
+}: {
+  filters: ImoveisFilters
+  update: (key: keyof ImoveisFilters, value: string) => void
+  cidades: string[]
+  tipos: string[]
+  onClear: () => void
+  onApply: () => void
+}) {
+  return (
+    <>
+      <div className="premium-scrollbar grid max-h-[58svh] grid-cols-1 gap-3 overflow-y-auto p-5 sm:grid-cols-2">
+        <Field label="Cidade">
+          <select className="h-11 rounded-[14px] border border-input bg-white px-3 text-sm" value={filters.cidade} onChange={(event) => update("cidade", event.target.value)}>
+            <option value="">Todas</option>
+            {cidades.map((cidade) => <option key={cidade}>{cidade}</option>)}
+          </select>
+        </Field>
+        <Field label="Tipo">
+          <select className="h-11 rounded-[14px] border border-input bg-white px-3 text-sm" value={filters.tipo} onChange={(event) => update("tipo", event.target.value)}>
+            <option value="">Todos</option>
+            {tipos.map((tipo) => <option key={tipo}>{tipo}</option>)}
+          </select>
+        </Field>
+        <CounterField label="Quartos" value={filters.quartos} onChange={(value) => update("quartos", value)} />
+        <CounterField label="Banheiros" value={filters.banheiros} onChange={(value) => update("banheiros", value)} />
+        <MaskedNumberField label="Valor minimo" value={filters.valorMin} onChange={(value) => update("valorMin", value)} formatter={formatCurrencyInput} placeholder="R$ 0" />
+        <MaskedNumberField label="Valor maximo" value={filters.valorMax} onChange={(value) => update("valorMax", value)} formatter={formatCurrencyInput} placeholder="R$ 0" />
+        <CounterField label="Garagem" value={filters.vagas} onChange={(value) => update("vagas", value)} />
+        <div className="hidden sm:block" />
+        <MaskedNumberField label="Area minima" value={filters.areaMin} onChange={(value) => update("areaMin", value)} formatter={formatAreaInput} placeholder="0 m²" />
+        <MaskedNumberField label="Area maxima" value={filters.areaMax} onChange={(value) => update("areaMax", value)} formatter={formatAreaInput} placeholder="0 m²" />
+      </div>
+      <div className="flex justify-between gap-3 border-t border-border/60 bg-white p-4">
+        <Button type="button" variant="ghost" className="h-11 rounded-full" onClick={onClear}>Limpar</Button>
+        <Button type="button" className="h-11 rounded-full px-5" onClick={onApply}>Aplicar</Button>
+      </div>
+    </>
   )
 }
 
@@ -552,8 +832,101 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
+function CounterField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  const numericValue = Math.max(0, Number(value || 0))
+  const setValue = (nextValue: number) => onChange(nextValue > 0 ? String(nextValue) : "")
+
+  return (
+    <Field label={label}>
+      <div className="flex h-11 items-center justify-between rounded-[14px] border border-input bg-white pl-3 pr-1">
+        <span className={cn("text-sm font-semibold", numericValue ? "text-foreground" : "text-muted-foreground")}>
+          {numericValue || "Qualquer"}
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            className="grid size-8 place-items-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:opacity-35"
+            onClick={() => setValue(numericValue - 1)}
+            disabled={numericValue <= 0}
+            aria-label={`Diminuir ${label.toLowerCase()}`}
+          >
+            <ChevronDown className="size-4" />
+          </button>
+          <button
+            type="button"
+            className="grid size-8 place-items-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+            onClick={() => setValue(numericValue + 1)}
+            aria-label={`Aumentar ${label.toLowerCase()}`}
+          >
+            <ChevronUp className="size-4" />
+          </button>
+        </div>
+      </div>
+    </Field>
+  )
+}
+
+function MaskedNumberField({
+  label,
+  value,
+  onChange,
+  formatter,
+  placeholder,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  formatter: (value: string) => string
+  placeholder: string
+}) {
+  return (
+    <Field label={label}>
+      <Input
+        className="h-11 rounded-[14px] font-semibold"
+        inputMode="numeric"
+        value={formatter(value)}
+        placeholder={placeholder}
+        onChange={(event) => onChange(onlyDigits(event.target.value))}
+      />
+    </Field>
+  )
+}
+
 function addressTitle(address: EnderecoResultado) {
   return address.address?.road || address.address?.pedestrian || address.address?.suburb || address.address?.city || address.display_name.split(",")[0] || "Endereço"
+}
+
+function cityFromAddress(address: EnderecoResultado) {
+  const data = address.address ?? {}
+  return data.city || data.town || data.village || data.municipality || data.county || ""
+}
+
+function findMatchingCity(city: string, imoveis: Imovel[]) {
+  if (!city) return ""
+  const normalizedCity = normalizeText(city)
+  return unique(imoveis.map((imovel) => imovel.city).filter(Boolean)).find((item) => normalizeText(item) === normalizedCity) ?? ""
+}
+
+function normalizeText(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").trim()
+}
+
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, "")
+}
+
+function formatCurrencyInput(value: string) {
+  if (!value) return ""
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  }).format(Number(value))
+}
+
+function formatAreaInput(value: string) {
+  if (!value) return ""
+  return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 }).format(Number(value))} m²`
 }
 
 function unique(values: string[]) {

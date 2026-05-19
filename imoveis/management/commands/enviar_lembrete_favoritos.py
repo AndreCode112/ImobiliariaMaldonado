@@ -166,7 +166,7 @@ class Command(BaseCommand):
         return usuarios
 
     def _imovel_context(self, imovel: Imovel, config: LembreteFavoritosConfig | None = None) -> dict:
-        imovel_url = self._build_imovel_url(imovel.pk)
+        imovel_url = self._build_imovel_url(imovel)
         whatsapp_link = self._build_whatsapp_link(imovel, imovel_url, config or LembreteFavoritosConfig.get_solo())
         imagem = imovel.imagens.first()
         imagem_cid = f"imovel_{imovel.pk}_principal"
@@ -187,9 +187,9 @@ class Command(BaseCommand):
             "whatsapp_link": whatsapp_link,
         }
 
-    def _build_imovel_url(self, imovel_id: int) -> str:
+    def _build_imovel_url(self, imovel: Imovel) -> str:
         base_url = self._public_base_url("FRONTEND_BASE_URL", "SITE_URL")
-        return f"{base_url.rstrip('/')}/imoveis/{imovel_id}"
+        return f"{base_url.rstrip('/')}/imoveis/{imovel.uuid}"
 
     def _public_base_url(self, *names: str) -> str:
         base_url = self._setting_or_env(*names)

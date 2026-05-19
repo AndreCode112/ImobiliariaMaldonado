@@ -84,20 +84,20 @@ export function AdminUsuariosPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
+      <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Painel administrativo</p>
           <h1 className="mt-2 text-3xl font-semibold">Usuários</h1>
           <p className="mt-2 text-muted-foreground">{usuarios.length} usuários cadastrados</p>
         </div>
       </div>
 
-      <div className="relative max-w-sm">
+      <div className="relative min-w-0 w-full max-w-sm">
         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input className="h-11 rounded-full bg-white pl-9" placeholder="Buscar usuários..." value={filter} onChange={(event) => setFilter(event.target.value)} />
+        <Input className="h-11 w-full rounded-full bg-white pl-9" placeholder="Buscar usuários..." value={filter} onChange={(event) => setFilter(event.target.value)} />
       </div>
 
-      <div className="overflow-hidden rounded-[24px] border bg-white">
+      <div className="max-w-full overflow-x-auto rounded-[24px] border bg-white premium-scrollbar">
         <table className="w-full min-w-[860px] text-sm">
           <thead className="bg-secondary/70 text-muted-foreground">
             <tr>
@@ -150,16 +150,16 @@ export function AdminUsuariosPage() {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="rounded-[28px] sm:max-w-2xl">
+        <DialogContent className="max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] overflow-y-auto rounded-[28px] sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><UserRound className="size-5 text-primary" />Editar usuário</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4">
-            <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid min-w-0 gap-4">
+            <div className="grid min-w-0 gap-4 md:grid-cols-2">
               <Field label="Usuário"><Input value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} /></Field>
               <Field label="E-mail"><Input type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} /></Field>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid min-w-0 gap-4 md:grid-cols-2">
               <Field label="Nome"><Input value={form.first_name} onChange={(event) => setForm((current) => ({ ...current, first_name: event.target.value }))} /></Field>
               <Field label="Sobrenome"><Input value={form.last_name} onChange={(event) => setForm((current) => ({ ...current, last_name: event.target.value }))} /></Field>
             </div>
@@ -180,8 +180,8 @@ export function AdminUsuariosPage() {
                 </Button>
               </div>
               {generatedLink ? (
-                <div className="mt-4 flex gap-2 rounded-2xl bg-secondary p-2">
-                  <Input readOnly className="h-10 bg-white" value={generatedLink.reset_url} />
+                <div className="mt-4 flex min-w-0 gap-2 rounded-2xl bg-secondary p-2">
+                  <Input readOnly className="h-10 min-w-0 bg-white" value={generatedLink.reset_url} />
                   <Button type="button" size="icon" variant="outline" className="size-10 rounded-full bg-white" onClick={copyGeneratedLink} aria-label="Copiar link">
                     <Copy className="size-4" />
                   </Button>
@@ -189,9 +189,9 @@ export function AdminUsuariosPage() {
               ) : null}
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" className="rounded-full" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button className="rounded-full" onClick={save} disabled={updateUsuario.isPending}>{updateUsuario.isPending ? "Salvando..." : "Salvar"}</Button>
+          <DialogFooter className="grid grid-cols-1 gap-2 sm:flex">
+            <Button variant="outline" className="w-full rounded-full sm:w-auto" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button className="w-full rounded-full sm:w-auto" onClick={save} disabled={updateUsuario.isPending}>{updateUsuario.isPending ? "Salvando..." : "Salvar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -200,7 +200,7 @@ export function AdminUsuariosPage() {
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <Label className="grid gap-2 text-sm font-medium">{label}{children}</Label>
+  return <Label className="grid min-w-0 gap-2 text-sm font-medium">{label}{children}</Label>
 }
 
 function Checkbox({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {

@@ -99,7 +99,7 @@ const EMPTY: FormState = {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid gap-2">
+    <div className="grid min-w-0 gap-2">
       <Label className="text-sm font-semibold text-foreground">{label}</Label>
       {children}
     </div>
@@ -507,15 +507,15 @@ export function AdminPropertyFormPage() {
   }
 
   return (
-    <section className="min-h-[calc(100svh-88px)] bg-secondary px-6 py-8">
-      <div className="mx-auto max-w-[1180px]">
+    <section className="min-h-[calc(100svh-88px)] bg-secondary px-0 py-4 sm:py-6 lg:py-8">
+      <div className="mx-auto min-w-0 max-w-[1180px] px-0">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Painel administrativo</p>
-        <h1 className="mt-2 text-3xl font-semibold">{editing ? "Editar imóvel" : "Cadastrar imóvel"}</h1>
+        <h1 className="mt-2 break-words text-3xl font-semibold">{editing ? "Editar imóvel" : "Cadastrar imóvel"}</h1>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent
-          className="max-h-[calc(100vh-2.5rem)] w-[calc(100vw-3rem)] !max-w-[1368px] gap-0 overflow-hidden p-0 sm:rounded-xl"
+          className="max-h-[calc(100svh-1rem)] w-[calc(100vw-1rem)] !max-w-[1368px] gap-0 overflow-hidden p-0 sm:max-h-[calc(100svh-2.5rem)] sm:w-[calc(100vw-3rem)] sm:rounded-xl"
           onInteractOutside={(event) => {
             const target = event.detail.originalEvent.target as HTMLElement | null
             if (previewPhoto || target?.closest?.("[data-photo-viewer]")) event.preventDefault()
@@ -527,7 +527,7 @@ export function AdminPropertyFormPage() {
             }
           }}
         >
-          <DialogHeader className="border-b px-7 py-4 sm:text-left">
+          <DialogHeader className="border-b px-4 py-4 sm:px-7 sm:text-left">
             <div className="flex items-center gap-4">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted text-foreground">
                 <Home className="h-6 w-6" />
@@ -543,13 +543,13 @@ export function AdminPropertyFormPage() {
             </div>
           </DialogHeader>
 
-          <div className="max-h-[calc(100vh-14rem)] overflow-y-auto">
+          <div className="max-h-[calc(100svh-13rem)] overflow-y-auto">
             <div className="grid gap-0 lg:grid-cols-2">
-              <div className="grid min-w-0 gap-4 px-7 py-6 lg:pr-8">
+              <div className="grid min-w-0 gap-4 px-4 py-5 sm:px-7 sm:py-6 lg:pr-8">
                 <Field label="Título *">
                   <Input className="h-11" value={form.titulo} onChange={(event) => setForm((current) => ({ ...current, titulo: event.target.value }))} placeholder="Ex: Apartamento 3 quartos em Botafogo" />
                 </Field>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Preço (R$) *">
                     <Input className="h-11" value={form.preco} onChange={(event) => setForm((current) => ({ ...current, preco: event.target.value }))} placeholder="350000" />
                   </Field>
@@ -558,15 +558,15 @@ export function AdminPropertyFormPage() {
                   </Field>
                 </div>
                 <Field label="CEP *">
-                  <div className="flex gap-2">
-                    <Input className="h-11" value={form.cep} onChange={(event) => setForm((current) => ({ ...current, cep: event.target.value }))} placeholder="00000-000" />
-                    <Button type="button" className="h-11 min-w-[118px]" onClick={buscarCep} disabled={cepLoading}>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Input className="h-11 min-w-0" value={form.cep} onChange={(event) => setForm((current) => ({ ...current, cep: event.target.value }))} placeholder="00000-000" />
+                    <Button type="button" className="h-11 w-full sm:w-auto sm:min-w-[118px]" onClick={buscarCep} disabled={cepLoading}>
                       <Search className="h-4 w-4" />
                       {cepLoading ? "Buscando..." : "Buscar"}
                     </Button>
                   </div>
                 </Field>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Bairro">
                     <Input className="h-11" value={form.bairro_nome} onChange={(event) => setForm((current) => ({ ...current, bairro_nome: event.target.value }))} placeholder="Bairro" />
                   </Field>
@@ -591,15 +591,15 @@ export function AdminPropertyFormPage() {
                   A cidade pode vir do CEP. O ponto do mapa usa latitude e longitude confirmadas.
                 </p>
                 <Field label="Endereço">
-                  <div className="flex gap-2">
-                    <Input className="h-11" value={form.endereco} onChange={(event) => setForm((current) => ({ ...current, endereco: event.target.value }))} placeholder="Rua, número" />
-                    <Button type="button" variant="outline" className="h-11 min-w-[118px]" onClick={buscarCoordenadasEndereco} disabled={addressLoading}>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Input className="h-11 min-w-0" value={form.endereco} onChange={(event) => setForm((current) => ({ ...current, endereco: event.target.value }))} placeholder="Rua, número" />
+                    <Button type="button" variant="outline" className="h-11 w-full sm:w-auto sm:min-w-[118px]" onClick={buscarCoordenadasEndereco} disabled={addressLoading}>
                       <MapPin className="h-4 w-4" />
                       {addressLoading ? "Buscando..." : "Buscar"}
                     </Button>
                   </div>
                 </Field>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Latitude">
                     <Input className="h-11" value={form.latitude} onChange={(event) => setForm((current) => ({ ...current, latitude: event.target.value }))} placeholder="-23.5505200" />
                   </Field>
@@ -607,7 +607,7 @@ export function AdminPropertyFormPage() {
                     <Input className="h-11" value={form.longitude} onChange={(event) => setForm((current) => ({ ...current, longitude: event.target.value }))} placeholder="-46.6333080" />
                   </Field>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-3">
                   <Field label="Quartos">
                     <Input className="h-11" type="number" min="0" value={form.quartos} onChange={(event) => setForm((current) => ({ ...current, quartos: event.target.value }))} />
                   </Field>
@@ -618,7 +618,7 @@ export function AdminPropertyFormPage() {
                     <Input className="h-11" type="number" min="0" value={form.vagas} onChange={(event) => setForm((current) => ({ ...current, vagas: event.target.value }))} />
                   </Field>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Status">
                     <Select value={form.status} onValueChange={(value) => setForm((current) => ({ ...current, status: value }))}>
                       <SelectTrigger className="h-11 w-full"><SelectValue /></SelectTrigger>
@@ -641,7 +641,7 @@ export function AdminPropertyFormPage() {
                     </SelectContent>
                   </Select>
                 </Field>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Topografia">
                     <Input className="h-11" value={form.topografia} onChange={(event) => setForm((current) => ({ ...current, topografia: event.target.value }))} />
                   </Field>
@@ -666,9 +666,9 @@ export function AdminPropertyFormPage() {
                 </div>
               </div>
 
-              <div className="min-w-0 border-t px-7 py-6 lg:border-l lg:border-t-0 lg:pl-8">
-                <div className="rounded-lg border bg-background p-5 shadow-sm">
-                  <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0 border-t px-4 py-5 sm:px-7 sm:py-6 lg:border-l lg:border-t-0 lg:pl-8">
+                <div className="rounded-lg border bg-background p-4 shadow-sm sm:p-5">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                     <Label className="text-base font-bold text-foreground">Fotos do imóvel</Label>
                     <span className="text-sm font-semibold text-muted-foreground">
                       {visibleExistingImages.length + imageFiles.length}/{MAX_IMAGES} fotos · {(selectedImageTotal / 1024 / 1024).toFixed(1)} MB de 25 MB
@@ -760,9 +760,9 @@ export function AdminPropertyFormPage() {
             </div>
           </div>
 
-          <DialogFooter className="border-t bg-background px-7 py-4">
-            <Button variant="outline" className="h-12 min-w-[120px]" onClick={closeDialog}>Cancelar</Button>
-            <Button className="h-12 min-w-[150px]" onClick={save} disabled={saving}>
+          <DialogFooter className="grid grid-cols-1 gap-2 border-t bg-background px-4 py-4 sm:flex sm:px-7">
+            <Button variant="outline" className="h-12 w-full sm:w-auto sm:min-w-[120px]" onClick={closeDialog}>Cancelar</Button>
+            <Button className="h-12 w-full sm:w-auto sm:min-w-[150px]" onClick={save} disabled={saving}>
               <Save className="h-4 w-4" />
               {saving ? "Salvando..." : editing ? "Salvar alterações" : "Cadastrar"}
             </Button>
@@ -779,7 +779,7 @@ export function AdminPropertyFormPage() {
         onNext={showNextPhoto}
       />
       <Dialog open={addressDialogOpen} onOpenChange={setAddressDialogOpen}>
-        <DialogContent className="rounded-[28px] sm:max-w-lg">
+        <DialogContent className="max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] overflow-y-auto rounded-[28px] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Coordenadas encontradas</DialogTitle>
             <DialogDescription>
@@ -790,7 +790,7 @@ export function AdminPropertyFormPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Endereço retornado</p>
             <p className="mt-2 text-sm leading-6 text-foreground">{addressResult?.display_name}</p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <Field label="Latitude">
               <Input readOnly className="h-11 bg-secondary" value={addressResult?.latitude ?? ""} />
             </Field>
@@ -798,11 +798,11 @@ export function AdminPropertyFormPage() {
               <Input readOnly className="h-11 bg-secondary" value={addressResult?.longitude ?? ""} />
             </Field>
           </div>
-          <DialogFooter>
-            <Button variant="outline" className="rounded-full" onClick={() => setAddressDialogOpen(false)}>
+          <DialogFooter className="grid grid-cols-1 gap-2 sm:flex">
+            <Button variant="outline" className="w-full rounded-full sm:w-auto" onClick={() => setAddressDialogOpen(false)}>
               Adicionar manual
             </Button>
-            <Button className="rounded-full" onClick={aplicarCoordenadasEndereco}>
+            <Button className="w-full rounded-full sm:w-auto" onClick={aplicarCoordenadasEndereco}>
               Adicionar
             </Button>
           </DialogFooter>

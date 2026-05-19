@@ -1,3 +1,4 @@
+import uuid as uuid_lib
 from datetime import time
 from pyexpat import model
 
@@ -13,6 +14,9 @@ class log(models.Model):
     criado_em = models.DateTimeField("Criado em", auto_now_add=True)
     route = models.CharField(max_length=200, blank=True, null=False)
     erro = models.TextField()
+
+    def __str__(self):
+        return f"{self.route} - {self.criado_em:%d/%m/%Y %H:%M}" if self.criado_em else self.route
 
 
 class TipoImovel(models.Model):
@@ -150,6 +154,7 @@ class Imovel(models.Model):
         ("irregular", "Irregular"),
     ]
 
+    uuid = models.UUIDField("UUID publico", default=uuid_lib.uuid4, unique=True, editable=False, db_index=True)
     titulo = models.CharField("Titulo", max_length=200)
     descricao = models.TextField("Descricao")
     preco = models.DecimalField("Preco (R$)", max_digits=14, decimal_places=2)
@@ -182,7 +187,7 @@ class Imovel(models.Model):
         return self.titulo
 
     def get_absolute_url(self):
-        return reverse("ApiImovelDetail", kwargs={"pk": self.pk})
+        return reverse("ApiImovelUuidDetail", kwargs={"uuid": self.uuid})
 
     @property
     def imagem_principal(self):
@@ -207,6 +212,7 @@ class Imovel(models.Model):
         img = self.imagem_principal
         return {
             "id": self.pk,
+            "uuid": str(self.uuid),
             "titulo": self.titulo,
             "preco": self.preco_formatado,
             "preco_resumido": self.preco_resumido,

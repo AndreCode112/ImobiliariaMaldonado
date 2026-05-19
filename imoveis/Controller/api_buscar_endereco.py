@@ -68,6 +68,7 @@ def cache_key_for_query(normalized_query: str) -> str:
 class NominatimSearch(BaseController):
 
     BASE_URL = "https://nominatim.openstreetmap.org/search"
+    REVERSE_URL = "https://nominatim.openstreetmap.org/reverse"
     limit: int = 5
     countrycodes: str = "br"
     UserAgent:str ="DashboardImoveis/1.0"
@@ -188,6 +189,71 @@ class NominatimSearch(BaseController):
         except Exception as error:
             self.status = status.HTTP_500_INTERNAL_SERVER_ERROR
             self.strErr = 'Erro ao extrair endereços: ' +  str(error)
+            self.response = {"success": False, "message": self.strErr}
+            return False
+
+    def reverse(self, request: HttpRequest) -> bool:
+        try:
+            data = extract_request_data(request)
+            latitude = str(data.get("latitude") or request.GET.get("latitude", "")).strip()
+            longitude = str(data.get("longitude") or request.GET.get("longitude", "")).strip()
+
+            if not latitude or not longitude:
+                return self.error(
+                    "Informe latitude e longitude.",
+                    status.HTTP_400_BAD_REQUEST,
+                    {"success": False, "message": "Informe latitude e longitude."},
+                )
+
+            lat = float(latitude)
+            lon = float(longitude)
+            if lat < -90 or lat > 90 or lon < -180 or lon > 180:
+                return self.error(
+                    "Coordenadas fora do intervalo permitido.",
+                    status.HTTP_400_BAD_REQUEST,
+                    {"success": False, "message": "Coordenadas fora do intervalo permitido."},
+                )
+
+            params = {
+                "lat": latitude,
+                "lon": longitude,
+                "format": "jsonv2",
+                "addressdetails": 1,
+                "zoom": 14,
+            }
+            request_url = f"{self.REVERSE_URL}?{urlencode(params)}"
+            reverse_request = Request(request_url, headers={"User-Agent": self.UserAgent})
+
+            try:
+                with urlopen(reverse_request, timeout=10) as response:
+                    payload = json.loads(response.read().decode("utf-8"))
+            except HTTPError as error:
+                self.status = error.code
+                self.strErr = f"Erro na requisição ao tentar buscar localização: {error.code}"
+                self.response = {"success": False, "message": self.strErr}
+                return False
+
+            result = {
+                "display_name": payload.get("display_name") or "Localização atual",
+                "latitude": payload.get("lat") or latitude,
+                "longitude": payload.get("lon") or longitude,
+                "place_id": str(payload.get("place_id") or "current-location"),
+                "type": payload.get("type") or "current_location",
+                "address": payload.get("address", {}),
+            }
+
+            return self.success(
+                {
+                    "success": True,
+                    "provider": "nominatim",
+                    "results": [result],
+                },
+                status.HTTP_200_OK,
+            )
+
+        except Exception as error:
+            self.status = status.HTTP_500_INTERNAL_SERVER_ERROR
+            self.strErr = "Erro ao extrair localização: " + str(error)
             self.response = {"success": False, "message": self.strErr}
             return False
 
