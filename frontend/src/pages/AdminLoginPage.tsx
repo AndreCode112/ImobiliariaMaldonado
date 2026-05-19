@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Shield, UserPlus } from "lucide-react"
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Shield, UserPlus } from "lucide-react"
 import { motion } from "framer-motion"
 import { useState, type FormEvent } from "react"
 import { Link, Navigate, useNavigate } from "react-router-dom"
@@ -14,6 +14,7 @@ export function AdminLoginPage() {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isRedirecting, setIsRedirecting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   if (isAuthenticated) return <Navigate to={isSuperuser ? "/admin" : "/"} replace />
 
@@ -23,7 +24,7 @@ export function AdminLoginPage() {
     const formData = new FormData(event.currentTarget)
     try {
       const session = await login({
-        username: String(formData.get("username") ?? ""),
+        email: String(formData.get("email") ?? ""),
         password: String(formData.get("password") ?? ""),
       })
       toast.success("Login realizado", {
@@ -35,7 +36,7 @@ export function AdminLoginPage() {
       }, 240)
     } catch {
       toast.error("Não foi possível entrar", {
-        description: "Confira usuário e senha e tente novamente.",
+        description: "Confira e-mail e senha e tente novamente.",
       })
     } finally {
       setIsSubmitting(false)
@@ -66,16 +67,32 @@ export function AdminLoginPage() {
             <Shield className="size-6" />
           </span>
           <h1 className="mt-5 text-2xl font-semibold">Entrar</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Use sua conta do Django para acessar favoritos ou o painel administrativo.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Use seu e-mail para acessar favoritos ou o painel administrativo.</p>
         </div>
         <div className="grid gap-4">
           <Label className="grid gap-2">
-            Usuário
-            <Input name="username" autoComplete="username" required />
+            E-mail
+            <Input name="email" type="email" inputMode="email" autoComplete="email" required />
           </Label>
           <Label className="grid gap-2">
             Senha
-            <Input name="password" type="password" autoComplete="current-password" required />
+            <span className="relative">
+              <Input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                className="pr-11"
+                required
+              />
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                onClick={() => setShowPassword((visible) => !visible)}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </span>
           </Label>
           <Button type="submit" className="mt-2 h-12 rounded-full" disabled={isSubmitting || isRedirecting}>
             {isSubmitting || isRedirecting ? "Entrando..." : "Entrar"}
