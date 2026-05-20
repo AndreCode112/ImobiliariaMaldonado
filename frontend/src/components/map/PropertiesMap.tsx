@@ -134,7 +134,7 @@ function MapPointsOfInterestZoomGate({ onChange }: { onChange: (visible: boolean
   const map = useMap()
 
   useEffect(() => {
-    const minZoomToShowPoints = 15
+    const minZoomToShowPoints = 13
     const syncVisibility = () => {
       onChange(map.getZoom() >= minZoomToShowPoints)
     }

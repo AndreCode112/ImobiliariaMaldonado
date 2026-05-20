@@ -239,7 +239,16 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
           )}
         </div>
 
-        <div className="relative min-w-0 pr-8 pb-9">
+        <div className="relative min-w-0 pr-20">
+          <button
+            type="button"
+            className="absolute right-10 top-0 grid size-8 place-items-center rounded-full border border-border bg-white text-muted-foreground shadow-none transition hover:border-primary/35 hover:text-primary"
+            onClick={shareProperty}
+            aria-label="Compartilhar imóvel"
+            title="Compartilhar imóvel"
+          >
+            <Share2 className="size-4" />
+          </button>
           <FavoriteButton id={imovel.id} className="absolute right-0 top-0 size-8 border border-border bg-white shadow-none" />
           <h3 className="line-clamp-2 pr-2 text-sm font-semibold leading-5 text-foreground">{imovel.title}</h3>
           <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
@@ -256,15 +265,6 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
             <Mini icon={Car} label={`${imovel.parking}`} />
           </div>
           <p className="mt-2 text-sm font-bold text-primary">{imovel.priceLabel}</p>
-          <button
-            type="button"
-            className="absolute bottom-0 right-0 grid size-8 place-items-center rounded-full border border-border bg-white text-muted-foreground shadow-sm transition hover:border-primary/35 hover:text-primary"
-            onClick={shareProperty}
-            aria-label="Compartilhar imóvel"
-            title="Compartilhar imóvel"
-          >
-            <Share2 className="size-4" />
-          </button>
         </div>
       </Link>
     </motion.article>

@@ -1,6 +1,6 @@
 import { API_BASE_URL, axiosClient } from "@/api/axiosClient"
 import type { AdminUser, AdminUserPayload, PasswordResetLink } from "@/types/auth"
-import type { AdminStats, ApiHealthReport, Cidade, CidadePayload, CorretorPayload, CorretorResumo, EnderecoResultado, Imovel, ImovelApi, ImovelPayload, LembreteFavoritosPayload, LembreteFavoritosResponse, PaginatedResults, SystemLogFilters, SystemLogsResponse } from "@/types/imovel"
+import type { AdminStats, ApiHealthReport, Cidade, CidadePayload, CorretorPayload, CorretorResumo, EnderecoResultado, Imovel, ImovelApi, ImovelPayload, LembreteFavoritosPayload, LembreteFavoritosResponse, PaginatedResults, PontoInteresse, SystemLogFilters, SystemLogsResponse } from "@/types/imovel"
 
 function numberFrom(value: string | number | undefined | null) {
   if (value === undefined || value === null || value === "") return 0
@@ -168,6 +168,14 @@ export const imoveisService = {
       params: { latitude, longitude },
     })
     return data.results[0] ?? null
+  },
+
+  async pontosInteresseCidade(cidadeId: number, signal?: AbortSignal): Promise<PontoInteresse[]> {
+    const { data } = await axiosClient.get<{ data?: { results?: PontoInteresse[] }; results?: PontoInteresse[] }>("/imoveis/api/pontos-interesse/", {
+      params: { cidade_id: cidadeId },
+      signal,
+    })
+    return data.data?.results ?? data.results ?? []
   },
 
   async get(id: number | string): Promise<Imovel> {

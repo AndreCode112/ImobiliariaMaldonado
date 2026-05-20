@@ -16,7 +16,7 @@ import { defaultFilters, filterImoveis } from "@/features/filters/filterImoveis"
 import { useImoveis } from "@/hooks/useImoveis"
 import { cn } from "@/lib/utils"
 import { imoveisService } from "@/services/imoveisService"
-import type { EnderecoResultado, Imovel, ImoveisFilters } from "@/types/imovel"
+import type { EnderecoResultado, Imovel, ImoveisFilters, PontoInteresse } from "@/types/imovel"
 
 const HEADER_VISIBILITY_EVENT = "maldonado:premium-header-visibility"
 const SCROLL_TO_MAP_EVENT = "maldonado:scroll-to-map"
@@ -72,6 +72,7 @@ export function PropertiesPage() {
   const [mapSearch, setMapSearch] = useState(buscaParam)
   const [userLocationAddress, setUserLocationAddress] = useState<EnderecoResultado | null>(() => readCachedUserLocation())
   const [addressResults, setAddressResults] = useState<EnderecoResultado[]>([])
+  const [pontosInteressePorCidade, setPontosInteressePorCidade] = useState<Record<number, PontoInteresse[]>>({})
   const [isSearchingAddress, setIsSearchingAddress] = useState(false)
   const [hasSearchedAddress, setHasSearchedAddress] = useState(false)
   const [propertySearch, setPropertySearch] = useState("")
@@ -86,6 +87,7 @@ export function PropertiesPage() {
   const geolocationRequestedRef = useRef(Boolean(userLocationAddress))
   const mapRegionActiveRef = useRef(false)
   const resultsLoadingTimeoutRef = useRef<number | null>(null)
+  const selectedAddressQueryRef = useRef("")
   const { scrollYProgress } = useScroll({
     target: transitionRef,
     offset: ["start start", "end end"],
@@ -120,6 +122,20 @@ export function PropertiesPage() {
       : propertySearchResults
     return filterImoveis(base, { ...filters, search: "" })
   }, [destaqueParam, filtered, filters, propertySearchActive, propertySearchResults])
+
+  const visibleCidadeIds = useMemo(() => {
+    return [...new Set(visibleImoveis.map((imovel) => imovel.raw.cidade?.id).filter((id): id is number => Boolean(id)))].sort((a, b) => a - b)
+  }, [visibleImoveis])
+
+  const visibleImoveisWithPoints = useMemo(() => {
+    return visibleImoveis.map((imovel) => {
+      const cidadeId = imovel.raw.cidade?.id
+      const pointsOfInterest = imovel.pointsOfInterest.length || !cidadeId
+        ? imovel.pointsOfInterest
+        : pontosInteressePorCidade[cidadeId] ?? []
+      return pointsOfInterest === imovel.pointsOfInterest ? imovel : { ...imovel, pointsOfInterest }
+    })
+  }, [pontosInteressePorCidade, visibleImoveis])
 
   const selectedAddress = useMemo<EnderecoResultado | null>(() => {
     const latitude = searchParams.get("endereco_lat")
@@ -254,6 +270,7 @@ export function PropertiesPage() {
     params.set("endereco_lng", address.longitude)
     params.set("map", "1")
     setMapSearch(title)
+    selectedAddressQueryRef.current = title
     setAddressResults([])
     setHasSearchedAddress(false)
     setSearchParams(params)
@@ -275,6 +292,7 @@ export function PropertiesPage() {
   }
 
   function clearMapSearch() {
+    selectedAddressQueryRef.current = ""
     setMapSearch("")
     setAddressResults([])
     setHasSearchedAddress(false)
@@ -288,6 +306,11 @@ export function PropertiesPage() {
       params.set("map", "1")
       return params
     })
+  }
+
+  function changeMapSearch(value: string) {
+    selectedAddressQueryRef.current = ""
+    setMapSearch(value)
   }
 
   useMotionValueEvent(scrollYProgress, "change", (value) => {
@@ -331,6 +354,12 @@ export function PropertiesPage() {
 
   useEffect(() => {
     const query = mapSearch.trim()
+    if (selectedAddressQueryRef.current && selectedAddressQueryRef.current === query) {
+      setAddressResults([])
+      setHasSearchedAddress(false)
+      setIsSearchingAddress(false)
+      return
+    }
     if (query.length < 3) {
       setAddressResults([])
       setHasSearchedAddress(false)
@@ -360,6 +389,33 @@ export function PropertiesPage() {
       window.clearTimeout(timeout)
     }
   }, [mapSearch])
+
+  useEffect(() => {
+    if (!showPointsOfInterest || !visibleCidadeIds.length) return
+    const missingCityIds = visibleCidadeIds.filter((cidadeId) => pontosInteressePorCidade[cidadeId] === undefined)
+    if (!missingCityIds.length) return
+
+    const controller = new AbortController()
+    Promise.all(
+      missingCityIds.map(async (cidadeId) => {
+        const pontos = await imoveisService.pontosInteresseCidade(cidadeId, controller.signal)
+        return [cidadeId, pontos] as const
+      }),
+    )
+      .then((entries) => {
+        if (controller.signal.aborted) return
+        setPontosInteressePorCidade((current) => {
+          const next = { ...current }
+          entries.forEach(([cidadeId, pontos]) => {
+            next[cidadeId] = pontos
+          })
+          return next
+        })
+      })
+      .catch(() => undefined)
+
+    return () => controller.abort()
+  }, [pontosInteressePorCidade, showPointsOfInterest, visibleCidadeIds])
 
   useEffect(() => {
     const query = propertySearch.trim()
@@ -591,7 +647,7 @@ export function PropertiesPage() {
             <div className="relative min-w-0 overflow-hidden">
               <Suspense fallback={<div className="absolute inset-0 bg-secondary" />}>
                 <PropertiesMap
-                  imoveis={visibleImoveis}
+                  imoveis={visibleImoveisWithPoints}
                   selectedId={selected?.id}
                   selectedAddress={selectedAddress ?? userLocationAddress}
                   scrollWheelZoom={mapInteractive}
@@ -616,7 +672,7 @@ export function PropertiesPage() {
                     activeFilterCount={activeFilterCount}
                     isMobile={isMobileLayout}
                     onFiltersOpenChange={(open) => setFiltersPopover(open ? "map" : null)}
-                    onChange={setMapSearch}
+                    onChange={changeMapSearch}
                     onSubmit={submitMapSearch}
                     onSelectAddress={selectAddress}
                     onClear={clearMapSearch}
