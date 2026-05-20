@@ -99,6 +99,15 @@ export function FiltersPopover({ filters, setFilters, imoveis, open: controlledO
                 <Field label="Garagem">
                   <Input className="h-11 rounded-xl" inputMode="numeric" value={filters.vagas} onChange={(event) => update("vagas", event.target.value)} />
                 </Field>
+                <Field label="Cozinha">
+                  <Input className="h-11 rounded-xl" inputMode="numeric" value={filters.cozinhas} onChange={(event) => update("cozinhas", event.target.value)} />
+                </Field>
+                <Field label="Sala">
+                  <Input className="h-11 rounded-xl" inputMode="numeric" value={filters.salas} onChange={(event) => update("salas", event.target.value)} />
+                </Field>
+                <Field label="Varanda">
+                  <Input className="h-11 rounded-xl" inputMode="numeric" value={filters.varandas} onChange={(event) => update("varandas", event.target.value)} />
+                </Field>
                 <Field label="Area minima">
                   <Input className="h-11 rounded-xl" inputMode="numeric" value={filters.areaMin} onChange={(event) => update("areaMin", event.target.value)} />
                 </Field>

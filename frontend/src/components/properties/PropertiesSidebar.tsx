@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from "framer-motion"
-import { Bath, BedDouble, Car, ChevronDown, ChevronUp, Eye, Filter, Images, LoaderCircle, MapPin, Ruler, Search, X } from "lucide-react"
-import type { ReactNode } from "react"
+import { Bath, BedDouble, Car, ChevronDown, ChevronUp, Eye, Filter, Images, LoaderCircle, MapPin, Ruler, Search, Share2, X } from "lucide-react"
+import type { MouseEvent, ReactNode } from "react"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
+import { toast } from "sonner"
 
 import { FavoriteButton } from "@/components/properties/FavoriteButton"
 import { Button } from "@/components/ui/button"
@@ -196,6 +197,29 @@ function SidebarSkeleton() {
 
 function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; active?: boolean; onFocus: (imovel: Imovel) => void }) {
   const image = imovel.images[0]
+  const propertyUrl = buildPropertyUrl(imovel.uuid)
+
+  async function shareProperty(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault()
+    event.stopPropagation()
+    const text = `Estou compartilhando com vc o link do imóvel: ${propertyUrl}`
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: imovel.title, text, url: propertyUrl })
+        return
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success("Link do imóvel copiado")
+    } catch {
+      toast.error("Não foi possível compartilhar este imóvel")
+    }
+  }
 
   return (
     <motion.article
@@ -215,7 +239,7 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
           )}
         </div>
 
-        <div className="relative min-w-0 pr-8">
+        <div className="relative min-w-0 pr-8 pb-9">
           <FavoriteButton id={imovel.id} className="absolute right-0 top-0 size-8 border border-border bg-white shadow-none" />
           <h3 className="line-clamp-2 pr-2 text-sm font-semibold leading-5 text-foreground">{imovel.title}</h3>
           <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
@@ -232,10 +256,24 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
             <Mini icon={Car} label={`${imovel.parking}`} />
           </div>
           <p className="mt-2 text-sm font-bold text-primary">{imovel.priceLabel}</p>
+          <button
+            type="button"
+            className="absolute bottom-0 right-0 grid size-8 place-items-center rounded-full border border-border bg-white text-muted-foreground shadow-sm transition hover:border-primary/35 hover:text-primary"
+            onClick={shareProperty}
+            aria-label="Compartilhar imóvel"
+            title="Compartilhar imóvel"
+          >
+            <Share2 className="size-4" />
+          </button>
         </div>
       </Link>
     </motion.article>
   )
+}
+
+function buildPropertyUrl(uuid: string) {
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://maldonadocorretorimoveis.com.br"
+  return `${origin}/imoveis/${uuid}`
 }
 
 function Mini({ icon: Icon, label }: { icon: typeof Ruler; label: string }) {

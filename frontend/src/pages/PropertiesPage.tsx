@@ -144,6 +144,9 @@ export function PropertiesPage() {
       filters.quartos,
       filters.banheiros,
       filters.vagas,
+      filters.cozinhas,
+      filters.salas,
+      filters.varandas,
       filters.areaMin,
       filters.areaMax,
     ]
@@ -911,7 +914,9 @@ function FiltersPanel({
         <MaskedNumberField label="Valor minimo" value={filters.valorMin} onChange={(value) => update("valorMin", value)} formatter={formatCurrencyInput} placeholder="R$ 0" />
         <MaskedNumberField label="Valor maximo" value={filters.valorMax} onChange={(value) => update("valorMax", value)} formatter={formatCurrencyInput} placeholder="R$ 0" />
         <CounterField label="Garagem" value={filters.vagas} onChange={(value) => update("vagas", value)} />
-        <div className="hidden sm:block" />
+        <CounterField label="Cozinha" value={filters.cozinhas} onChange={(value) => update("cozinhas", value)} />
+        <CounterField label="Sala" value={filters.salas} onChange={(value) => update("salas", value)} />
+        <CounterField label="Varanda" value={filters.varandas} onChange={(value) => update("varandas", value)} />
         <MaskedNumberField label="Area minima" value={filters.areaMin} onChange={(value) => update("areaMin", value)} formatter={formatAreaInput} placeholder="0 m²" />
         <MaskedNumberField label="Area maxima" value={filters.areaMax} onChange={(value) => update("areaMax", value)} formatter={formatAreaInput} placeholder="0 m²" />
       </div>

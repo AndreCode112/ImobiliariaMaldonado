@@ -125,6 +125,9 @@ export interface ImoveisFilters {
   quartos: string
   banheiros: string
   vagas: string
+  cozinhas: string
+  salas: string
+  varandas: string
   areaMin: string
   areaMax: string
 }

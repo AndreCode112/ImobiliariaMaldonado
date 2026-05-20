@@ -11,6 +11,9 @@ export const defaultFilters: ImoveisFilters = {
   quartos: "",
   banheiros: "",
   vagas: "",
+  cozinhas: "",
+  salas: "",
+  varandas: "",
   areaMin: "",
   areaMax: "",
 }
@@ -40,6 +43,9 @@ export function filterImoveis(imoveis: Imovel[], filters: ImoveisFilters) {
     if (filters.quartos && imovel.bedrooms < Number(filters.quartos)) return false
     if (filters.banheiros && imovel.bathrooms < Number(filters.banheiros)) return false
     if (filters.vagas && imovel.parking < Number(filters.vagas)) return false
+    if (filters.cozinhas && imovel.kitchens < Number(filters.cozinhas)) return false
+    if (filters.salas && imovel.livingRooms < Number(filters.salas)) return false
+    if (filters.varandas && imovel.balconies < Number(filters.varandas)) return false
     if (!matchesNumber(imovel.price, filters.valorMin, filters.valorMax)) return false
     if (!matchesNumber(imovel.area, filters.areaMin, filters.areaMax)) return false
     return true
