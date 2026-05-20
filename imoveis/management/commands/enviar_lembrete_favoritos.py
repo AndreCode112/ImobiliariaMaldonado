@@ -1,4 +1,5 @@
 import os
+import json
 from urllib.parse import quote
 
 from django.conf import settings
@@ -8,7 +9,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Count, Prefetch, Q
 
 from imoveis.Controller.sendEmail import EmailSender
-from imoveis.models import FavoritoImovel, ImagemImovel, Imovel, LembreteFavoritosConfig
+from imoveis.models import FavoritoImovel, ImagemImovel, Imovel, LembreteFavoritosConfig, log as SystemLog
 
 
 class Command(BaseCommand):
@@ -43,15 +44,32 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        config = LembreteFavoritosConfig.get_solo()
+        run_payload = {
+            "tipo": "lembrete_favoritos",
+            "status": "executando",
+            "horario_configurado": config.horario.strftime("%H:%M") if config.horario else "",
+            "ativo": config.ativo,
+            "dry_run": options["dry_run"],
+            "to_email": options["to_email"],
+            "enviados": 0,
+            "ignorados": 0,
+            "total_usuarios": 0,
+            "mensagem": "",
+        }
+        run_log = SystemLog.objects.create(route="lembrete_favoritos", erro=json.dumps(run_payload, ensure_ascii=False))
         usuarios = self._usuarios_com_favoritos(options)
         total = usuarios.count() if hasattr(usuarios, "count") else len(usuarios)
+        run_payload["total_usuarios"] = total
 
         if not total:
-            self.stdout.write(self.style.WARNING("Nenhum usuario com favoritos disponiveis para lembrar."))
+            message = "Nenhum usuario com favoritos disponiveis para lembrar."
+            self.stdout.write(self.style.WARNING(message))
+            run_payload.update({"status": "sem_destinatarios", "mensagem": message})
+            self._salvar_historico(run_log, run_payload)
             return
 
         sender = EmailSender.from_env()
-        config = LembreteFavoritosConfig.get_solo()
         to_email = options["to_email"]
         connection = None
         enviados = 0
@@ -113,12 +131,35 @@ class Command(BaseCommand):
                     ignorados += 1
                     self.stdout.write(self.style.ERROR(f"O backend SMTP nao confirmou envio para {to_email}."))
         except Exception as exc:
+            run_payload.update(
+                {
+                    "status": "erro",
+                    "enviados": enviados,
+                    "ignorados": ignorados,
+                    "mensagem": f"{type(exc).__name__}: {exc}",
+                }
+            )
+            self._salvar_historico(run_log, run_payload)
             raise CommandError(f"Erro ao enviar lembretes: {type(exc).__name__}: {exc}") from exc
         finally:
             if connection:
                 connection.close()
 
-        self.stdout.write(self.style.SUCCESS(f"Concluido: {enviados} enviado(s), {ignorados} ignorado(s)."))
+        message = f"Concluido: {enviados} enviado(s), {ignorados} ignorado(s)."
+        run_payload.update(
+            {
+                "status": "concluido",
+                "enviados": enviados,
+                "ignorados": ignorados,
+                "mensagem": message,
+            }
+        )
+        self._salvar_historico(run_log, run_payload)
+        self.stdout.write(self.style.SUCCESS(message))
+
+    def _salvar_historico(self, run_log, payload: dict):
+        run_log.erro = json.dumps(payload, ensure_ascii=False, indent=2)
+        run_log.save(update_fields=["erro"])
 
     def _print_email_settings(self):
         self.stdout.write("Configuracoes de e-mail do Django:")

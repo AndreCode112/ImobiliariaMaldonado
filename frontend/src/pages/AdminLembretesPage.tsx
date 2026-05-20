@@ -1,4 +1,4 @@
-import { CalendarClock, Clock, Heart, Home, Mail, MessageCircle, Pencil, Phone, Save, Send, Users } from "lucide-react"
+import { CalendarClock, Clock, Eye, Heart, Home, Mail, MessageCircle, Pencil, Phone, Save, Send, Users } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { useCorretores, useLembreteFavoritos, useUpdateLembreteFavoritos } from "@/hooks/useImoveis"
-import type { LembreteFavoritosPayload } from "@/types/imovel"
+import type { LembreteFavoritosHistorico, LembreteFavoritosPayload } from "@/types/imovel"
 
 const DEFAULT_MESSAGE = "Ola, tenho interesse no imovel {titulo}: {url}"
 
@@ -21,6 +21,7 @@ export function AdminLembretesPage() {
   const update = useUpdateLembreteFavoritos()
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [messageOpen, setMessageOpen] = useState(false)
+  const [selectedRun, setSelectedRun] = useState<LembreteFavoritosHistorico | null>(null)
   const [form, setForm] = useState<LembreteFavoritosPayload>({
     horario: "09:00",
     ativo: false,
@@ -44,6 +45,7 @@ export function AdminLembretesPage() {
 
   const stats = data?.stats
   const config = data?.config
+  const historico = data?.historico ?? []
   const cards = [
     { label: "Clientes que receberão", value: stats?.clientes_com_favoritos, icon: Users },
     { label: "Favoritos cadastrados", value: stats?.favoritos_cadastrados, icon: Heart },
@@ -139,10 +141,6 @@ export function AdminLembretesPage() {
                 <InfoRow label="Status" value={config?.ativo ? "Ativo" : "Inativo"} />
                 <InfoRow label="Horário diário" value={config?.horario ?? "09:00"} />
                 <InfoRow label="Cron instalado" value={config?.cron_instalado ? "Sim" : "Não"} />
-                <div className="min-w-0 rounded-2xl border bg-secondary/50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Comando no Ubuntu</p>
-                  <p className="mt-2 break-all font-mono text-xs leading-5 text-foreground">{config?.cron_linha || "Nenhuma rotina instalada."}</p>
-                </div>
               </>
             )}
           </CardContent>
@@ -236,6 +234,56 @@ export function AdminLembretesPage() {
         </CardContent>
       </Card>
 
+      <Card className="rounded-[28px] border-border/80 bg-white shadow-none">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Clock className="size-5 text-primary" />
+            Histórico de execuções
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="max-w-full overflow-x-auto rounded-[22px] border premium-scrollbar">
+            <table className="w-full min-w-[860px] text-sm">
+              <thead className="bg-secondary/70 text-muted-foreground">
+                <tr>
+                  <th className="px-5 py-4 text-left font-medium">Execução</th>
+                  <th className="px-5 py-4 text-left font-medium">Horário</th>
+                  <th className="px-5 py-4 text-left font-medium">Status</th>
+                  <th className="px-5 py-4 text-left font-medium">Log</th>
+                  <th className="px-5 py-4 text-right font-medium">Response</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historico.map((item) => (
+                  <tr key={item.id} className="border-t align-top">
+                    <td className="px-5 py-4 font-semibold text-foreground">{formatDateTime(item.executado_em)}</td>
+                    <td className="px-5 py-4 text-muted-foreground">{item.horario || config?.horario || "09:00"}</td>
+                    <td className="px-5 py-4">
+                      <span className={statusClassName(item.status)}>{statusLabel(item.status)}</span>
+                    </td>
+                    <td className="max-w-[360px] px-5 py-4">
+                      <p className="line-clamp-2 break-words text-muted-foreground">{item.log || "Sem detalhes registrados."}</p>
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <Button variant="outline" size="sm" className="rounded-full bg-white" onClick={() => setSelectedRun(item)}>
+                        <Eye className="size-4" />
+                        Ver response
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {!isLoading && !historico.length ? (
+                  <tr><td colSpan={5} className="px-5 py-10 text-center text-muted-foreground">Nenhuma execução registrada ainda.</td></tr>
+                ) : null}
+                {isLoading ? (
+                  <tr><td colSpan={5} className="px-5 py-6"><Skeleton className="h-10 rounded-full" /></td></tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
       <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
         <DialogContent className="max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] overflow-y-auto rounded-[28px] sm:max-w-lg">
           <DialogHeader>
@@ -322,6 +370,30 @@ export function AdminLembretesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={Boolean(selectedRun)} onOpenChange={(open) => !open && setSelectedRun(null)}>
+        <DialogContent className="max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] overflow-y-auto rounded-[28px] sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="size-5 text-primary" />
+              Response da execução
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <InfoRow label="Execução" value={formatDateTime(selectedRun?.executado_em)} />
+              <InfoRow label="Horário" value={selectedRun?.horario || config?.horario || "09:00"} />
+              <InfoRow label="Status" value={statusLabel(selectedRun?.status)} />
+            </div>
+            <pre className="max-h-[52svh] overflow-auto rounded-2xl border bg-secondary/50 p-4 text-xs leading-5 text-foreground premium-scrollbar">
+              {JSON.stringify(selectedRun?.response ?? {}, null, 2)}
+            </pre>
+          </div>
+          <DialogFooter>
+            <Button className="w-full rounded-full sm:w-auto" onClick={() => setSelectedRun(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -339,4 +411,34 @@ function formatWhatsappNumber(value: string) {
   const digits = value.replace(/\D/g, "")
   if (!digits) return "Sem número"
   return `+${digits}`
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return "-"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date)
+}
+
+function statusLabel(value?: string) {
+  const labels: Record<string, string> = {
+    concluido: "Concluído",
+    executando: "Executando",
+    erro: "Erro",
+    sem_destinatarios: "Sem destinatários",
+    log: "Log",
+  }
+  return labels[value ?? ""] ?? "Registrado"
+}
+
+function statusClassName(value: string) {
+  const base = "inline-flex rounded-full px-3 py-1.5 text-xs font-bold"
+  if (value === "concluido") return `${base} bg-emerald-50 text-emerald-700`
+  if (value === "erro") return `${base} bg-red-50 text-red-700`
+  if (value === "executando") return `${base} bg-blue-50 text-blue-700`
+  if (value === "sem_destinatarios") return `${base} bg-amber-50 text-amber-700`
+  return `${base} bg-secondary text-muted-foreground`
 }

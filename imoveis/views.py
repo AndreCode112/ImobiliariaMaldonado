@@ -31,7 +31,7 @@ from .Controller.api_cadastro_imoveis import (
     ApiStats,
 )
 from .Controller.lembrete_favoritos_scheduler import sync_crontab
-from .models import Corretor, FavoritoImovel, Imovel, LembreteFavoritosConfig, PontoInteresse
+from .models import Corretor, FavoritoImovel, Imovel, LembreteFavoritosConfig, PontoInteresse, log
 from .Controller.logs import ApiLogs, InsertLogs
 
 
@@ -514,13 +514,46 @@ def _lembrete_stats_payload():
     }
 
 
+def _lembrete_historico_payload():
+    registros = log.objects.filter(route="lembrete_favoritos").order_by("-criado_em")
+    historico = []
+
+    for registro in registros:
+        try:
+            response = json.loads(registro.erro)
+        except (TypeError, JSONDecodeError, ValueError):
+            response = {
+                "status": "log",
+                "mensagem": registro.erro,
+            }
+
+        historico.append(
+            {
+                "id": registro.pk,
+                "executado_em": registro.criado_em.isoformat() if registro.criado_em else None,
+                "horario": response.get("horario_configurado") or "",
+                "status": response.get("status") or "log",
+                "log": response.get("mensagem") or "",
+                "response": response,
+            }
+        )
+
+    return historico
+
+
 @api_view(["GET", "PUT", "PATCH"])
 @permission_classes([IsSuperUser])
 def ApiLembreteFavoritosView(request):
     config = LembreteFavoritosConfig.get_solo()
 
     if request.method == "GET":
-        return JsonResponse({"config": _lembrete_config_payload(config), "stats": _lembrete_stats_payload()})
+        return JsonResponse(
+            {
+                "config": _lembrete_config_payload(config),
+                "stats": _lembrete_stats_payload(),
+                "historico": _lembrete_historico_payload(),
+            }
+        )
 
     data = request.data
     horario = parse_time(str(data.get("horario") or ""))
@@ -582,6 +615,7 @@ def ApiLembreteFavoritosView(request):
         {
             "config": _lembrete_config_payload(config),
             "stats": _lembrete_stats_payload(),
+            "historico": _lembrete_historico_payload(),
             "cron_ok": cron_ok,
             "message": cron_message,
         }

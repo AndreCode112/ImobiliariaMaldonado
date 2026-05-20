@@ -256,6 +256,15 @@ export interface LembreteFavoritosStats {
   top_imoveis: LembreteTopImovel[]
 }
 
+export interface LembreteFavoritosHistorico {
+  id: number
+  executado_em?: string | null
+  horario: string
+  status: string
+  log: string
+  response: Record<string, unknown>
+}
+
 export interface LembreteFavoritosPayload {
   horario: string
   ativo: boolean
@@ -268,6 +277,7 @@ export interface LembreteFavoritosPayload {
 export interface LembreteFavoritosResponse {
   config: LembreteFavoritosConfig
   stats: LembreteFavoritosStats
+  historico: LembreteFavoritosHistorico[]
   cron_ok?: boolean
   message?: string
 }
