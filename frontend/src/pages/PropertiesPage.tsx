@@ -20,7 +20,42 @@ import type { EnderecoResultado, Imovel, ImoveisFilters } from "@/types/imovel"
 
 const HEADER_VISIBILITY_EVENT = "maldonado:premium-header-visibility"
 const SCROLL_TO_MAP_EVENT = "maldonado:scroll-to-map"
+const USER_LOCATION_CACHE_KEY = "maldonado.user-location"
+const USER_LOCATION_CACHE_TTL = 1000 * 60 * 60 * 12
 const PropertiesMap = lazy(() => import("@/components/map/PropertiesMap").then((mod) => ({ default: mod.PropertiesMap })))
+
+interface CachedUserLocation {
+  expiresAt: number
+  address: EnderecoResultado
+}
+
+function readCachedUserLocation() {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = window.localStorage.getItem(USER_LOCATION_CACHE_KEY)
+    if (!raw) return null
+    const cached = JSON.parse(raw) as Partial<CachedUserLocation>
+    if (!cached.expiresAt || cached.expiresAt <= Date.now() || !cached.address?.latitude || !cached.address.longitude) {
+      window.localStorage.removeItem(USER_LOCATION_CACHE_KEY)
+      return null
+    }
+    return cached.address
+  } catch {
+    window.localStorage.removeItem(USER_LOCATION_CACHE_KEY)
+    return null
+  }
+}
+
+function cacheUserLocation(address: EnderecoResultado) {
+  if (typeof window === "undefined") return
+  window.localStorage.setItem(
+    USER_LOCATION_CACHE_KEY,
+    JSON.stringify({
+      expiresAt: Date.now() + USER_LOCATION_CACHE_TTL,
+      address,
+    } satisfies CachedUserLocation),
+  )
+}
 
 export function PropertiesPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -35,7 +70,7 @@ export function PropertiesPage() {
   const [showPointsOfInterest, setShowPointsOfInterest] = useState(true)
   const [heroVideoReady, setHeroVideoReady] = useState(false)
   const [mapSearch, setMapSearch] = useState(buscaParam)
-  const [userLocationAddress, setUserLocationAddress] = useState<EnderecoResultado | null>(null)
+  const [userLocationAddress, setUserLocationAddress] = useState<EnderecoResultado | null>(() => readCachedUserLocation())
   const [addressResults, setAddressResults] = useState<EnderecoResultado[]>([])
   const [isSearchingAddress, setIsSearchingAddress] = useState(false)
   const [hasSearchedAddress, setHasSearchedAddress] = useState(false)
@@ -48,7 +83,7 @@ export function PropertiesPage() {
   const [resultsLoading, setResultsLoading] = useState(false)
   const transitionRef = useRef<HTMLDivElement | null>(null)
   const heroVideoRef = useRef<HTMLVideoElement | null>(null)
-  const geolocationRequestedRef = useRef(false)
+  const geolocationRequestedRef = useRef(Boolean(userLocationAddress))
   const mapRegionActiveRef = useRef(false)
   const resultsLoadingTimeoutRef = useRef<number | null>(null)
   const { scrollYProgress } = useScroll({
@@ -155,25 +190,29 @@ export function PropertiesPage() {
 
     const userCity = cityFromAddress(address)
     const matchedCity = findMatchingCity(userCity, imoveis)
-    setUserLocationAddress({
+    const nextAddress = {
       ...address,
       display_name: address.display_name || matchedCity || userCity || "Sua localização atual",
       latitude: String(address.latitude || latitude),
       longitude: String(address.longitude || longitude),
-    })
+    }
+    setUserLocationAddress(nextAddress)
+    cacheUserLocation(nextAddress)
     setFilters((current) => ({
       ...current,
       cidade: matchedCity || current.cidade,
       bairro: "",
     }))
-    setSearchParams((params) => {
-      params.delete("bairro")
-      params.set("map", "1")
-      return params
-    })
-  }, [imoveis, setSearchParams, showResultsLoading])
+  }, [imoveis, showResultsLoading])
 
   const requestUserLocation = useCallback(() => {
+    const cachedLocation = readCachedUserLocation()
+    if (cachedLocation) {
+      geolocationRequestedRef.current = true
+      setUserLocationAddress(cachedLocation)
+      return true
+    }
+
     if (geolocationRequestedRef.current || typeof navigator === "undefined" || !navigator.geolocation) return false
     geolocationRequestedRef.current = true
 
