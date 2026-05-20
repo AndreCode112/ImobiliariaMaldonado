@@ -70,26 +70,34 @@ def _clear_auth_cookies(response):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login_view(request):
-    email = (request.data.get("email") or "").strip().lower()
+    identifier = (request.data.get("email") or request.data.get("username") or "").strip()
     password = request.data.get("password") or ""
 
-    if not email or not password:
-        return JsonResponse({"detail": "E-mail e senha são obrigatórios."}, status=400)
-
-    try:
-        validate_email(email)
-    except ValidationError:
-        return JsonResponse({"detail": "E-mail inválido."}, status=400)
+    if not identifier or not password:
+        return JsonResponse({"detail": "E-mail/usuário e senha são obrigatórios."}, status=400)
 
     User = get_user_model()
-    try:
-        user_by_email = User.objects.get(email__iexact=email)
-    except User.DoesNotExist:
-        return JsonResponse({"detail": "Credenciais inválidas."}, status=401)
-    except User.MultipleObjectsReturned:
-        return JsonResponse({"detail": "E-mail duplicado. Entre em contato com o suporte."}, status=409)
+    if "@" in identifier:
+        try:
+            validate_email(identifier)
+        except ValidationError:
+            return JsonResponse({"detail": "E-mail inválido."}, status=400)
 
-    user = authenticate(request, username=user_by_email.get_username(), password=password)
+        try:
+            login_user = User.objects.get(email__iexact=identifier.lower())
+        except User.DoesNotExist:
+            return JsonResponse({"detail": "Credenciais inválidas."}, status=401)
+        except User.MultipleObjectsReturned:
+            return JsonResponse({"detail": "E-mail duplicado. Entre em contato com o suporte."}, status=409)
+    else:
+        try:
+            login_user = User.objects.get(username__iexact=identifier)
+        except User.DoesNotExist:
+            return JsonResponse({"detail": "Credenciais inválidas."}, status=401)
+        except User.MultipleObjectsReturned:
+            return JsonResponse({"detail": "Usuário duplicado. Entre em contato com o suporte."}, status=409)
+
+    user = authenticate(request, username=login_user.get_username(), password=password)
     if user is None:
         return JsonResponse({"detail": "Credenciais inválidas."}, status=401)
     if not user.is_active:

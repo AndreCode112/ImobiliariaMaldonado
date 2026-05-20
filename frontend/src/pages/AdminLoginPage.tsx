@@ -67,12 +67,12 @@ export function AdminLoginPage() {
             <Shield className="size-6" />
           </span>
           <h1 className="mt-5 text-2xl font-semibold">Entrar</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Use seu e-mail para acessar favoritos ou o painel administrativo.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Use seu e-mail ou usuário para acessar favoritos ou o painel administrativo.</p>
         </div>
         <div className="grid gap-4">
           <Label className="grid gap-2">
-            E-mail
-            <Input name="email" type="email" inputMode="email" autoComplete="email" required />
+            E-mail ou usuário
+            <Input name="email" type="text" inputMode="email" autoComplete="username" required />
           </Label>
           <Label className="grid gap-2">
             Senha
