@@ -33,6 +33,13 @@ from .Controller.api_cadastro_imoveis import (
 from .Controller.lembrete_favoritos_scheduler import sync_crontab
 from .models import Corretor, FavoritoImovel, Imovel, LembreteFavoritosConfig, PontoInteresse, log
 from .Controller.logs import ApiLogs, InsertLogs
+from .rate_limits import (
+    admin_api_rate_limit,
+    admin_write_rate_limit,
+    public_api_rate_limit,
+    search_api_rate_limit,
+    user_api_rate_limit,
+)
 
 
 def _json_response(controller):
@@ -64,6 +71,7 @@ class IsSuperUser(BasePermission):
         return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
 
 
+@admin_api_rate_limit
 @api_view(["GET"])
 @permission_classes([IsSuperUser])
 def GetCidadeInfoCep(request):
@@ -72,6 +80,7 @@ def GetCidadeInfoCep(request):
     return _json_response(instanceApiBuscarCep)
 
 
+@admin_api_rate_limit
 @api_view(["GET"])
 @permission_classes([IsSuperUser])
 def ApiStatsView(request):
@@ -80,6 +89,8 @@ def ApiStatsView(request):
     return _json_response(controller)
 
 
+@admin_write_rate_limit
+@admin_api_rate_limit
 @api_view(["GET", "DELETE"])
 def ApiLogsView(request):
     unauthorized = _superuser_unauthorized_response(request)
@@ -91,6 +102,8 @@ def ApiLogsView(request):
     return _json_response(controller)
 
 
+@admin_write_rate_limit
+@public_api_rate_limit
 @api_view(["GET", "POST"])
 @permission_classes([IsSuperUserOrReadOnly])
 def ApiImoveisView(request):
@@ -99,6 +112,8 @@ def ApiImoveisView(request):
     return _json_response(controller)
 
 
+@admin_write_rate_limit
+@admin_api_rate_limit
 @api_view(["GET", "PUT", "DELETE"])
 @permission_classes([IsSuperUser])
 def ApiImovelDetailView(request, pk):
@@ -107,6 +122,7 @@ def ApiImovelDetailView(request, pk):
     return _json_response(controller)
 
 
+@public_api_rate_limit
 @api_view(["GET"])
 @permission_classes([IsSuperUserOrReadOnly])
 def ApiImovelUuidDetailView(request, uuid):
@@ -115,6 +131,7 @@ def ApiImovelUuidDetailView(request, uuid):
     return _json_response(controller)
 
 
+@search_api_rate_limit
 @api_view(["GET"])
 @permission_classes([IsSuperUserOrReadOnly])
 def ApiCepCadastroView(request, cep):
@@ -123,6 +140,7 @@ def ApiCepCadastroView(request, cep):
     return _json_response(controller)
 
 
+@search_api_rate_limit
 @api_view(["GET"])
 @permission_classes([IsSuperUserOrReadOnly])
 def ApiBuscarPontosInteresseView(request):
@@ -160,6 +178,7 @@ def ApiBuscarPontosInteresseView(request):
     return _json_response(controller)
 
 
+@search_api_rate_limit
 @api_view(["GET"])
 @permission_classes([IsSuperUserOrReadOnly])
 def ApiBuscarEnderecoView(request):
@@ -168,6 +187,7 @@ def ApiBuscarEnderecoView(request):
     return _json_response(controller)
 
 
+@search_api_rate_limit
 @api_view(["GET"])
 @permission_classes([IsSuperUserOrReadOnly])
 def ApiReverseEnderecoView(request):
@@ -176,6 +196,8 @@ def ApiReverseEnderecoView(request):
     return _json_response(controller)
 
 
+@admin_write_rate_limit
+@public_api_rate_limit
 @api_view(["GET", "POST"])
 @permission_classes([IsSuperUserOrReadOnly])
 def ApiCorretoresView(request):
@@ -184,6 +206,8 @@ def ApiCorretoresView(request):
     return _json_response(controller)
 
 
+@admin_write_rate_limit
+@public_api_rate_limit
 @api_view(["GET", "PUT", "DELETE"])
 @permission_classes([IsSuperUserOrReadOnly])
 def ApiCorretorDetailView(request, pk):
@@ -192,6 +216,8 @@ def ApiCorretorDetailView(request, pk):
     return _json_response(controller)
 
 
+@admin_write_rate_limit
+@public_api_rate_limit
 @api_view(["GET", "POST"])
 @permission_classes([IsSuperUserOrReadOnly])
 def ApiCidadesView(request):
@@ -200,6 +226,8 @@ def ApiCidadesView(request):
     return _json_response(controller)
 
 
+@admin_write_rate_limit
+@public_api_rate_limit
 @api_view(["GET", "PUT", "DELETE"])
 @permission_classes([IsSuperUserOrReadOnly])
 def ApiCidadeDetailView(request, pk):
@@ -208,6 +236,7 @@ def ApiCidadeDetailView(request, pk):
     return _json_response(controller)
 
 
+@user_api_rate_limit
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def ApiFavoritosView(request):
@@ -215,6 +244,7 @@ def ApiFavoritosView(request):
     return JsonResponse({"results": list(favoritos)})
 
 
+@user_api_rate_limit
 @api_view(["POST", "DELETE"])
 @permission_classes([IsAuthenticated])
 def ApiFavoritoDetailView(request, imovel_id):
@@ -255,6 +285,7 @@ def _request_bool(data, key, fallback):
     return bool(value)
 
 
+@admin_api_rate_limit
 @api_view(["GET"])
 @permission_classes([IsSuperUser])
 def ApiUsuariosView(request):
@@ -263,6 +294,8 @@ def ApiUsuariosView(request):
     return JsonResponse({"results": [_admin_user_payload(user) for user in users]})
 
 
+@admin_write_rate_limit
+@admin_api_rate_limit
 @api_view(["GET", "PUT", "PATCH"])
 @permission_classes([IsSuperUser])
 def ApiUsuarioDetailView(request, user_id):
@@ -304,6 +337,7 @@ def ApiUsuarioDetailView(request, user_id):
     return JsonResponse(_admin_user_payload(user))
 
 
+@admin_write_rate_limit
 @api_view(["POST"])
 @permission_classes([IsSuperUser])
 def ApiUsuarioResetLinkView(request, user_id):
@@ -327,6 +361,7 @@ def ApiUsuarioResetLinkView(request, user_id):
     )
 
 
+@admin_api_rate_limit
 @api_view(["GET"])
 @permission_classes([IsSuperUser])
 def ApiIntegracoesHealthView(request):
@@ -541,6 +576,8 @@ def _lembrete_historico_payload():
     return historico
 
 
+@admin_write_rate_limit
+@admin_api_rate_limit
 @api_view(["GET", "PUT", "PATCH"])
 @permission_classes([IsSuperUser])
 def ApiLembreteFavoritosView(request):

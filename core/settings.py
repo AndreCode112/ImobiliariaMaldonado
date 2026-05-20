@@ -60,6 +60,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'imoveis.middleware.ContentSecurityPolicyMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -144,9 +145,28 @@ STORAGES = {
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'imoveis.authentication.CookieJWTAuthentication',
     ),
     'EXCEPTION_HANDLER': 'imoveis.nao_autorizado.handler',
+}
+
+JWT_AUTH_COOKIE = os.getenv("JWT_AUTH_COOKIE", "maldonado_access")
+JWT_REFRESH_COOKIE = os.getenv("JWT_REFRESH_COOKIE", "maldonado_refresh")
+JWT_AUTH_COOKIE_SAMESITE = os.getenv("JWT_AUTH_COOKIE_SAMESITE", "Lax")
+JWT_AUTH_COOKIE_SECURE = os.getenv("JWT_AUTH_COOKIE_SECURE", "True").lower() in {"1", "true", "yes", "on"}
+JWT_AUTH_COOKIE_DOMAIN = os.getenv("JWT_AUTH_COOKIE_DOMAIN") or None
+
+RATELIMIT_ENABLE = os.getenv("DJANGO_RATELIMIT_ENABLE", "True").lower() in {"1", "true", "yes", "on"}
+RATELIMIT_RATES = {
+    "auth.login.ip": os.getenv("RATELIMIT_AUTH_LOGIN", "5/m"),
+    "auth.register.ip": os.getenv("RATELIMIT_AUTH_REGISTER", "3/h"),
+    "auth.password_reset.ip": os.getenv("RATELIMIT_AUTH_PASSWORD_RESET", "5/h"),
+    "auth.refresh.ip": os.getenv("RATELIMIT_AUTH_REFRESH", "20/m"),
+    "api.public.ip": os.getenv("RATELIMIT_API_PUBLIC", "120/m"),
+    "api.search.ip": os.getenv("RATELIMIT_API_SEARCH", "30/m"),
+    "api.user.ip": os.getenv("RATELIMIT_API_USER", "60/m"),
+    "api.admin.ip": os.getenv("RATELIMIT_API_ADMIN", "80/m"),
+    "api.admin.write.ip": os.getenv("RATELIMIT_API_ADMIN_WRITE", "20/m"),
 }
 
 SIMPLE_JWT = {
@@ -174,6 +194,32 @@ SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
 DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv("DJANGO_DATA_UPLOAD_MAX_MEMORY_SIZE", str(32 * 1024 * 1024)))
 FILE_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv("DJANGO_FILE_UPLOAD_MAX_MEMORY_SIZE", str(10 * 1024 * 1024)))
+
+REDIS_URL = os.getenv("REDIS_URL", "").strip()
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
+    }
+
+CONTENT_SECURITY_POLICY = os.getenv(
+    "CONTENT_SECURITY_POLICY",
+    "default-src 'self'; "
+    "script-src 'self' 'unsafe-inline'; "
+    "style-src 'self' 'unsafe-inline' https://unpkg.com; "
+    "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://*.cartocdn.com; "
+    "font-src 'self' data:; "
+    "connect-src 'self' https://nominatim.openstreetmap.org https://overpass-api.de https://api.geoapify.com https://api.foursquare.com; "
+    "media-src 'self' blob:; "
+    "frame-ancestors 'none'; "
+    "base-uri 'self'; "
+    "form-action 'self'",
+)
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

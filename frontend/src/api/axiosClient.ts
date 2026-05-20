@@ -6,18 +6,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ""
 
 export const axiosClient = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: false,
+  withCredentials: true,
 })
 
-axiosClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = authStore.getAccessToken()
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
-let refreshPromise: Promise<string | null> | null = null
+let refreshPromise: Promise<boolean> | null = null
 
 function isAuthRefreshRequest(url?: string) {
   return Boolean(url?.includes("/api/auth/refresh/"))
@@ -36,39 +28,27 @@ axiosClient.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    if (!authStore.isSuperuser()) {
-      authStore.clear()
-      return Promise.reject(error)
-    }
-
-    const refresh = authStore.getRefreshToken()
-    if (!refresh) {
-      authStore.clear()
-      return Promise.reject(error)
-    }
-
     originalRequest._retry = true
     refreshPromise ??= axios
-      .post<{ access: string }>(`${API_BASE_URL || ""}/api/auth/refresh/`, { refresh })
+      .post(`${API_BASE_URL || ""}/api/auth/refresh/`, undefined, { withCredentials: true })
       .then((response) => {
-        authStore.setAccessToken(response.data.access)
-        return response.data.access
+        if (response.data?.user) authStore.setSession({ user: response.data.user })
+        return true
       })
       .catch((refreshError) => {
         console.error("Falha ao renovar access token.", refreshError)
         authStore.clear()
-        return null
+        return false
       })
       .finally(() => {
         refreshPromise = null
       })
 
-    const token = await refreshPromise
-    if (!token) {
+    const refreshed = await refreshPromise
+    if (!refreshed) {
       return Promise.reject(error)
     }
 
-    originalRequest.headers.Authorization = `Bearer ${token}`
     return axiosClient(originalRequest)
   },
 )

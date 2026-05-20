@@ -17,9 +17,8 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import include, path, re_path
-from rest_framework_simplejwt.views import TokenRefreshView
 
-from imoveis.auth_views import login_view, me_view, password_reset_confirm_view, register_view
+from imoveis.auth_views import login_view, logout_view, me_view, password_reset_confirm_view, refresh_view, register_view
 from .views import frontend_app
 
 urlpatterns = [
@@ -27,8 +26,9 @@ urlpatterns = [
     path('api/auth/login/', login_view, name='auth_login'),
     path('api/auth/register/', register_view, name='auth_register'),
     path('api/auth/me/', me_view, name='auth_me'),
+    path('api/auth/logout/', logout_view, name='auth_logout'),
     path('api/auth/password-reset/confirm/', password_reset_confirm_view, name='auth_password_reset_confirm'),
-    path('api/auth/refresh/', TokenRefreshView.as_view(), name='auth_refresh'),
+    path('api/auth/refresh/', refresh_view, name='auth_refresh'),
     re_path(
         r'^(?P<_path>(admin(?:/.*)?|login/?|cadastro/?|favoritos/?|contato/?|resetar-senha/.*|imoveis(?:/[^/]+)?/?))$',
         frontend_app,

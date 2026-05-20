@@ -31,10 +31,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  useEffect(() => {
+    if (!session) return
+    let active = true
+    authService.me()
+      .then((nextSession) => {
+        if (active) setSession(nextSession)
+      })
+      .catch(() => {
+        authStore.clear()
+        if (active) setSession(null)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
-      isAuthenticated: Boolean(session?.access),
+      isAuthenticated: Boolean(session?.user),
       isSuperuser: Boolean(session?.user?.is_superuser),
       login: async (credentials) => {
         const nextSession = await authService.login(credentials)

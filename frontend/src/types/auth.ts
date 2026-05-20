@@ -3,11 +3,6 @@ export interface LoginCredentials {
   password: string
 }
 
-export interface TokenPair {
-  access: string
-  refresh: string
-}
-
 export interface AuthUser {
   id: number
   username: string
@@ -18,7 +13,7 @@ export interface AuthUser {
   is_staff: boolean
 }
 
-export interface AuthSession extends TokenPair {
+export interface AuthSession {
   user: AuthUser
 }
 

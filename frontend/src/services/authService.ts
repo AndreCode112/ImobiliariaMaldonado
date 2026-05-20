@@ -9,6 +9,12 @@ export const authService = {
     return data
   },
 
+  async me(): Promise<AuthSession> {
+    const { data } = await axiosClient.get<AuthSession>("/api/auth/me/")
+    authStore.setSession(data)
+    return data
+  },
+
   async register(payload: { username: string; password: string; email?: string }) {
     const { data } = await axiosClient.post("/api/auth/register/", payload)
     return data
@@ -20,6 +26,7 @@ export const authService = {
   },
 
   logout() {
+    void axiosClient.post("/api/auth/logout/").catch(() => undefined)
     authStore.clear()
   },
 }

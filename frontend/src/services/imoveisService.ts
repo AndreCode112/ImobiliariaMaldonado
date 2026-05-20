@@ -73,6 +73,25 @@ function buildCorretorFormData(payload: CorretorPayload) {
   return formData
 }
 
+async function getAllImoveis(params: Record<string, string | number | undefined> = {}) {
+  const pageSize = Number(params.page_size ?? 120)
+  const first = await axiosClient.get<PaginatedResults<ImovelApi>>("/imoveis/api/imoveis/", {
+    params: { compact: 1, page_size: pageSize, page: 1, ...params },
+  })
+  const results = [...first.data.results]
+  let next = first.data.next
+
+  while (next) {
+    const { data } = await axiosClient.get<PaginatedResults<ImovelApi>>("/imoveis/api/imoveis/", {
+      params: { compact: 1, page_size: pageSize, ...params, page: next },
+    })
+    results.push(...data.results)
+    next = data.next
+  }
+
+  return results.map(normalizeImovel)
+}
+
 export const imoveisService = {
   async stats(): Promise<AdminStats> {
     const { data } = await axiosClient.get<AdminStats>("/imoveis/api/stats/")
@@ -116,13 +135,12 @@ export const imoveisService = {
   },
 
   async list(): Promise<Imovel[]> {
-    const { data } = await axiosClient.get<PaginatedResults<ImovelApi>>("/imoveis/api/imoveis/")
-    return data.results.map(normalizeImovel)
+    return getAllImoveis()
   },
 
   async search(query: string, signal?: AbortSignal): Promise<Imovel[]> {
     const { data } = await axiosClient.get<PaginatedResults<ImovelApi>>("/imoveis/api/imoveis/", {
-      params: { q: query },
+      params: { q: query, compact: 1, page_size: 24 },
       signal,
     })
     return data.results.map(normalizeImovel)

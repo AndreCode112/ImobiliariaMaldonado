@@ -283,5 +283,10 @@ export interface LembreteFavoritosResponse {
 }
 
 export interface PaginatedResults<T> {
+  count?: number
+  page?: number
+  page_size?: number
+  next?: number | null
+  previous?: number | null
   results: T[]
 }

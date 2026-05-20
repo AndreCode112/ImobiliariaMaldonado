@@ -3,16 +3,17 @@ from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.transaction import on_commit
 from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import HttpRequest
 from rest_framework import status
 
 from imoveis.models import Bairro, Cidade, Corretor, ImagemImovel, Imovel
+from imoveis.background_tasks import enqueue_pontos_interesse_sync
 
 from .api_buscar_cep import ApiBuscarCep
 from .api_buscar_coordenadas import ApiBuscarCoordenadas
 from .base_controller import BaseController
-from .sync_pontos_interesse import sync_pontos_interesse_imovel
 
 
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
@@ -20,6 +21,8 @@ ALLOWED_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_IMAGES_PER_PROPERTY = 15
 MAX_IMAGE_SIZE = 2 * 1024 * 1024
 MAX_TOTAL_IMAGE_SIZE = 25 * 1024 * 1024
+DEFAULT_PAGE_SIZE = 48
+MAX_PAGE_SIZE = 120
 
 
 def _cidade_dict(cidade):
@@ -94,6 +97,76 @@ def _imovel_dict(imovel):
             if img.imagem
         ],
         "criado_em": imovel.criado_em.isoformat() if imovel.criado_em else None,
+    }
+
+
+def _imovel_list_dict(imovel):
+    principal = next((img for img in list(imovel.imagens.all()) if img.imagem), None)
+    return {
+        "id": imovel.pk,
+        "uuid": str(imovel.uuid),
+        "titulo": imovel.titulo,
+        "descricao": "",
+        "preco": str(imovel.preco),
+        "preco_formatado": imovel.preco_formatado,
+        "cep": imovel.cep,
+        "endereco": imovel.endereco,
+        "area": str(imovel.area),
+        "quartos": imovel.quartos,
+        "banheiros": imovel.banheiros,
+        "vagas": imovel.vagas,
+        "status": imovel.status,
+        "destaque": imovel.destaque,
+        "finalidade": imovel.finalidade,
+        "zona_uso": imovel.zona_uso,
+        "topografia": imovel.topografia,
+        "latitude": str(imovel.latitude) if imovel.latitude is not None else "",
+        "longitude": str(imovel.longitude) if imovel.longitude is not None else "",
+        "tipo": {"id": imovel.tipo.pk, "nome": imovel.tipo.nome} if imovel.tipo else None,
+        "cidade": _cidade_dict(imovel.cidade) if imovel.cidade else None,
+        "bairro": {"id": imovel.bairro.pk, "nome": imovel.bairro.nome} if imovel.bairro else None,
+        "corretor": _corretor_dict(imovel.corretor) if imovel.corretor else None,
+        "pontos_interesse": [],
+        "imagens": [
+            {
+                "id": principal.pk,
+                "url": principal.imagem.url,
+                "legenda": principal.legenda,
+                "principal": principal.principal,
+                "ordem": principal.ordem,
+            }
+        ]
+        if principal
+        else [],
+        "criado_em": imovel.criado_em.isoformat() if imovel.criado_em else None,
+    }
+
+
+def _positive_int(value, default, maximum=None):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        parsed = default
+    parsed = max(parsed, 1)
+    return min(parsed, maximum) if maximum else parsed
+
+
+def _paginated_response(request, qs, serializer):
+    page = _positive_int(request.GET.get("page"), 1)
+    page_size = _positive_int(request.GET.get("page_size"), DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)
+    total = qs.count()
+    start = (page - 1) * page_size
+    end = start + page_size
+    results = [serializer(item) for item in qs[start:end]]
+    next_page = page + 1 if end < total else None
+    previous_page = page - 1 if page > 1 else None
+    return {
+        "count": total,
+        "page": page,
+        "page_size": page_size,
+        "next": next_page,
+        "previous": previous_page,
+        "results": results,
     }
 
 
@@ -357,10 +430,7 @@ def _validation_message(exc):
 
 
 def _sync_imovel_pontos_interesse(imovel, *, force=False):
-    try:
-        return sync_pontos_interesse_imovel(imovel, force=force)
-    except Exception:
-        return 0
+    on_commit(lambda: enqueue_pontos_interesse_sync(imovel.pk, force=force))
 
 
 def _filter_imoveis_search(qs, query):
@@ -416,14 +486,18 @@ class ApiImoveis(BaseController):
     def execute(self, request: HttpRequest) -> bool:
         if request.method == "GET":
             query = request.GET.get("q") or request.GET.get("search") or ""
+            compact = request.GET.get("compact", "1") != "0"
             qs = (
                 Imovel.objects.select_related("tipo", "cidade", "bairro", "corretor")
-                .prefetch_related("imagens", "cidade__pontos_interesse")
+                .prefetch_related("imagens")
                 .all()
             )
             if query:
-                qs = _filter_imoveis_search(qs, query)[:24]
-            return self.success({"results": [_imovel_dict(imovel) for imovel in qs]}, status.HTTP_200_OK)
+                qs = _filter_imoveis_search(qs, query)
+            serializer = _imovel_list_dict if compact else _imovel_dict
+            if not compact:
+                qs = qs.prefetch_related("cidade__pontos_interesse")
+            return self.success(_paginated_response(request, qs, serializer), status.HTTP_200_OK)
 
         try:
             data, files = _parse_request_payload(request)

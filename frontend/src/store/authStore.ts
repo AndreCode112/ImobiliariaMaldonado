@@ -12,7 +12,7 @@ function readSession(): AuthSession | null {
   if (!raw) return null
   try {
     const session = JSON.parse(raw) as Partial<AuthSession>
-    if (!session.access || !session.refresh || !session.user) {
+    if (!session.user) {
       localStorage.removeItem(AUTH_STORAGE_KEY)
       return null
     }
@@ -31,13 +31,7 @@ function writeSession(session: AuthSession) {
 export const authStore = {
   getSession: readSession,
   setSession: writeSession,
-  getAccessToken: () => readSession()?.access ?? null,
-  getRefreshToken: () => readSession()?.refresh ?? null,
   isSuperuser: () => Boolean(readSession()?.user?.is_superuser),
-  setAccessToken: (access: string) => {
-    const session = readSession()
-    if (session) writeSession({ ...session, access })
-  },
   clear: () => {
     localStorage.removeItem(AUTH_STORAGE_KEY)
     notifySessionChanged()
