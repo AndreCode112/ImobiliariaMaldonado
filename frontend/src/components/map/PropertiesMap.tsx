@@ -255,19 +255,25 @@ function HomePin() {
 function PontoInteressePin({ categoria }: { categoria: string }) {
   const category = categoria || "servico"
   const config = {
-    restaurante: { icon: Utensils },
-    mercado: { icon: ShoppingCart },
-    loja: { icon: Store },
-    turismo: { icon: Camera },
-    parque: { icon: TreePine },
-    servico: { icon: MapPinned },
-  }[category] ?? { icon: MapPinned }
+    restaurante: { icon: Utensils, color: "#ef7d22" },
+    mercado: { icon: ShoppingCart, color: "#15803d" },
+    loja: { icon: Store, color: "#7c3aed" },
+    turismo: { icon: Camera, color: "#2563eb" },
+    parque: { icon: TreePine, color: "#65a30d" },
+    servico: { icon: MapPinned, color: "#64748b" },
+  }[category] ?? { icon: MapPinned, color: "#64748b" }
   const Icon = config.icon
 
   return (
-    <div className="relative grid size-6 place-items-center rounded-full border-2 border-white bg-[#0071c2] text-white shadow-[0_10px_24px_rgba(0,113,194,0.32)]">
-      <Icon className="size-3" />
-      <span className="absolute -bottom-1 left-1/2 size-2 -translate-x-1/2 rotate-45 rounded-[2px] bg-[#0071c2]" />
+    <div
+      className="relative grid size-4 place-items-center rounded-full border border-white text-white shadow-[0_6px_14px_rgba(15,23,42,0.22)]"
+      style={{ backgroundColor: config.color }}
+    >
+      <Icon className="size-2.5" strokeWidth={3} />
+      <span
+        className="absolute -bottom-0.5 left-1/2 size-1.5 -translate-x-1/2 rotate-45 rounded-[1px]"
+        style={{ backgroundColor: config.color }}
+      />
     </div>
   )
 }
