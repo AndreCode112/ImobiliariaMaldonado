@@ -211,10 +211,13 @@ export function AdminCorretoresPage() {
                 onDragOver={(event) => { event.preventDefault(); setDragActive(true) }}
                 onDragLeave={(event) => { event.preventDefault(); setDragActive(false) }}
                 onDrop={(event) => { event.preventDefault(); setDragActive(false); addPhoto(event.dataTransfer.files) }}
-                className={cn("mt-2 flex aspect-square cursor-pointer flex-col items-center justify-center rounded-[20px] border border-dashed text-center transition", dragActive ? "border-primary bg-primary/5" : "bg-secondary/60")}
+                className={cn(
+                  "mt-2 flex aspect-square cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[20px] bg-white text-center shadow-[0_18px_50px_rgba(15,23,42,0.10)] ring-1 ring-border/60 transition",
+                  dragActive && "ring-2 ring-primary/35",
+                )}
               >
                 {photoPreview || (!form.remove_foto && editing?.foto_url) ? (
-                  <img src={photoPreview ?? editing?.foto_url ?? ""} alt="Foto do corretor" className="size-full rounded-[20px] object-cover" />
+                  <img src={photoPreview ?? editing?.foto_url ?? ""} alt="Foto do corretor" className="size-full object-cover" />
                 ) : (
                   <div className="grid gap-2 px-4 text-muted-foreground">
                     <UploadCloud className="mx-auto size-7" />

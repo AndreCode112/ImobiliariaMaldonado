@@ -256,8 +256,8 @@ export function PropertyDetailPage() {
                   </Button>
                 )}
               </div>
-              <div className="mt-6 flex gap-3 rounded-2xl bg-secondary p-4">
-                <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-full bg-white text-primary">
+              <div className="mt-6 flex gap-3 rounded-2xl bg-secondary/70 p-4">
+                <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-full bg-white text-primary shadow-[0_12px_28px_rgba(15,23,42,0.10)] ring-1 ring-white/80">
                   {realtor?.foto_url ? <img src={realtor.foto_url} alt={realtor.nome} className="size-full object-cover" /> : <span className="text-base font-bold">{(realtor?.nome ?? "M")[0]}</span>}
                 </div>
                 <div className="min-w-0">
