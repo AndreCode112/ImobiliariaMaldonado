@@ -1,4 +1,4 @@
-import { ArrowLeft, Bath, BedDouble, Car, ChevronLeft, ChevronRight, Copy, Images, MapPin, Ruler, Send, Share2, X } from "lucide-react"
+import { ArrowLeft, Bath, BedDouble, Car, ChevronLeft, ChevronRight, Copy, Home, Images, MapPin, Ruler, Send, Share2, Sofa, Utensils, X } from "lucide-react"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
@@ -206,11 +206,14 @@ export function PropertyDetailPage() {
               ))}
             </nav>
             <section>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
                 <Metric icon={Ruler} label="Área" value={`${imovel.area} m²`} />
                 <Metric icon={BedDouble} label="Quartos" value={String(imovel.bedrooms)} />
                 <Metric icon={Bath} label="Banheiros" value={String(imovel.bathrooms)} />
                 <Metric icon={Car} label="Garagem" value={String(imovel.parking)} />
+                <Metric icon={Utensils} label="Cozinhas" value={String(imovel.kitchens)} />
+                <Metric icon={Sofa} label="Salas" value={String(imovel.livingRooms)} />
+                <Metric icon={Home} label="Varandas" value={String(imovel.balconies)} />
               </div>
             </section>
 

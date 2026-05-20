@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { createPortal } from "react-dom"
 import { useNavigate, useParams } from "react-router-dom"
-import { ChevronLeft, ChevronRight, Home, Image as ImageIcon, MapPin, Save, Search, UploadCloud, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Home, Image as ImageIcon, MapPin, Minus, Plus, Save, Search, UploadCloud, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { axiosClient } from "@/api/axiosClient"
@@ -52,12 +52,13 @@ type FormState = {
   quartos: number | string
   banheiros: number | string
   vagas: number | string
+  cozinhas: number | string
+  salas: number | string
+  varandas: number | string
   status: string
   destaque: boolean
   finalidade: string
   corretor_id: string
-  topografia: string
-  zona_uso: string
 }
 
 type ImageFilePreview = {
@@ -89,12 +90,13 @@ const EMPTY: FormState = {
   quartos: 0,
   banheiros: 0,
   vagas: 0,
+  cozinhas: 0,
+  salas: 0,
+  varandas: 0,
   status: "disponivel",
   destaque: false,
   finalidade: "",
   corretor_id: "",
-  topografia: "",
-  zona_uso: "",
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -103,6 +105,84 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <Label className="text-sm font-semibold text-foreground">{label}</Label>
       {children}
     </div>
+  )
+}
+
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, "")
+}
+
+function formatCep(value: string) {
+  const digits = onlyDigits(value).slice(0, 8)
+  if (digits.length <= 5) return digits
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`
+}
+
+function formatCurrencyInput(value: string) {
+  const digits = onlyDigits(value).replace(/^0+(?=\d)/, "")
+  if (!digits) return ""
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  }).format(Number(digits))
+}
+
+function formatCurrencyValue(value: string) {
+  if (!value) return ""
+  const parsed = Number(String(value).replace(",", "."))
+  if (Number.isFinite(parsed)) return formatCurrencyInput(String(Math.round(parsed)))
+  return formatCurrencyInput(value)
+}
+
+function formatAreaInput(value: string) {
+  const digits = onlyDigits(value).replace(/^0+(?=\d)/, "")
+  return digits ? `${digits} m²` : ""
+}
+
+function formatAreaValue(value: string) {
+  if (!value) return ""
+  const parsed = Number(String(value).replace(",", "."))
+  return Number.isFinite(parsed) ? formatAreaInput(String(Math.round(parsed))) : formatAreaInput(value)
+}
+
+function numericPayload(value: string | number) {
+  return onlyDigits(String(value)) || "0"
+}
+
+function counterValue(value: string | number) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? Math.max(parsed, 0) : 0
+}
+
+function CounterField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string | number
+  onChange: (value: number) => void
+}) {
+  const current = counterValue(value)
+  return (
+    <Field label={label}>
+      <div className="grid h-11 grid-cols-[44px_1fr_44px] overflow-hidden rounded-md border bg-background">
+        <Button type="button" variant="ghost" className="h-11 rounded-none" onClick={() => onChange(Math.max(current - 1, 0))} aria-label={`Diminuir ${label}`}>
+          <Minus className="h-4 w-4" />
+        </Button>
+        <input
+          className="min-w-0 border-x bg-transparent text-center text-sm font-semibold outline-none"
+          inputMode="numeric"
+          value={current}
+          onChange={(event) => onChange(counterValue(event.target.value))}
+          aria-label={label}
+        />
+        <Button type="button" variant="ghost" className="h-11 rounded-none" onClick={() => onChange(current + 1)} aria-label={`Aumentar ${label}`}>
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+    </Field>
   )
 }
 
@@ -238,24 +318,25 @@ export function AdminPropertyFormPage() {
     setForm({
       titulo: raw.titulo,
       descricao: raw.descricao || "",
-      preco: raw.preco || "",
-      cep: raw.cep || "",
+      preco: formatCurrencyValue(raw.preco || ""),
+      cep: formatCep(raw.cep || ""),
       endereco: raw.endereco || "",
       bairro_nome: raw.bairro?.nome || "",
       cidade_id: raw.cidade?.id ? String(raw.cidade.id) : "",
       cidade_nome: raw.cidade ? `${raw.cidade.nome} - ${raw.cidade.estado || ""}` : "",
       latitude: raw.latitude || "",
       longitude: raw.longitude || "",
-      area: raw.area || "",
+      area: formatAreaValue(raw.area || ""),
       quartos: raw.quartos ?? 0,
       banheiros: raw.banheiros ?? 0,
       vagas: raw.vagas ?? 0,
+      cozinhas: raw.cozinhas ?? 0,
+      salas: raw.salas ?? 0,
+      varandas: raw.varandas ?? 0,
       status: raw.status || "disponivel",
       destaque: raw.destaque || false,
       finalidade: raw.finalidade || "",
       corretor_id: raw.corretor?.id ? String(raw.corretor.id) : "",
-      topografia: raw.topografia || "",
-      zona_uso: raw.zona_uso || "",
     })
   }, [editing, imovel?.raw])
 
@@ -467,26 +548,34 @@ export function AdminPropertyFormPage() {
   }
 
   async function save() {
-    if (!form.titulo || !form.preco) {
+    const cep = onlyDigits(form.cep)
+    const preco = numericPayload(form.preco)
+    const area = numericPayload(form.area)
+    if (!form.titulo || !preco) {
       toast.error("Título e preço são obrigatórios")
+      return
+    }
+    if (cep.length !== 8) {
+      toast.error("Informe um CEP com 8 dígitos")
       return
     }
 
     const payload: ImovelPayload = {
       titulo: form.titulo,
       descricao: form.descricao,
-      preco: form.preco,
-      cep: form.cep,
+      preco,
+      cep: formatCep(cep),
       endereco: form.endereco,
-      area: form.area || "0",
-      quartos: Number(form.quartos || 0),
-      banheiros: Number(form.banheiros || 0),
-      vagas: Number(form.vagas || 0),
+      area,
+      quartos: counterValue(form.quartos),
+      banheiros: counterValue(form.banheiros),
+      vagas: counterValue(form.vagas),
+      cozinhas: counterValue(form.cozinhas),
+      salas: counterValue(form.salas),
+      varandas: counterValue(form.varandas),
       status: form.status,
       destaque: form.destaque,
       finalidade: form.finalidade,
-      zona_uso: form.zona_uso,
-      topografia: form.topografia,
       latitude: form.latitude,
       longitude: form.longitude,
       cidade_id: form.cidade_id,
@@ -551,15 +640,15 @@ export function AdminPropertyFormPage() {
                 </Field>
                 <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Preço (R$) *">
-                    <Input className="h-11" value={form.preco} onChange={(event) => setForm((current) => ({ ...current, preco: event.target.value }))} placeholder="350000" />
+                    <Input className="h-11" inputMode="numeric" value={form.preco} onChange={(event) => setForm((current) => ({ ...current, preco: formatCurrencyInput(event.target.value) }))} placeholder="R$ 350.000" />
                   </Field>
                   <Field label="Área (m²)">
-                    <Input className="h-11" value={form.area} onChange={(event) => setForm((current) => ({ ...current, area: event.target.value }))} placeholder="80" />
+                    <Input className="h-11" inputMode="numeric" value={form.area} onChange={(event) => setForm((current) => ({ ...current, area: formatAreaInput(event.target.value) }))} placeholder="80 m²" />
                   </Field>
                 </div>
                 <Field label="CEP *">
                   <div className="flex flex-col gap-2 sm:flex-row">
-                    <Input className="h-11 min-w-0" value={form.cep} onChange={(event) => setForm((current) => ({ ...current, cep: event.target.value }))} placeholder="00000-000" />
+                    <Input className="h-11 min-w-0" inputMode="numeric" maxLength={9} value={form.cep} onChange={(event) => setForm((current) => ({ ...current, cep: formatCep(event.target.value) }))} placeholder="00000-000" />
                     <Button type="button" className="h-11 w-full sm:w-auto sm:min-w-[118px]" onClick={buscarCep} disabled={cepLoading}>
                       <Search className="h-4 w-4" />
                       {cepLoading ? "Buscando..." : "Buscar"}
@@ -607,16 +696,13 @@ export function AdminPropertyFormPage() {
                     <Input className="h-11" value={form.longitude} onChange={(event) => setForm((current) => ({ ...current, longitude: event.target.value }))} placeholder="-46.6333080" />
                   </Field>
                 </div>
-                <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-3">
-                  <Field label="Quartos">
-                    <Input className="h-11" type="number" min="0" value={form.quartos} onChange={(event) => setForm((current) => ({ ...current, quartos: event.target.value }))} />
-                  </Field>
-                  <Field label="Banheiros">
-                    <Input className="h-11" type="number" min="0" value={form.banheiros} onChange={(event) => setForm((current) => ({ ...current, banheiros: event.target.value }))} />
-                  </Field>
-                  <Field label="Vagas">
-                    <Input className="h-11" type="number" min="0" value={form.vagas} onChange={(event) => setForm((current) => ({ ...current, vagas: event.target.value }))} />
-                  </Field>
+                <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <CounterField label="Quartos" value={form.quartos} onChange={(value) => setForm((current) => ({ ...current, quartos: value }))} />
+                  <CounterField label="Banheiros" value={form.banheiros} onChange={(value) => setForm((current) => ({ ...current, banheiros: value }))} />
+                  <CounterField label="Vagas" value={form.vagas} onChange={(value) => setForm((current) => ({ ...current, vagas: value }))} />
+                  <CounterField label="Cozinhas" value={form.cozinhas} onChange={(value) => setForm((current) => ({ ...current, cozinhas: value }))} />
+                  <CounterField label="Salas" value={form.salas} onChange={(value) => setForm((current) => ({ ...current, salas: value }))} />
+                  <CounterField label="Varandas" value={form.varandas} onChange={(value) => setForm((current) => ({ ...current, varandas: value }))} />
                 </div>
                 <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Status">
@@ -641,14 +727,6 @@ export function AdminPropertyFormPage() {
                     </SelectContent>
                   </Select>
                 </Field>
-                <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Field label="Topografia">
-                    <Input className="h-11" value={form.topografia} onChange={(event) => setForm((current) => ({ ...current, topografia: event.target.value }))} />
-                  </Field>
-                  <Field label="Zona de uso">
-                    <Input className="h-11" value={form.zona_uso} onChange={(event) => setForm((current) => ({ ...current, zona_uso: event.target.value }))} />
-                  </Field>
-                </div>
                 <Field label="Descrição">
                   <Textarea
                     className="min-h-[86px] rounded-md"

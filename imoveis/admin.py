@@ -85,7 +85,7 @@ class ImovelAdmin(admin.ModelAdmin):
     fieldsets = (
         ("Informacoes Basicas", {"fields": ("titulo", "descricao", "tipo", "finalidade", "status", "destaque", "corretor")}),
         ("Localizacao", {"fields": ("cep", "endereco", "cidade", "bairro", "latitude", "longitude"), "classes": ("collapse",)}),
-        ("Caracteristicas", {"fields": ("preco", "area", "quartos", "banheiros", "vagas", "zona_uso", "topografia")}),
+        ("Caracteristicas", {"fields": ("preco", "area", "quartos", "banheiros", "vagas", "cozinhas", "salas", "varandas")}),
     )
 
     def preco_formatado_admin(self, obj):

@@ -1,4 +1,4 @@
-import { Bath, BedDouble, Building2, Car, Edit, Filter, Home, MapPin, Plus, Ruler, Search, Sparkles, Trash2, X } from "lucide-react"
+import { Bath, BedDouble, Building2, Car, Edit, Filter, Home, MapPin, Plus, Ruler, Search, Sofa, Sparkles, Trash2, Utensils, X } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
@@ -158,6 +158,9 @@ export function AdminDashboardPage() {
                     <Metric icon={BedDouble} value={`${imovel.bedrooms} quartos`} />
                     <Metric icon={Bath} value={`${imovel.bathrooms} banheiros`} />
                     <Metric icon={Car} value={`${imovel.parking} vagas`} />
+                    <Metric icon={Utensils} value={`${imovel.kitchens} cozinhas`} />
+                    <Metric icon={Sofa} value={`${imovel.livingRooms} salas`} />
+                    <Metric icon={Home} value={`${imovel.balconies} varandas`} />
                   </div>
                   <p className="mt-3 text-sm font-semibold text-primary">{imovel.priceLabel}</p>
                 </div>

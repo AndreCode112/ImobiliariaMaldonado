@@ -1,4 +1,4 @@
-import { axiosClient } from "@/api/axiosClient"
+import { API_BASE_URL, axiosClient } from "@/api/axiosClient"
 import type { AdminUser, AdminUserPayload, PasswordResetLink } from "@/types/auth"
 import type { AdminStats, ApiHealthReport, Cidade, CidadePayload, CorretorPayload, CorretorResumo, EnderecoResultado, Imovel, ImovelApi, ImovelPayload, LembreteFavoritosPayload, LembreteFavoritosResponse, PaginatedResults, SystemLogFilters, SystemLogsResponse } from "@/types/imovel"
 
@@ -14,11 +14,17 @@ function isNew(criadoEm?: string | null) {
   return Number.isFinite(created) && Date.now() - created <= sevenDays
 }
 
+function assetUrl(url?: string | null) {
+  if (!url) return ""
+  if (/^(https?:|data:|blob:)/i.test(url)) return url
+  const base = API_BASE_URL || (typeof window !== "undefined" ? window.location.origin : "")
+  return base ? new URL(url, base).toString() : url
+}
+
 export function normalizeImovel(api: ImovelApi): Imovel {
+  const imagens = api.imagens.map((image) => ({ ...image, url: assetUrl(image.url) })).filter((image) => image.url)
   const amenities = [
     api.finalidade,
-    api.zona_uso,
-    api.topografia,
     api.status === "disponivel" ? "Disponivel para compra" : api.status,
   ].filter(Boolean) as string[]
 
@@ -36,9 +42,12 @@ export function normalizeImovel(api: ImovelApi): Imovel {
     bedrooms: api.quartos,
     bathrooms: api.banheiros,
     parking: api.vagas,
+    kitchens: api.cozinhas ?? 0,
+    livingRooms: api.salas ?? 0,
+    balconies: api.varandas ?? 0,
     area: numberFrom(api.area),
     type: api.tipo?.nome ?? "Residencial",
-    images: api.imagens.map((image) => image.url),
+    images: imagens.map((image) => image.url),
     isFeatured: api.destaque,
     isNew: isNew(api.criado_em),
     description: api.descricao,
@@ -46,7 +55,7 @@ export function normalizeImovel(api: ImovelApi): Imovel {
     status: api.status,
     realtor: api.corretor,
     pointsOfInterest: api.pontos_interesse ?? [],
-    raw: api,
+    raw: { ...api, imagens },
   }
 }
 

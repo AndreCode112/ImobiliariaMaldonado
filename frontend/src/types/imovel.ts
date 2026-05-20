@@ -67,11 +67,12 @@ export interface ImovelApi {
   quartos: number
   banheiros: number
   vagas: number
+  cozinhas: number
+  salas: number
+  varandas: number
   status: "disponivel" | "vendido" | "alugado" | "reservado" | string
   destaque: boolean
   finalidade?: string
-  zona_uso?: string
-  topografia?: string
   latitude?: string
   longitude?: string
   tipo?: TipoImovelResumo | null
@@ -97,6 +98,9 @@ export interface Imovel {
   bedrooms: number
   bathrooms: number
   parking: number
+  kitchens: number
+  livingRooms: number
+  balconies: number
   area: number
   type: string
   images: string[]
@@ -135,11 +139,12 @@ export interface ImovelPayload {
   quartos: number
   banheiros: number
   vagas: number
+  cozinhas: number
+  salas: number
+  varandas: number
   status?: string
   destaque?: boolean
   finalidade?: string
-  zona_uso?: string
-  topografia?: string
   latitude: string
   longitude: string
   tipo_id?: string

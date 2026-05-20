@@ -147,13 +147,6 @@ class Imovel(models.Model):
         ("industrial", "Industrial"),
     ]
 
-    TOPOGRAFIA_CHOICES = [
-        ("plana", "Plana"),
-        ("aclive", "Aclive"),
-        ("declive", "Declive"),
-        ("irregular", "Irregular"),
-    ]
-
     uuid = models.UUIDField("UUID publico", default=uuid_lib.uuid4, unique=True, editable=False, db_index=True)
     titulo = models.CharField("Titulo", max_length=200)
     descricao = models.TextField("Descricao")
@@ -168,12 +161,13 @@ class Imovel(models.Model):
     quartos = models.PositiveIntegerField("Quartos", default=0)
     banheiros = models.PositiveIntegerField("Banheiros", default=0)
     vagas = models.PositiveIntegerField("Vagas de garagem", default=0)
+    cozinhas = models.PositiveIntegerField("Cozinhas", default=0)
+    salas = models.PositiveIntegerField("Salas", default=0)
+    varandas = models.PositiveIntegerField("Varandas", default=0)
     area = models.DecimalField("Area (m2)", max_digits=10, decimal_places=2)
     status = models.CharField("Status", max_length=20, choices=STATUS_CHOICES, default="disponivel")
     destaque = models.BooleanField("Imovel em destaque", default=False)
     corretor = models.ForeignKey(Corretor, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Corretor")
-    zona_uso = models.CharField("Zona de uso", max_length=50, blank=True)
-    topografia = models.CharField("Topografia", max_length=50, blank=True, choices=TOPOGRAFIA_CHOICES)
     finalidade = models.CharField("Finalidade", max_length=50, blank=True, choices=FINALIDADE_CHOICES)
     criado_em = models.DateTimeField("Criado em", auto_now_add=True)
     atualizado_em = models.DateTimeField("Atualizado em", auto_now=True)
@@ -222,6 +216,9 @@ class Imovel(models.Model):
             "quartos": self.quartos,
             "banheiros": self.banheiros,
             "vagas": self.vagas,
+            "cozinhas": self.cozinhas,
+            "salas": self.salas,
+            "varandas": self.varandas,
             "area": float(self.area),
             "tipo": self.tipo.nome if self.tipo else "",
             "finalidade": self.get_finalidade_display() if self.finalidade else "",
