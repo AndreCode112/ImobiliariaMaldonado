@@ -32,6 +32,7 @@ export function PropertiesPage() {
   const [selected, setSelected] = useState<Imovel | null>(null)
   const [filtersPopover, setFiltersPopover] = useState<"map" | "sidebar" | null>(null)
   const [showPointsOfInterest, setShowPointsOfInterest] = useState(true)
+  const [heroVideoReady, setHeroVideoReady] = useState(false)
   const [mapSearch, setMapSearch] = useState(buscaParam)
   const [userLocationAddress, setUserLocationAddress] = useState<EnderecoResultado | null>(null)
   const [addressResults, setAddressResults] = useState<EnderecoResultado[]>([])
@@ -45,6 +46,7 @@ export function PropertiesPage() {
   const [mapInteractive, setMapInteractive] = useState(false)
   const [resultsLoading, setResultsLoading] = useState(false)
   const transitionRef = useRef<HTMLDivElement | null>(null)
+  const heroVideoRef = useRef<HTMLVideoElement | null>(null)
   const autoScrollRef = useRef(false)
   const geolocationRequestedRef = useRef(false)
   const mapRegionActiveRef = useRef(false)
@@ -133,6 +135,63 @@ export function PropertiesPage() {
     }, duration)
   }, [])
 
+  const applyUserLocation = useCallback(async (latitude: number, longitude: number) => {
+    showResultsLoading(1100)
+
+    let address: EnderecoResultado = {
+      display_name: "Sua localização atual",
+      latitude: String(latitude),
+      longitude: String(longitude),
+      place_id: "current-location",
+      type: "current_location",
+      address: {},
+    }
+
+    try {
+      address = await imoveisService.buscarEnderecoReverso(latitude, longitude) ?? address
+    } catch {
+      // Mantem a localização bruta caso o reverse geocode não responda.
+    }
+
+    const userCity = cityFromAddress(address)
+    const matchedCity = findMatchingCity(userCity, imoveis)
+    setUserLocationAddress({
+      ...address,
+      display_name: address.display_name || matchedCity || userCity || "Sua localização atual",
+      latitude: String(address.latitude || latitude),
+      longitude: String(address.longitude || longitude),
+    })
+    setFilters((current) => ({
+      ...current,
+      cidade: matchedCity || current.cidade,
+      bairro: "",
+    }))
+    setSearchParams((params) => {
+      params.delete("bairro")
+      params.set("map", "1")
+      return params
+    })
+  }, [imoveis, setSearchParams, showResultsLoading])
+
+  const requestUserLocation = useCallback(() => {
+    if (geolocationRequestedRef.current || typeof navigator === "undefined" || !navigator.geolocation) return false
+    geolocationRequestedRef.current = true
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        void applyUserLocation(position.coords.latitude, position.coords.longitude)
+      },
+      () => undefined,
+      {
+        enableHighAccuracy: true,
+        maximumAge: 1000 * 60 * 8,
+        timeout: 9000,
+      },
+    )
+
+    return true
+  }, [applyUserLocation])
+
   function selectAddress(address: EnderecoResultado) {
     const title = addressTitle(address)
     const params = new URLSearchParams(searchParams)
@@ -190,6 +249,7 @@ export function PropertiesPage() {
   })
 
   const scrollToMap = useCallback(() => {
+    requestUserLocation()
     const transition = transitionRef.current
     if (!transition) return
     const top = transition.offsetTop + transition.offsetHeight * (isMobileLayout ? 0.78 : 0.82)
@@ -198,7 +258,7 @@ export function PropertiesPage() {
       params.set("map", "1")
       return params
     })
-  }, [isMobileLayout, setSearchParams])
+  }, [isMobileLayout, requestUserLocation, setSearchParams])
 
   useEffect(() => {
     window.addEventListener(SCROLL_TO_MAP_EVENT, scrollToMap)
@@ -288,57 +348,39 @@ export function PropertiesPage() {
   }, [controlsVisible, resultsLoadingKey, showResultsLoading])
 
   useEffect(() => {
-    if (isLoading || !controlsVisible || geolocationRequestedRef.current || typeof navigator === "undefined" || !navigator.geolocation) return
-    geolocationRequestedRef.current = true
+    if (isLoading || !controlsVisible) return
+    requestUserLocation()
+  }, [controlsVisible, isLoading, requestUserLocation])
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const latitude = position.coords.latitude
-        const longitude = position.coords.longitude
-        showResultsLoading(1100)
+  useEffect(() => {
+    if (!userLocationAddress || !imoveis.length || filters.cidade) return
+    const userCity = cityFromAddress(userLocationAddress)
+    const matchedCity = findMatchingCity(userCity, imoveis)
+    if (!matchedCity) return
+    setFilters((current) => current.cidade ? current : { ...current, cidade: matchedCity, bairro: "" })
+  }, [filters.cidade, imoveis, userLocationAddress])
 
-        let address: EnderecoResultado = {
-          display_name: "Sua localização atual",
-          latitude: String(latitude),
-          longitude: String(longitude),
-          place_id: "current-location",
-          type: "current_location",
-          address: {},
-        }
+  useEffect(() => {
+    const video = heroVideoRef.current
+    if (!video) return
 
-        try {
-          address = await imoveisService.buscarEnderecoReverso(latitude, longitude) ?? address
-        } catch {
-          // Mantem a localização bruta caso o reverse geocode não responda.
-        }
+    video.muted = true
+    video.defaultMuted = true
+    video.playsInline = true
+    video.controls = false
 
-        const userCity = cityFromAddress(address)
-        const matchedCity = findMatchingCity(userCity, imoveis)
-        setUserLocationAddress({
-          ...address,
-          display_name: address.display_name || matchedCity || userCity || "Sua localização atual",
-          latitude: String(address.latitude || latitude),
-          longitude: String(address.longitude || longitude),
-        })
-        setFilters((current) => ({
-          ...current,
-          cidade: matchedCity || current.cidade,
-          bairro: "",
-        }))
-        setSearchParams((params) => {
-          params.delete("bairro")
-          params.set("map", "1")
-          return params
-        })
-      },
-      () => undefined,
-      {
-        enableHighAccuracy: true,
-        maximumAge: 1000 * 60 * 8,
-        timeout: 9000,
-      },
-    )
-  }, [controlsVisible, imoveis, isLoading, setSearchParams, showResultsLoading])
+    const playVideo = () => {
+      const playRequest = video.play()
+      if (playRequest) {
+        playRequest.catch(() => setHeroVideoReady(false))
+      }
+    }
+
+    playVideo()
+    document.addEventListener("visibilitychange", playVideo)
+
+    return () => document.removeEventListener("visibilitychange", playVideo)
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -411,14 +453,30 @@ export function PropertiesPage() {
           style={{ scale: heroScale, opacity: heroOpacity, filter: heroBlur }}
           className="sticky top-0 h-dvh min-h-[560px] origin-center overflow-hidden bg-black md:min-h-[700px]"
         >
+          <img
+            className={cn("absolute inset-0 size-full object-cover transition-opacity duration-500", heroVideoReady ? "opacity-0" : "opacity-100")}
+            src="/videoBackground-poster.jpg"
+            alt=""
+            aria-hidden="true"
+          />
           <video
-            className="absolute inset-0 size-full object-cover"
+            ref={heroVideoRef}
+            className={cn("absolute inset-0 size-full object-cover transition-opacity duration-500", heroVideoReady ? "opacity-100" : "opacity-0")}
             src="/videoBackground.mp4"
             autoPlay
             muted
             loop
             playsInline
-            preload="auto"
+            preload="metadata"
+            poster="/videoBackground-poster.jpg"
+            controls={false}
+            disablePictureInPicture
+            onCanPlay={() => {
+              setHeroVideoReady(true)
+              void heroVideoRef.current?.play().catch(() => setHeroVideoReady(false))
+            }}
+            onPlaying={() => setHeroVideoReady(true)}
+            onError={() => setHeroVideoReady(false)}
             aria-hidden="true"
           />
           <div className="absolute inset-0 bg-black/45" />
@@ -517,7 +575,9 @@ export function PropertiesPage() {
                     onSubmit={submitMapSearch}
                     onSelectAddress={selectAddress}
                     onClear={clearMapSearch}
-                    onCenter={() => window.dispatchEvent(new Event("maldonado:fit-imoveis"))}
+                    onCenter={() => {
+                      if (!requestUserLocation()) window.dispatchEvent(new Event("maldonado:fit-imoveis"))
+                    }}
                   />
 
                   <div className="pointer-events-auto absolute right-4 top-4 z-[790] md:right-5 md:top-5">
