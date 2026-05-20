@@ -36,10 +36,6 @@ APPEND_SLASH = False
 GEOAPIFY_API_KEY = os.getenv('GEOAPIFY_API_KEY', '')
 FOURSQUARE_API_KEY = os.getenv('FOURSQUARE_API_KEY', '')
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "").strip()
-DJANGO_ADMIN_URL = os.getenv("DJANGO_ADMIN_URL", "admin/").strip().lstrip("/") or "admin/"
-if not DJANGO_ADMIN_URL.endswith("/"):
-    DJANGO_ADMIN_URL = f"{DJANGO_ADMIN_URL}/"
-
 
 # Application definition
 INSTALLED_APPS = [
