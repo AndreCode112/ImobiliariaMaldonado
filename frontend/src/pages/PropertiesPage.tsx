@@ -1,11 +1,11 @@
 import { AnimatePresence, motion, useMotionValueEvent, useScroll, useTransform } from "framer-motion"
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, LoaderCircle, LocateFixed, MapPin, Search, SlidersHorizontal, X } from "lucide-react"
 import type { ReactNode } from "react"
+import { lazy, Suspense } from "react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "react-router-dom"
 
 import { AccountMenuButton } from "@/components/layout/PremiumHeader"
-import { PropertiesMap } from "@/components/map/PropertiesMap"
 import { PropertiesSidebar } from "@/components/properties/PropertiesSidebar"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -20,6 +20,7 @@ import type { EnderecoResultado, Imovel, ImoveisFilters } from "@/types/imovel"
 
 const HEADER_VISIBILITY_EVENT = "maldonado:premium-header-visibility"
 const SCROLL_TO_MAP_EVENT = "maldonado:scroll-to-map"
+const PropertiesMap = lazy(() => import("@/components/map/PropertiesMap").then((mod) => ({ default: mod.PropertiesMap })))
 
 export function PropertiesPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -546,15 +547,17 @@ export function PropertiesPage() {
             />
 
             <div className="relative min-w-0 overflow-hidden">
-              <PropertiesMap
-                imoveis={visibleImoveis}
-                selectedId={selected?.id}
-                selectedAddress={selectedAddress ?? userLocationAddress}
-                scrollWheelZoom={mapInteractive}
-                showPointsOfInterest={showPointsOfInterest}
-                onSelect={setSelected}
-                onClearSelect={() => setSelected(null)}
-              />
+              <Suspense fallback={<div className="absolute inset-0 bg-secondary" />}>
+                <PropertiesMap
+                  imoveis={visibleImoveis}
+                  selectedId={selected?.id}
+                  selectedAddress={selectedAddress ?? userLocationAddress}
+                  scrollWheelZoom={mapInteractive}
+                  showPointsOfInterest={showPointsOfInterest}
+                  onSelect={setSelected}
+                  onClearSelect={() => setSelected(null)}
+                />
+              </Suspense>
               <MapLoadingOverlay visible={controlsVisible && resultsAreLoading} />
 
               {controlsVisible ? (

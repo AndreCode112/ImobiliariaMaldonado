@@ -1,5 +1,5 @@
 import { Bath, BedDouble, Camera, Car, Home, MapPin, MapPinned, Ruler, ShoppingCart, Store, TreePine, Utensils, X } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 
 import { FavoriteButton } from "@/components/properties/FavoriteButton"
@@ -52,11 +52,19 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
 
   return (
     <div
-      className="relative size-full overflow-hidden rounded-none bg-secondary"
+      className="relative size-full overflow-hidden rounded-none bg-secondary [touch-action:pan-y]"
       onMouseEnter={() => setIsHoveringMap(true)}
       onMouseLeave={() => setIsHoveringMap(false)}
     >
-      <Map center={center} zoom={visibleImoveis.length === 1 ? 15 : visibleImoveis.length ? 13 : 11} className="size-full rounded-none" scrollWheelZoom={false}>
+      <Map
+        center={center}
+        zoom={visibleImoveis.length === 1 ? 15 : visibleImoveis.length ? 13 : 11}
+        className="size-full rounded-none"
+        scrollWheelZoom={false}
+        dragging={!isMobileLayout}
+        touchZoom={!isMobileLayout}
+        doubleClickZoom={!isMobileLayout}
+      >
         <MapTileLayer
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO'
@@ -203,14 +211,20 @@ function MapExternalControls({ imoveis, selectedAddress }: { imoveis: Imovel[]; 
 
 function MapFlyTo({ address }: { address: EnderecoResultado }) {
   const map = useMap()
+  const previousTargetRef = useRef("")
 
   useEffect(() => {
     const latitude = Number(address.latitude)
     const longitude = Number(address.longitude)
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return
+
+    const target = `${latitude.toFixed(7)}:${longitude.toFixed(7)}`
+    if (previousTargetRef.current === target) return
+    previousTargetRef.current = target
+
     map.flyTo([latitude, longitude], Math.max(map.getZoom(), 15), {
       animate: true,
-      duration: 1.2,
+      duration: 0.6,
     })
   }, [address, map])
 
@@ -224,7 +238,6 @@ function addressTitle(address: EnderecoResultado) {
 function AddressPin() {
   return (
     <div className="relative grid size-9 place-items-center rounded-full border-[3px] border-white bg-zinc-950 text-white shadow-[0_18px_44px_rgba(0,0,0,0.32)]">
-      <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-zinc-950/30" />
       <MapPin className="size-5" />
     </div>
   )

@@ -42,6 +42,8 @@ import type {
     TileLayer,
     Tooltip,
 } from "leaflet"
+import Leaflet from "leaflet"
+import * as LeafletDraw from "leaflet-draw"
 import "leaflet-draw/dist/leaflet.draw.css"
 import "leaflet.fullscreen/dist/Control.FullScreen.css"
 import type {} from "leaflet.markercluster"
@@ -67,19 +69,28 @@ import {
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import React, {
-    Suspense,
     createContext,
-    lazy,
     useContext,
     useEffect,
     useRef,
     useState,
-    type ComponentType,
     type ReactNode,
     type Ref,
 } from "react"
 import { renderToString } from "react-dom/server"
 import {
+    Circle as LeafletCircle,
+    CircleMarker as LeafletCircleMarker,
+    FeatureGroup as LeafletFeatureGroup,
+    LayerGroup as LeafletLayerGroup,
+    MapContainer as LeafletMapContainer,
+    Marker as LeafletMarker,
+    Polygon as LeafletPolygon,
+    Polyline as LeafletPolyline,
+    Popup as LeafletPopup,
+    Rectangle as LeafletRectangle,
+    TileLayer as LeafletTileLayer,
+    Tooltip as LeafletTooltip,
     useMap,
     useMapEvents,
     type CircleMarkerProps,
@@ -94,97 +105,8 @@ import {
     type TileLayerProps,
     type TooltipProps,
 } from "react-leaflet"
+import LeafletMarkerClusterGroup from "react-leaflet-markercluster"
 import type { MarkerClusterGroupProps } from "react-leaflet-markercluster"
-
-function createLazyComponent<T extends ComponentType<any>>(
-    factory: () => Promise<{ default: T }>
-) {
-    const LazyComponent = lazy(factory)
-
-    return (props: React.ComponentProps<T>) => {
-        const [isMounted, setIsMounted] = useState(false)
-
-        useEffect(() => {
-            setIsMounted(true)
-        }, [])
-
-        if (!isMounted) {
-            return null
-        }
-
-        return (
-            <Suspense>
-                <LazyComponent {...props} />
-            </Suspense>
-        )
-    }
-}
-
-const LeafletMapContainer = createLazyComponent(() =>
-    import("react-leaflet").then((mod) => ({
-        default: mod.MapContainer,
-    }))
-)
-const LeafletTileLayer = createLazyComponent(() =>
-    import("react-leaflet").then((mod) => ({
-        default: mod.TileLayer,
-    }))
-)
-const LeafletMarker = createLazyComponent(() =>
-    import("react-leaflet").then((mod) => ({
-        default: mod.Marker,
-    }))
-)
-const LeafletPopup = createLazyComponent(() =>
-    import("react-leaflet").then((mod) => ({
-        default: mod.Popup,
-    }))
-)
-const LeafletTooltip = createLazyComponent(() =>
-    import("react-leaflet").then((mod) => ({
-        default: mod.Tooltip,
-    }))
-)
-const LeafletCircle = createLazyComponent(() =>
-    import("react-leaflet").then((mod) => ({
-        default: mod.Circle,
-    }))
-)
-const LeafletCircleMarker = createLazyComponent(() =>
-    import("react-leaflet").then((mod) => ({
-        default: mod.CircleMarker,
-    }))
-)
-const LeafletPolyline = createLazyComponent(() =>
-    import("react-leaflet").then((mod) => ({
-        default: mod.Polyline,
-    }))
-)
-const LeafletPolygon = createLazyComponent(() =>
-    import("react-leaflet").then((mod) => ({
-        default: mod.Polygon,
-    }))
-)
-const LeafletRectangle = createLazyComponent(() =>
-    import("react-leaflet").then((mod) => ({
-        default: mod.Rectangle,
-    }))
-)
-const LeafletLayerGroup = createLazyComponent(() =>
-    import("react-leaflet").then((mod) => ({
-        default: mod.LayerGroup,
-    }))
-)
-const LeafletFeatureGroup = createLazyComponent(() =>
-    import("react-leaflet").then((mod) => ({
-        default: mod.FeatureGroup,
-    }))
-)
-const LeafletMarkerClusterGroup = createLazyComponent(async () =>
-    import("react-leaflet-markercluster").then((mod) => ({
-        default: mod.default,
-    }))
-)
 
 function Map({
     zoom = 15,
@@ -812,7 +734,8 @@ function MapFullscreenControl({
     useEffect(() => {
         if (!L) return
 
-        const fullscreenControl = new L.Control.FullScreen()
+        const FullScreenControl = (L.Control as unknown as { FullScreen: new () => L.Control }).FullScreen
+        const fullscreenControl = new FullScreenControl()
         fullscreenControl.addTo(map)
 
         const container = fullscreenControl.getContainer()
@@ -839,7 +762,7 @@ function MapFullscreenControl({
                 type="button"
                 size="icon-sm"
                 variant="secondary"
-                onClick={() => map.toggleFullscreen()}
+                onClick={() => (map as LeafletMap & { toggleFullscreen: () => void }).toggleFullscreen()}
                 aria-label={
                     isFullscreen ? "Exit fullscreen" : "Enter fullscreen"
                 }
@@ -1450,34 +1373,7 @@ function useMapDrawHandleIcon() {
 }
 
 function useLeaflet() {
-    const [L, setL] = useState<typeof import("leaflet") | null>(null)
-    const [LeafletDraw, setLeafletDraw] = useState<
-        typeof import("leaflet-draw") | null
-    >(null)
-
-    useEffect(() => {
-        async function loadLeaflet() {
-            const leaflet = await import("leaflet")
-            const leafletFullscreen = await import("leaflet.fullscreen")
-            const leafletDraw = await import("leaflet-draw")
-
-            const L_object = leaflet.default
-            if (L_object.Control && !L_object.Control.FullScreen) {
-                L_object.Control.FullScreen =
-                    leafletFullscreen.default || leafletFullscreen
-            }
-
-            setLeafletDraw(leafletDraw)
-            setL(L_object)
-        }
-
-        if (L && LeafletDraw) return
-        if (typeof window === "undefined") return
-
-        loadLeaflet()
-    }, [L, LeafletDraw])
-
-    return { L, LeafletDraw }
+    return { L: Leaflet, LeafletDraw }
 }
 
 function useDebounceLoadingState(delay = 200) {
