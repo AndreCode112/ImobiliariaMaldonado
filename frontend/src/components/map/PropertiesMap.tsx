@@ -191,7 +191,8 @@ function MapExternalControls({ imoveis, selectedAddress }: { imoveis: Imovel[]; 
       const latitude = Number(selectedAddress.latitude)
       const longitude = Number(selectedAddress.longitude)
       if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return
-      map.flyTo([latitude, longitude], Math.max(map.getZoom(), 15), { duration: 0.8 })
+      map.stop()
+      map.setView([latitude, longitude], Math.max(map.getZoom(), 15), { animate: true, duration: 0.35 })
     }
 
     window.addEventListener("maldonado:fit-imoveis", fitImoveis)

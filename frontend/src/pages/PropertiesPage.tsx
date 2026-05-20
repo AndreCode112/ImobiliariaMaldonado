@@ -48,7 +48,6 @@ export function PropertiesPage() {
   const [resultsLoading, setResultsLoading] = useState(false)
   const transitionRef = useRef<HTMLDivElement | null>(null)
   const heroVideoRef = useRef<HTMLVideoElement | null>(null)
-  const autoScrollRef = useRef(false)
   const geolocationRequestedRef = useRef(false)
   const mapRegionActiveRef = useRef(false)
   const resultsLoadingTimeoutRef = useRef<number | null>(null)
@@ -192,6 +191,17 @@ export function PropertiesPage() {
 
     return true
   }, [applyUserLocation])
+
+  const centerMapOnUserLocation = useCallback(() => {
+    if (userLocationAddress) {
+      window.dispatchEvent(new Event("maldonado:fly-address"))
+      return
+    }
+
+    if (!requestUserLocation()) {
+      window.dispatchEvent(new Event("maldonado:fit-imoveis"))
+    }
+  }, [requestUserLocation, userLocationAddress])
 
   function selectAddress(address: EnderecoResultado) {
     const title = addressTitle(address)
@@ -439,16 +449,6 @@ export function PropertiesPage() {
       <div
         ref={transitionRef}
         className="relative h-[165svh] bg-black md:h-[190vh]"
-        onWheel={(event) => {
-          if (event.deltaY <= 0 || autoScrollRef.current) return
-          const progress = scrollYProgress.get()
-          if (progress < 0.42 || progress > 0.82) return
-          autoScrollRef.current = true
-          scrollToMap()
-          window.setTimeout(() => {
-            autoScrollRef.current = false
-          }, 1100)
-        }}
       >
         <motion.section
           style={{ scale: heroScale, opacity: heroOpacity, filter: heroBlur }}
@@ -578,9 +578,7 @@ export function PropertiesPage() {
                     onSubmit={submitMapSearch}
                     onSelectAddress={selectAddress}
                     onClear={clearMapSearch}
-                    onCenter={() => {
-                      if (!requestUserLocation()) window.dispatchEvent(new Event("maldonado:fit-imoveis"))
-                    }}
+                    onCenter={centerMapOnUserLocation}
                   />
 
                   <div className="pointer-events-auto absolute right-4 top-4 z-[790] md:right-5 md:top-5">
