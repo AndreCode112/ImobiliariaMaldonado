@@ -16,10 +16,11 @@ Including another URLconf
 """
 from django.conf import settings
 from django.conf.urls.static import static
-from django.urls import include, path
+from django.urls import include, path, re_path
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from imoveis.auth_views import login_view, me_view, password_reset_confirm_view, register_view
+from .views import frontend_app
 
 urlpatterns = [
     path('imoveis/', include('imoveis.urls')),
@@ -28,6 +29,12 @@ urlpatterns = [
     path('api/auth/me/', me_view, name='auth_me'),
     path('api/auth/password-reset/confirm/', password_reset_confirm_view, name='auth_password_reset_confirm'),
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='auth_refresh'),
+    re_path(
+        r'^(?P<_path>(admin(?:/.*)?|login/?|cadastro/?|favoritos/?|contato/?|resetar-senha/.*|imoveis(?:/[^/]+)?/?))$',
+        frontend_app,
+        name='frontend_app_route',
+    ),
+    path('', frontend_app, name='frontend_app'),
 ]
 
 if settings.DEBUG:
