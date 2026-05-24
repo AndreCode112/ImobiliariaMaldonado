@@ -311,16 +311,6 @@ export function PropertyDetailPage() {
         onNext={showNextImage}
         onSelect={setPreviewIndex}
       />
-      {whatsappHref ? (
-        <div className="fixed inset-x-0 bottom-0 z-[70] border-t border-white/70 bg-white/92 px-4 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-18px_52px_rgba(15,23,42,0.12)] backdrop-blur-xl md:hidden">
-          <Button asChild className="h-12 w-full rounded-full bg-[#25D366] text-white shadow-[0_14px_34px_rgba(37,211,102,0.24)] hover:bg-[#1ebe5d]">
-            <a href={whatsappHref} target="_blank" rel="noreferrer">
-              <WhatsappIcon className="size-5" />
-              Chamar no WhatsApp
-            </a>
-          </Button>
-        </div>
-      ) : null}
     </motion.section>
   )
 }
