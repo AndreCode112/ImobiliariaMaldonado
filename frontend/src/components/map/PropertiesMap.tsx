@@ -1,3 +1,4 @@
+import { motion } from "framer-motion"
 import { Bath, BedDouble, Camera, Car, Home, MapPin, MapPinned, Ruler, ShoppingCart, Store, TreePine, Utensils, X } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Link } from "react-router-dom"
@@ -18,11 +19,13 @@ interface PropertiesMapProps {
 }
 
 const DEFAULT_CENTER: [number, number] = [-23.55052, -46.633308]
+const MAP_TOUCH_HINT_KEY = "maldonado.map-touch-hint-seen"
 
 export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWheelZoom = true, showPointsOfInterest = false, onSelect, onClearSelect }: PropertiesMapProps) {
   const [isHoveringMap, setIsHoveringMap] = useState(false)
   const [showPontosInteresse, setShowPontosInteresse] = useState(false)
   const [isMobileLayout, setIsMobileLayout] = useState(false)
+  const [showTouchHint, setShowTouchHint] = useState(false)
   const visibleImoveis = imoveis.filter((imovel) => imovel.latitude !== null && imovel.longitude !== null)
   const selectedImovel = visibleImoveis.find((imovel) => imovel.id === selectedId)
   const pontosInteresse = useMemo(() => {
@@ -50,9 +53,18 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
     return () => media.removeEventListener("change", sync)
   }, [])
 
+  useEffect(() => {
+    if (!isMobileLayout || typeof window === "undefined") return
+    if (window.localStorage.getItem(MAP_TOUCH_HINT_KEY)) return
+    setShowTouchHint(true)
+    window.localStorage.setItem(MAP_TOUCH_HINT_KEY, "1")
+    const timeout = window.setTimeout(() => setShowTouchHint(false), 5200)
+    return () => window.clearTimeout(timeout)
+  }, [isMobileLayout])
+
   return (
     <div
-      className="relative size-full overflow-hidden rounded-none bg-secondary [touch-action:pan-y] md:[touch-action:auto]"
+      className="relative size-full overflow-hidden rounded-none bg-secondary [touch-action:pan-y_pinch-zoom] md:[touch-action:auto]"
       onMouseEnter={() => setIsHoveringMap(true)}
       onMouseLeave={() => setIsHoveringMap(false)}
     >
@@ -62,7 +74,7 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
         className="size-full rounded-none"
         scrollWheelZoom={false}
         dragging={!isMobileLayout}
-        touchZoom={!isMobileLayout}
+        touchZoom
         doubleClickZoom={!isMobileLayout}
       >
         <MapTileLayer
@@ -71,6 +83,7 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
         />
         <MapWheelZoomController enabled={scrollWheelZoom && isHoveringMap} />
         <MapMobileTouchController mobile={isMobileLayout} />
+        <MapSelectionFocus imovel={selectedImovel} mobile={isMobileLayout} />
         <MapPointsOfInterestZoomGate onChange={setShowPontosInteresse} />
         <MapExternalControls imoveis={visibleImoveis} selectedAddress={selectedAddress} />
         <MapZoomControl
@@ -126,9 +139,40 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
           </MapMarker>
         ))}
       </Map>
+      {isMobileLayout && showTouchHint ? (
+        <motion.div
+          className="pointer-events-none absolute left-1/2 top-[142px] z-[790] -translate-x-1/2 rounded-full border border-white/80 bg-white/94 px-4 py-2 text-center text-xs font-semibold text-foreground shadow-[0_14px_42px_rgba(15,23,42,0.14)] backdrop-blur-xl"
+          initial={{ opacity: 0, y: -8, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -8, scale: 0.96 }}
+          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        >
+          Use dois dedos para aproximar o mapa
+        </motion.div>
+      ) : null}
       {isMobileLayout && selectedImovel ? <MobilePreview imovel={selectedImovel} onClose={onClearSelect} /> : null}
     </div>
   )
+}
+
+function MapSelectionFocus({ imovel, mobile }: { imovel?: Imovel; mobile: boolean }) {
+  const map = useMap()
+  const previousIdRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!mobile || !imovel?.latitude || !imovel.longitude) return
+    if (previousIdRef.current === imovel.id) return
+    previousIdRef.current = imovel.id
+
+    const zoom = Math.max(map.getZoom(), 15)
+    const markerPoint = map.project([imovel.latitude, imovel.longitude], zoom)
+    const previewOffset = Math.min(190, Math.max(120, map.getSize().y * 0.22))
+    const center = map.unproject(markerPoint.add([0, previewOffset]), zoom)
+    map.stop()
+    map.flyTo(center, zoom, { animate: true, duration: 0.45 })
+  }, [imovel, map, mobile])
+
+  return null
 }
 
 function MapMobileTouchController({ mobile }: { mobile: boolean }) {
@@ -139,7 +183,7 @@ function MapMobileTouchController({ mobile }: { mobile: boolean }) {
     if (mobile) {
       touchMap.tap?.disable()
       map.dragging.disable()
-      map.touchZoom.disable()
+      map.touchZoom.enable()
       map.doubleClickZoom.disable()
       return
     }
@@ -332,8 +376,23 @@ function Preview({ imovel }: { imovel: Imovel }) {
 }
 
 function MobilePreview({ imovel, onClose }: { imovel: Imovel; onClose?: () => void }) {
+  function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: { offset: { y: number }; velocity: { y: number } }) {
+    if (info.offset.y > 70 || info.velocity.y > 620) onClose?.()
+  }
+
   return (
-    <div className="absolute inset-x-3 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-[880] overflow-hidden rounded-[24px] border border-border/70 bg-white/96 shadow-[0_24px_80px_rgba(0,0,0,0.18)] backdrop-blur-xl md:hidden">
+    <motion.div
+      className="absolute inset-x-3 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-[880] overflow-hidden rounded-[24px] border border-border/70 bg-white/96 shadow-[0_24px_80px_rgba(0,0,0,0.18)] backdrop-blur-xl md:hidden"
+      drag="y"
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={{ top: 0.04, bottom: 0.24 }}
+      onDragEnd={handleDragEnd}
+      initial={{ opacity: 0, y: 22, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 22, scale: 0.98 }}
+      transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <div className="mx-auto mt-2 h-1 w-11 rounded-full bg-border" />
       <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3 p-3">
         <div className="relative h-28 overflow-hidden rounded-[18px] bg-secondary">
           {imovel.images[0] ? <img src={imovel.images[0]} alt={imovel.title} className="size-full object-cover" /> : null}
@@ -366,7 +425,7 @@ function MobilePreview({ imovel, onClose }: { imovel: Imovel; onClose?: () => vo
         </Button>
         <FavoriteButton id={imovel.id} className="size-11 border border-border bg-white shadow-none" />
       </div>
-    </div>
+    </motion.div>
   )
 }
 

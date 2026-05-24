@@ -35,6 +35,7 @@ export function PropertyCard({ imovel, active, onFocus }: PropertyCardProps) {
               src={image}
               alt={imovel.title}
               loading="lazy"
+              decoding="async"
               className="size-full object-cover transition duration-700 group-hover:scale-[1.04]"
             />
           ) : (

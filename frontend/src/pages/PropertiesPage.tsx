@@ -707,8 +707,7 @@ export function PropertiesPage() {
                       onClick={() => setSidebarOpen(true)}
                     >
                       <List className="size-4" />
-                      Ver lista
-                      <span className="grid min-w-6 place-items-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-bold text-white">{visibleImoveis.length}</span>
+                      Ver {visibleImoveis.length} {visibleImoveis.length === 1 ? "imóvel" : "imóveis"}
                     </Button>
                   ) : null}
                 </>

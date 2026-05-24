@@ -1,5 +1,5 @@
 import { ArrowLeft, Bath, BedDouble, Car, ChevronLeft, ChevronRight, Copy, Home, Images, MapPin, Ruler, Send, Share2, Sofa, Utensils, X } from "lucide-react"
-import { motion } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { Link, useParams } from "react-router-dom"
@@ -20,6 +20,7 @@ export function PropertyDetailPage() {
   const { data: imovel, isLoading } = useImovel(publicUuid)
   const { data: corretores = [] } = useCorretores()
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
+  const [galleryIndex, setGalleryIndex] = useState(0)
   const previewImage = previewIndex !== null ? imovel?.images[previewIndex] : null
   const realtor = imovel?.realtor?.whatsapp || imovel?.realtor?.telefone
     ? imovel.realtor
@@ -98,6 +99,21 @@ export function PropertyDetailPage() {
     return () => window.removeEventListener("keydown", handleKeyDown)
   })
 
+  useEffect(() => {
+    if (!imovel?.images.length) return
+    const nextIndexes = [
+      (galleryIndex + 1) % imovel.images.length,
+      previewIndex !== null ? (previewIndex + 1) % imovel.images.length : null,
+    ].filter((index): index is number => index !== null)
+
+    nextIndexes.forEach((index) => {
+      const src = imovel.images[index]
+      if (!src) return
+      const image = new Image()
+      image.src = src
+    })
+  }, [galleryIndex, imovel?.images, previewIndex])
+
   if (isLoading) {
     return (
       <div className="relative min-h-svh bg-white">
@@ -122,7 +138,7 @@ export function PropertyDetailPage() {
   return (
     <motion.section {...pageTransition} className="relative min-h-svh bg-white">
       <DetailTopControls />
-      <div className="mx-auto max-w-[1280px] px-4 pb-8 pt-24 md:px-8 md:pt-28">
+      <div className="mx-auto max-w-[1280px] px-4 pb-28 pt-24 md:px-8 md:pb-8 md:pt-28">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="max-w-4xl text-3xl font-semibold tracking-tight md:text-5xl">{imovel.title}</h1>
@@ -172,8 +188,16 @@ export function PropertyDetailPage() {
           </div>
         </div>
 
-        <div className="relative grid h-[56vh] min-h-[420px] grid-cols-1 gap-2 overflow-hidden rounded-[28px] md:grid-cols-4">
-          <GalleryImage src={imovel.images[0]} title={imovel.title} className="md:col-span-2 md:row-span-2" onClick={() => setPreviewIndex(0)} />
+        <MobilePropertyGallery
+          images={imovel.images}
+          title={imovel.title}
+          currentIndex={galleryIndex}
+          onChange={setGalleryIndex}
+          onOpen={setPreviewIndex}
+        />
+
+        <div className="relative hidden h-[56vh] min-h-[420px] grid-cols-1 gap-2 overflow-hidden rounded-[28px] md:grid md:grid-cols-4">
+          <GalleryImage src={imovel.images[0]} title={imovel.title} className="md:col-span-2 md:row-span-2" loading="eager" onClick={() => setPreviewIndex(0)} />
           <GalleryImage src={imovel.images[1]} title={imovel.title} onClick={() => setPreviewIndex(1)} />
           <GalleryImage src={imovel.images[2]} title={imovel.title} onClick={() => setPreviewIndex(2)} />
           <GalleryImage src={imovel.images[3]} title={imovel.title} onClick={() => setPreviewIndex(3)} />
@@ -271,6 +295,7 @@ export function PropertyDetailPage() {
         </div>
       </div>
       <PhotoViewer
+        images={imovel.images}
         src={previewImage}
         title={imovel.title}
         count={imovel.images.length}
@@ -278,7 +303,18 @@ export function PropertyDetailPage() {
         onClose={closePreview}
         onPrevious={showPreviousImage}
         onNext={showNextImage}
+        onSelect={setPreviewIndex}
       />
+      {whatsappHref ? (
+        <div className="fixed inset-x-0 bottom-0 z-[70] border-t border-white/70 bg-white/92 px-4 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-18px_52px_rgba(15,23,42,0.12)] backdrop-blur-xl md:hidden">
+          <Button asChild className="h-12 w-full rounded-full bg-[#25D366] text-white shadow-[0_14px_34px_rgba(37,211,102,0.24)] hover:bg-[#1ebe5d]">
+            <a href={whatsappHref} target="_blank" rel="noreferrer">
+              <WhatsappIcon className="size-5" />
+              Chamar no WhatsApp
+            </a>
+          </Button>
+        </div>
+      ) : null}
     </motion.section>
   )
 }
@@ -342,15 +378,111 @@ function WhatsappIcon({ className }: { className?: string }) {
   )
 }
 
-function GalleryImage({ src, title, className, onClick }: { src?: string; title: string; className?: string; onClick: () => void }) {
+function MobilePropertyGallery({
+  images,
+  title,
+  currentIndex,
+  onChange,
+  onOpen,
+}: {
+  images: string[]
+  title: string
+  currentIndex: number
+  onChange: (index: number) => void
+  onOpen: (index: number) => void
+}) {
+  const image = images[currentIndex]
+  const canNavigate = images.length > 1
+
+  function goTo(index: number) {
+    if (!images.length) return
+    onChange((index + images.length) % images.length)
+  }
+
+  function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: { offset: { x: number }; velocity: { x: number } }) {
+    if (!canNavigate) return
+    if (info.offset.x < -56 || info.velocity.x < -460) {
+      goTo(currentIndex + 1)
+      return
+    }
+    if (info.offset.x > 56 || info.velocity.x > 460) {
+      goTo(currentIndex - 1)
+    }
+  }
+
+  return (
+    <section className="md:hidden">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-[24px] bg-secondary">
+        {image ? (
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.button
+              key={image}
+              type="button"
+              className="absolute inset-0 cursor-zoom-in [touch-action:pan-y]"
+              drag={canNavigate ? "x" : false}
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.12}
+              onDragEnd={handleDragEnd}
+              onClick={() => onOpen(currentIndex)}
+              initial={{ opacity: 0.5, scale: 0.99 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              exit={{ opacity: 0.5, scale: 0.99 }}
+              transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <img src={image} alt={title} className="size-full object-cover" loading={currentIndex === 0 ? "eager" : "lazy"} decoding="async" draggable={false} />
+            </motion.button>
+          </AnimatePresence>
+        ) : (
+          <div className="grid size-full place-items-center text-muted-foreground">
+            <Images className="size-8" />
+          </div>
+        )}
+        {images.length ? (
+          <>
+            <div className="absolute left-3 top-3 rounded-full bg-black/52 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+              {currentIndex + 1} / {images.length}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="absolute bottom-3 right-3 h-9 rounded-full border-white/60 bg-white/92 px-3 text-xs shadow-[0_12px_34px_rgba(0,0,0,0.16)] backdrop-blur hover:bg-white"
+              onClick={() => onOpen(currentIndex)}
+            >
+              <Images className="size-4" />
+              Fotos
+            </Button>
+          </>
+        ) : null}
+      </div>
+      {images.length > 1 ? (
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          {images.map((src, index) => (
+            <button
+              key={`${src}-${index}`}
+              type="button"
+              className={`h-14 w-16 shrink-0 overflow-hidden rounded-[12px] border transition ${index === currentIndex ? "border-primary ring-2 ring-primary/20" : "border-transparent opacity-70"}`}
+              onClick={() => onChange(index)}
+              aria-label={`Ver foto ${index + 1}`}
+            >
+              <img src={src} alt="" className="size-full object-cover" loading="lazy" decoding="async" />
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+function GalleryImage({ src, title, className, loading = "lazy", onClick }: { src?: string; title: string; className?: string; loading?: "eager" | "lazy"; onClick: () => void }) {
   return (
     <button type="button" className={`bg-secondary ${src ? "cursor-zoom-in" : "cursor-default"} ${className ?? ""}`} onClick={src ? onClick : undefined}>
-      {src ? <img src={src} alt={title} className="size-full object-cover transition hover:scale-[1.02]" /> : null}
+      {src ? <img src={src} alt={title} className="size-full object-cover transition hover:scale-[1.02]" loading={loading} decoding="async" /> : null}
     </button>
   )
 }
 
 function PhotoViewer({
+  images,
   src,
   title,
   count,
@@ -358,7 +490,9 @@ function PhotoViewer({
   onClose,
   onPrevious,
   onNext,
+  onSelect,
 }: {
+  images: string[]
   src?: string | null
   title: string
   count: number
@@ -366,9 +500,27 @@ function PhotoViewer({
   onClose: (event?: React.MouseEvent | KeyboardEvent) => void
   onPrevious: (event?: React.MouseEvent | KeyboardEvent) => void
   onNext: (event?: React.MouseEvent | KeyboardEvent) => void
+  onSelect: (index: number) => void
 }) {
   if (!src || typeof document === "undefined") return null
   const canNavigate = count > 1
+
+  function handlePhotoDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: { offset: { x: number; y: number }; velocity: { x: number; y: number } }) {
+    if (info.offset.y > 86 || info.velocity.y > 720) {
+      onClose()
+      return
+    }
+    if (!canNavigate) return
+    const dragDistance = info.offset.x
+    const dragVelocity = info.velocity.x
+    if (dragDistance < -70 || dragVelocity < -520) {
+      onNext()
+      return
+    }
+    if (dragDistance > 70 || dragVelocity > 520) {
+      onPrevious()
+    }
+  }
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/92 backdrop-blur-md" role="dialog" aria-modal="true">
@@ -384,7 +536,7 @@ function PhotoViewer({
         <>
           <button
             type="button"
-            className="absolute left-5 top-1/2 z-10 grid size-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
+            className="absolute left-3 top-1/2 z-10 hidden size-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 sm:grid"
             onClick={onPrevious}
             aria-label="Foto anterior"
           >
@@ -392,18 +544,54 @@ function PhotoViewer({
           </button>
           <button
             type="button"
-            className="absolute right-5 top-1/2 z-10 grid size-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
+            className="absolute right-3 top-1/2 z-10 hidden size-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 sm:grid"
             onClick={onNext}
             aria-label="Próxima foto"
           >
             <ChevronRight className="size-8" />
           </button>
-          <div className="absolute bottom-5 left-1/2 z-10 -translate-x-1/2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white">
+          <div className="absolute left-1/2 top-5 z-10 -translate-x-1/2 rounded-full bg-white/14 px-4 py-2 text-sm font-bold text-white shadow-[0_14px_38px_rgba(0,0,0,0.22)] ring-1 ring-white/16 backdrop-blur-xl">
             {currentIndex + 1} / {count}
           </div>
         </>
       ) : null}
-      <img src={src} alt={title} className="h-screen w-screen object-contain" />
+      <div className="flex h-screen w-screen items-center justify-center overflow-hidden [touch-action:none]">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.img
+            key={src}
+            src={src}
+            alt={title}
+            decoding="async"
+            className={canNavigate ? "h-screen w-screen cursor-grab object-contain active:cursor-grabbing" : "h-screen w-screen object-contain"}
+            draggable={false}
+            drag={canNavigate ? true : "y"}
+            dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+            dragElastic={0.16}
+            onDragEnd={handlePhotoDragEnd}
+            initial={{ opacity: 0, scale: 0.985 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.985 }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+          />
+        </AnimatePresence>
+      </div>
+      {canNavigate ? (
+        <div className="absolute inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-10 flex justify-center px-4">
+          <div className="flex max-w-full gap-2 overflow-x-auto rounded-2xl bg-black/24 p-2 backdrop-blur-xl">
+            {images.map((image, index) => (
+              <button
+                key={`${image}-${index}`}
+                type="button"
+                className={`h-12 w-14 shrink-0 overflow-hidden rounded-[10px] border transition ${index === currentIndex ? "border-white opacity-100" : "border-white/10 opacity-58"}`}
+                onClick={() => onSelect(index)}
+                aria-label={`Abrir foto ${index + 1}`}
+              >
+              <img src={image} alt="" className="size-full object-cover" loading="lazy" decoding="async" />
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>,
     document.body,
   )
@@ -430,11 +618,25 @@ function Section({ id, title, children }: { id?: string; title: string; children
 
 function DetailSkeleton() {
   return (
-    <div className="mx-auto max-w-[1280px] space-y-8 px-8 py-8">
-      <Skeleton className="h-12 w-2/3" />
-      <Skeleton className="h-[52vh] rounded-[28px]" />
+    <div className="mx-auto max-w-[1280px] space-y-6 px-4 pb-28 pt-24 md:px-8 md:pt-28">
+      <div className="space-y-3">
+        <Skeleton className="h-9 w-4/5 rounded-full md:h-12 md:w-2/3" />
+        <Skeleton className="h-5 w-3/5 rounded-full" />
+      </div>
+      <div className="grid gap-2 overflow-hidden rounded-[28px] md:h-[56vh] md:min-h-[420px] md:grid-cols-4">
+        <Skeleton className="aspect-[4/3] rounded-[24px] md:col-span-2 md:row-span-2 md:aspect-auto md:rounded-none" />
+        <Skeleton className="hidden rounded-none md:block" />
+        <Skeleton className="hidden rounded-none md:block" />
+        <Skeleton className="hidden rounded-none md:block" />
+        <Skeleton className="hidden rounded-none md:block" />
+      </div>
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-        <Skeleton className="h-96 rounded-[28px]" />
+        <div className="space-y-8">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+            {Array.from({ length: 7 }).map((_, index) => <Skeleton key={index} className="h-28 rounded-[22px]" />)}
+          </div>
+          <Skeleton className="h-44 rounded-[24px]" />
+        </div>
         <Skeleton className="h-80 rounded-[28px]" />
       </div>
     </div>

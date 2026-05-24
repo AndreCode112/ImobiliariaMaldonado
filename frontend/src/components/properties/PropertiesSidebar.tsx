@@ -235,7 +235,7 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
       <Link to={`/imoveis/${imovel.uuid}`} className="grid grid-cols-[96px_minmax(0,1fr)] gap-3 p-3 sm:grid-cols-[112px_minmax(0,1fr)]" onClick={() => onFocus(imovel)}>
         <div className="relative h-24 overflow-hidden rounded-[14px] bg-secondary sm:h-28">
           {image ? (
-            <img src={image} alt={imovel.title} loading="lazy" className="size-full object-cover transition duration-700 group-hover:scale-[1.04]" />
+            <img src={image} alt={imovel.title} loading="lazy" decoding="async" className="size-full object-cover transition duration-700 group-hover:scale-[1.04]" />
           ) : (
             <div className="grid size-full place-items-center text-muted-foreground">
               <Images className="size-7" />
