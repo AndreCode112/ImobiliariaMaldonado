@@ -1,6 +1,6 @@
 import { ArrowLeft, Bath, BedDouble, Car, ChevronLeft, ChevronRight, Copy, Home, Images, MapPin, Ruler, Send, Share2, Sofa, Utensils, X } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
-import { useEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
@@ -27,6 +27,12 @@ export function PropertyDetailPage() {
     : corretores.find((corretor) => corretor.id === imovel?.realtor?.id) ?? corretores.find((corretor) => corretor.ativo !== false) ?? imovel?.realtor ?? null
   const whatsappHref = imovel && realtor ? buildWhatsappLink(imovel, realtor) : null
   const shareUrl = imovel ? buildPropertyUrl(imovel.uuid) : ""
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+    setGalleryIndex(0)
+    setPreviewIndex(null)
+  }, [publicUuid])
 
   function closePreview(event?: React.MouseEvent | KeyboardEvent) {
     event?.preventDefault()

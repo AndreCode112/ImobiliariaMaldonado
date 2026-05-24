@@ -77,9 +77,13 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
         touchZoom
         doubleClickZoom={!isMobileLayout}
       >
+        <MapViewportStabilizer />
         <MapTileLayer
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO'
+          keepBuffer={6}
+          updateWhenIdle={false}
+          updateWhenZooming
         />
         <MapWheelZoomController enabled={scrollWheelZoom && isHoveringMap} />
         <MapMobileTouchController mobile={isMobileLayout} />
@@ -153,6 +157,43 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
       {isMobileLayout && selectedImovel ? <MobilePreview imovel={selectedImovel} onClose={onClearSelect} /> : null}
     </div>
   )
+}
+
+function MapViewportStabilizer() {
+  const map = useMap()
+
+  useEffect(() => {
+    let frame = 0
+    const invalidate = () => {
+      window.cancelAnimationFrame(frame)
+      frame = window.requestAnimationFrame(() => {
+        map.invalidateSize({ animate: false, pan: false })
+      })
+    }
+
+    const container = map.getContainer()
+    invalidate()
+    const timeouts = [120, 320, 680, 1100].map((delay) => window.setTimeout(invalidate, delay))
+    const observer = new ResizeObserver(invalidate)
+    observer.observe(container)
+
+    window.addEventListener("resize", invalidate)
+    window.addEventListener("orientationchange", invalidate)
+    document.addEventListener("visibilitychange", invalidate)
+    map.on("zoomend moveend", invalidate)
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      timeouts.forEach((timeout) => window.clearTimeout(timeout))
+      observer.disconnect()
+      window.removeEventListener("resize", invalidate)
+      window.removeEventListener("orientationchange", invalidate)
+      document.removeEventListener("visibilitychange", invalidate)
+      map.off("zoomend moveend", invalidate)
+    }
+  }, [map])
+
+  return null
 }
 
 function MapSelectionFocus({ imovel, mobile }: { imovel?: Imovel; mobile: boolean }) {
