@@ -1,5 +1,5 @@
-import { AnimatePresence, motion, useMotionValueEvent, useScroll, useTransform } from "framer-motion"
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, LoaderCircle, LocateFixed, MapPin, Search, SlidersHorizontal, X } from "lucide-react"
+import { AnimatePresence, motion, useMotionValueEvent, useScroll, useSpring, useTransform } from "framer-motion"
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, List, LoaderCircle, LocateFixed, MapPin, Search, SlidersHorizontal, X } from "lucide-react"
 import type { ReactNode } from "react"
 import { lazy, Suspense } from "react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -92,16 +92,19 @@ export function PropertiesPage() {
     target: transitionRef,
     offset: ["start start", "end end"],
   })
-  const heroScale = useTransform(scrollYProgress, [0, 0.72], [1, 0.96])
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.72], [1, 0.24])
-  const heroBlur = useTransform(scrollYProgress, [0, 0.72], ["blur(0px)", "blur(6px)"])
-  const mapY = useTransform(scrollYProgress, [0, 0.82], ["100vh", "0vh"])
-  const mapRadius = useTransform(scrollYProgress, [0.18, 0.82], [36, 0])
-  const mapShadow = useTransform(
+  const heroScale = useTransform(scrollYProgress, [0, isMobileLayout ? 0.62 : 0.72], [1, isMobileLayout ? 0.985 : 0.96])
+  const heroOpacity = useTransform(scrollYProgress, [0, isMobileLayout ? 0.66 : 0.72], [1, isMobileLayout ? 0.12 : 0.24])
+  const heroBlur = useTransform(scrollYProgress, [0, isMobileLayout ? 0.66 : 0.72], ["blur(0px)", isMobileLayout ? "blur(3px)" : "blur(6px)"])
+  const rawMapY = useTransform(scrollYProgress, [0.04, isMobileLayout ? 0.74 : 0.82], ["100vh", "0vh"])
+  const rawMapRadius = useTransform(scrollYProgress, [0.18, isMobileLayout ? 0.74 : 0.82], [36, 0])
+  const rawMapShadow = useTransform(
     scrollYProgress,
-    [0.18, 0.82],
+    [0.18, isMobileLayout ? 0.74 : 0.82],
     ["0 -28px 90px rgba(0,0,0,0.22)", "0 0 0 rgba(0,0,0,0)"],
   )
+  const mapY = useSpring(rawMapY, { stiffness: 130, damping: 24, mass: 0.42 })
+  const mapRadius = useSpring(rawMapRadius, { stiffness: 150, damping: 26, mass: 0.36 })
+  const mapShadow = useSpring(rawMapShadow, { stiffness: 150, damping: 28, mass: 0.4 })
   const [filters, setFilters] = useState<ImoveisFilters>({
     ...defaultFilters,
     search: buscaParam,
@@ -314,13 +317,15 @@ export function PropertiesPage() {
   }
 
   useMotionValueEvent(scrollYProgress, "change", (value) => {
-    const mapRegionActive = value > 0.74
+    const activeThreshold = isMobileLayout ? 0.68 : 0.74
+    const interactiveThreshold = isMobileLayout ? 0.74 : 0.82
+    const mapRegionActive = value > activeThreshold
     if (mapRegionActive && !mapRegionActiveRef.current) {
       showResultsLoading(900)
     }
     mapRegionActiveRef.current = mapRegionActive
     setControlsVisible(mapRegionActive)
-    setMapInteractive(value > 0.82)
+    setMapInteractive(value > interactiveThreshold)
     window.dispatchEvent(new CustomEvent(HEADER_VISIBILITY_EVENT, { detail: { visible: !mapRegionActive } }))
   })
 
@@ -328,7 +333,7 @@ export function PropertiesPage() {
     requestUserLocation()
     const transition = transitionRef.current
     if (!transition) return
-    const top = transition.offsetTop + transition.offsetHeight * (isMobileLayout ? 0.78 : 0.82)
+    const top = transition.offsetTop + transition.offsetHeight * (isMobileLayout ? 0.72 : 0.82)
     window.scrollTo({ top, behavior: "smooth" })
     setSearchParams((params) => {
       params.set("map", "1")
@@ -546,7 +551,7 @@ export function PropertiesPage() {
     <section className="relative bg-secondary">
       <div
         ref={transitionRef}
-        className="relative h-[165svh] bg-black md:h-[190vh]"
+        className="relative h-[185svh] bg-black md:h-[190vh]"
       >
         <motion.section
           style={{ scale: heroScale, opacity: heroOpacity, filter: heroBlur }}
@@ -694,13 +699,14 @@ export function PropertiesPage() {
                     <span className="hidden sm:inline">{sidebarOpen ? "Ocultar lista" : "Ver imóveis"}</span>
                   </Button>
 
-                  {!sidebarOpen ? (
+                  {!sidebarOpen && !selected ? (
                     <Button
                       type="button"
                       variant="outline"
-                      className="absolute bottom-5 left-1/2 z-[760] h-12 -translate-x-1/2 rounded-full border-border/70 bg-white/94 px-5 text-sm shadow-[0_18px_50px_rgba(0,0,0,0.14)] backdrop-blur-xl md:hidden"
+                      className="absolute bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-1/2 z-[760] h-12 -translate-x-1/2 rounded-full border-border/70 bg-white/94 px-5 text-sm shadow-[0_18px_50px_rgba(0,0,0,0.14)] backdrop-blur-xl md:hidden"
                       onClick={() => setSidebarOpen(true)}
                     >
+                      <List className="size-4" />
                       Ver lista
                       <span className="grid min-w-6 place-items-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-bold text-white">{visibleImoveis.length}</span>
                     </Button>

@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion"
-import { Bath, BedDouble, Car, ChevronDown, ChevronUp, Eye, Filter, Images, LoaderCircle, MapPin, Ruler, Search, Share2, X } from "lucide-react"
+import { Bath, BedDouble, Car, ChevronDown, ChevronUp, Eye, Filter, Images, LoaderCircle, MapPin, Minimize2, Ruler, Search, Share2, X } from "lucide-react"
 import type { MouseEvent, ReactNode } from "react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
 
@@ -45,37 +45,33 @@ export function PropertiesSidebar({
   onTogglePoints,
   onFocus,
 }: PropertiesSidebarProps) {
-  const [mobileExpanded, setMobileExpanded] = useState(false)
-
-  useEffect(() => {
-    if (!open) setMobileExpanded(false)
-  }, [open])
+  const [mobileExpandedState, setMobileExpandedState] = useState(false)
+  const mobileExpanded = open && mobileExpandedState
 
   return (
     <div className="h-full">
       <AnimatePresence>
         {open && (
           <motion.aside
-            initial={{ opacity: 0, x: -22, filter: "blur(8px)" }}
-            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, x: -22, filter: "blur(8px)" }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, x: -22, y: 34, filter: "blur(8px)" }}
+            animate={{ opacity: 1, x: 0, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, x: -22, y: 28, filter: "blur(8px)" }}
+            transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
             className={cn(
               "fixed inset-x-0 bottom-0 z-[820] rounded-t-[30px] border border-white/70 bg-white/94 shadow-[0_-18px_70px_rgba(0,0,0,0.16)] backdrop-blur-xl md:relative md:inset-auto md:z-auto md:h-full md:max-h-none md:w-full md:rounded-none md:border-y-0 md:border-l-0 md:border-r md:border-border/70 md:bg-white/92 md:shadow-[16px_0_80px_rgba(0,0,0,0.06)]",
-              mobileExpanded ? "h-[92dvh]" : "h-[68dvh]",
+              mobileExpanded ? "h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)-10px))]" : "h-[min(68dvh,560px)]",
             )}
+            layout
           >
             <div className="flex h-full flex-col">
               <button
                 type="button"
-                className="mx-auto mt-3 grid h-8 w-24 place-items-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground md:hidden"
-                onClick={() => setMobileExpanded((expanded) => !expanded)}
+                className="mx-auto mt-3 inline-flex h-10 min-w-40 items-center justify-center gap-2 rounded-full border border-border/70 bg-white px-4 text-sm font-semibold text-foreground shadow-[0_10px_28px_rgba(15,23,42,0.08)] transition active:scale-[0.98] md:hidden"
+                onClick={() => setMobileExpandedState((expanded) => !expanded)}
                 aria-label={mobileExpanded ? "Reduzir lista" : "Expandir lista"}
               >
-                <span className="flex items-center gap-1">
-                  <span className="h-1.5 w-12 rounded-full bg-border" />
-                  {mobileExpanded ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}
-                </span>
+                {mobileExpanded ? <ChevronDown className="size-4 text-primary" /> : <ChevronUp className="size-4 text-primary" />}
+                {mobileExpanded ? "Reduzir lista" : "Expandir lista"}
               </button>
               <div className="border-b border-border/70 p-5 pt-4 md:p-5">
                 <div className="flex items-start justify-between gap-4">
@@ -86,8 +82,16 @@ export function PropertiesSidebar({
                   <Button variant="outline" className="hidden h-10 rounded-full bg-white px-4 text-sm md:inline-flex" onClick={() => onOpenChange(false)}>
                     Ocultar lista
                   </Button>
-                  <Button variant="ghost" size="icon" className="rounded-full md:hidden" onClick={() => onOpenChange(false)}>
-                    <ChevronDown className="size-4" />
+                  <Button
+                    variant="outline"
+                    className="h-10 rounded-full bg-white px-3 text-sm md:hidden"
+                    onClick={() => {
+                      setMobileExpandedState(false)
+                      onOpenChange(false)
+                    }}
+                  >
+                    <Minimize2 className="size-4" />
+                    Fechar
                   </Button>
                 </div>
                 <SidebarSearchField

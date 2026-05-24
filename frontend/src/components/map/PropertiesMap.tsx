@@ -52,7 +52,7 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
 
   return (
     <div
-      className="relative size-full overflow-hidden rounded-none bg-secondary [touch-action:pan-y]"
+      className="relative size-full overflow-hidden rounded-none bg-secondary [touch-action:pan-y] md:[touch-action:auto]"
       onMouseEnter={() => setIsHoveringMap(true)}
       onMouseLeave={() => setIsHoveringMap(false)}
     >
@@ -70,6 +70,7 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO'
         />
         <MapWheelZoomController enabled={scrollWheelZoom && isHoveringMap} />
+        <MapMobileTouchController mobile={isMobileLayout} />
         <MapPointsOfInterestZoomGate onChange={setShowPontosInteresse} />
         <MapExternalControls imoveis={visibleImoveis} selectedAddress={selectedAddress} />
         <MapZoomControl
@@ -128,6 +129,28 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
       {isMobileLayout && selectedImovel ? <MobilePreview imovel={selectedImovel} onClose={onClearSelect} /> : null}
     </div>
   )
+}
+
+function MapMobileTouchController({ mobile }: { mobile: boolean }) {
+  const map = useMap()
+
+  useEffect(() => {
+    const touchMap = map as typeof map & { tap?: { enable: () => void; disable: () => void } }
+    if (mobile) {
+      touchMap.tap?.disable()
+      map.dragging.disable()
+      map.touchZoom.disable()
+      map.doubleClickZoom.disable()
+      return
+    }
+
+    touchMap.tap?.enable()
+    map.dragging.enable()
+    map.touchZoom.enable()
+    map.doubleClickZoom.enable()
+  }, [map, mobile])
+
+  return null
 }
 
 function MapPointsOfInterestZoomGate({ onChange }: { onChange: (visible: boolean) => void }) {
@@ -310,7 +333,7 @@ function Preview({ imovel }: { imovel: Imovel }) {
 
 function MobilePreview({ imovel, onClose }: { imovel: Imovel; onClose?: () => void }) {
   return (
-    <div className="absolute inset-x-3 bottom-4 z-[620] overflow-hidden rounded-[24px] border border-border/70 bg-white/96 shadow-[0_24px_80px_rgba(0,0,0,0.18)] backdrop-blur-xl md:hidden">
+    <div className="absolute inset-x-3 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-[880] overflow-hidden rounded-[24px] border border-border/70 bg-white/96 shadow-[0_24px_80px_rgba(0,0,0,0.18)] backdrop-blur-xl md:hidden">
       <div className="grid grid-cols-[104px_minmax(0,1fr)] gap-3 p-3">
         <div className="relative h-28 overflow-hidden rounded-[18px] bg-secondary">
           {imovel.images[0] ? <img src={imovel.images[0]} alt={imovel.title} className="size-full object-cover" /> : null}
