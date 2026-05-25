@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion"
 import { Bath, BedDouble, Car, ChevronDown, ChevronUp, Eye, Filter, Images, LoaderCircle, MapPin, Minimize2, Ruler, Search, Share2, X } from "lucide-react"
 import type { MouseEvent, ReactNode } from "react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
 
@@ -45,8 +45,42 @@ export function PropertiesSidebar({
   onTogglePoints,
   onFocus,
 }: PropertiesSidebarProps) {
-  const [mobileExpandedState, setMobileExpandedState] = useState(false)
-  const mobileExpanded = open && mobileExpandedState
+  const [mobileSnap, setMobileSnap] = useState<"peek" | "mid" | "full">("mid")
+  const [isMobileSheet, setIsMobileSheet] = useState(false)
+  const listRef = useRef<HTMLDivElement | null>(null)
+  const isPeek = mobileSnap === "peek"
+  const isFull = mobileSnap === "full"
+
+  useEffect(() => {
+    if (!open) setMobileSnap("mid")
+  }, [open])
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)")
+    const sync = () => setIsMobileSheet(media.matches)
+    sync()
+    media.addEventListener("change", sync)
+    return () => media.removeEventListener("change", sync)
+  }, [])
+
+  useEffect(() => {
+    if (!open || !selectedId) return
+    window.setTimeout(() => {
+      listRef.current?.querySelector(`[data-property-id="${selectedId}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" })
+    }, 220)
+  }, [open, selectedId])
+
+  function handleSheetDragEnd(_: unknown, info: { offset: { y: number }; velocity: { y: number } }) {
+    const down = info.offset.y > 58 || info.velocity.y > 560
+    const up = info.offset.y < -58 || info.velocity.y < -560
+    if (up) {
+      setMobileSnap((snap) => snap === "peek" ? "mid" : "full")
+      return
+    }
+    if (down) {
+      setMobileSnap((snap) => snap === "full" ? "mid" : "peek")
+    }
+  }
 
   return (
     <div className="h-full">
@@ -59,19 +93,25 @@ export function PropertiesSidebar({
             transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
             className={cn(
               "fixed inset-x-0 bottom-0 z-[820] rounded-t-[30px] border border-white/70 bg-white/94 shadow-[0_-18px_70px_rgba(0,0,0,0.16)] backdrop-blur-xl md:relative md:inset-auto md:z-auto md:h-full md:max-h-none md:w-full md:rounded-none md:border-y-0 md:border-l-0 md:border-r md:border-border/70 md:bg-white/92 md:shadow-[16px_0_80px_rgba(0,0,0,0.06)]",
-              mobileExpanded ? "h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)-10px))]" : "h-[min(68dvh,560px)]",
+              mobileSnap === "peek" && "h-[112px]",
+              mobileSnap === "mid" && "h-[min(58dvh,520px)]",
+              mobileSnap === "full" && "h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)-10px))]",
             )}
+            drag={isMobileSheet ? "y" : false}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0.08, bottom: 0.16 }}
+            onDragEnd={handleSheetDragEnd}
             layout
           >
             <div className="flex h-full flex-col">
               <button
                 type="button"
                 className="mx-auto mt-3 inline-flex h-10 min-w-40 items-center justify-center gap-2 rounded-full border border-border/70 bg-white px-4 text-sm font-semibold text-foreground shadow-[0_10px_28px_rgba(15,23,42,0.08)] transition active:scale-[0.98] md:hidden"
-                onClick={() => setMobileExpandedState((expanded) => !expanded)}
-                aria-label={mobileExpanded ? "Reduzir lista" : "Expandir lista"}
+                onClick={() => setMobileSnap((snap) => snap === "full" ? "mid" : "full")}
+                aria-label={isFull ? "Reduzir lista" : "Expandir lista"}
               >
-                {mobileExpanded ? <ChevronDown className="size-4 text-primary" /> : <ChevronUp className="size-4 text-primary" />}
-                {mobileExpanded ? "Reduzir lista" : "Expandir lista"}
+                {isFull ? <ChevronDown className="size-4 text-primary" /> : <ChevronUp className="size-4 text-primary" />}
+                {isFull ? "Reduzir lista" : "Expandir lista"}
               </button>
               <div className="border-b border-border/70 p-5 pt-4 md:p-5">
                 <div className="flex items-start justify-between gap-4">
@@ -86,7 +126,7 @@ export function PropertiesSidebar({
                     variant="outline"
                     className="h-10 rounded-full bg-white px-3 text-sm md:hidden"
                     onClick={() => {
-                      setMobileExpandedState(false)
+                      setMobileSnap("mid")
                       onOpenChange(false)
                     }}
                   >
@@ -94,30 +134,34 @@ export function PropertiesSidebar({
                     Fechar
                   </Button>
                 </div>
-                <SidebarSearchField
-                  value={searchValue}
-                  isSearching={isSearchingProperties}
-                  onChange={onSearchChange}
-                  onClear={onSearchClear}
-                />
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  {filtersControl ?? (
-                    <Button variant="outline" className="h-10 rounded-full bg-white text-sm">
-                      <Filter className="size-4" />
-                      Filtros
-                    </Button>
-                  )}
-                  <Button
-                    variant={showPointsOfInterest ? "default" : "outline"}
-                    className="h-10 rounded-full text-sm"
-                    onClick={onTogglePoints}
-                  >
-                    <Eye className="size-4" />
-                    Pontos próximos
-                  </Button>
-                </div>
+                {!isPeek ? (
+                  <>
+                    <SidebarSearchField
+                      value={searchValue}
+                      isSearching={isSearchingProperties}
+                      onChange={onSearchChange}
+                      onClear={onSearchClear}
+                    />
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      {filtersControl ?? (
+                        <Button variant="outline" className="h-10 rounded-full bg-white text-sm">
+                          <Filter className="size-4" />
+                          Filtros
+                        </Button>
+                      )}
+                      <Button
+                        variant={showPointsOfInterest ? "default" : "outline"}
+                        className="h-10 rounded-full text-sm"
+                        onClick={onTogglePoints}
+                      >
+                        <Eye className="size-4" />
+                        Pontos próximos
+                      </Button>
+                    </div>
+                  </>
+                ) : null}
               </div>
-              <div className="premium-scrollbar flex-1 overflow-y-auto">
+              <div ref={listRef} className={cn("premium-scrollbar flex-1 overflow-y-auto", isPeek && "hidden")}>
                 {isLoading ? <SidebarSkeleton /> : null}
                 {!isLoading && (
                   <div className="divide-y divide-border/70">
@@ -228,6 +272,7 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
   return (
     <motion.article
       layout
+      data-property-id={imovel.id}
       className={cn("group bg-white transition duration-200 hover:bg-secondary/65", active && "bg-primary/[0.04]")}
       onMouseEnter={() => onFocus(imovel)}
       onFocus={() => onFocus(imovel)}

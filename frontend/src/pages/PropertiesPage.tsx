@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useMotionValueEvent, useScroll, useSpring, useTransform } from "framer-motion"
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, List, LoaderCircle, LocateFixed, MapPin, Search, SlidersHorizontal, X } from "lucide-react"
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Hand, List, LoaderCircle, LocateFixed, MapPin, Search, SlidersHorizontal, X } from "lucide-react"
 import type { ReactNode } from "react"
 import { lazy, Suspense } from "react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -22,11 +22,19 @@ const HEADER_VISIBILITY_EVENT = "maldonado:premium-header-visibility"
 const SCROLL_TO_MAP_EVENT = "maldonado:scroll-to-map"
 const USER_LOCATION_CACHE_KEY = "maldonado.user-location"
 const USER_LOCATION_CACHE_TTL = 1000 * 60 * 60 * 12
+const MAP_CONTEXT_CACHE_KEY = "maldonado.map-context"
 const PropertiesMap = lazy(() => import("@/components/map/PropertiesMap").then((mod) => ({ default: mod.PropertiesMap })))
 
 interface CachedUserLocation {
   expiresAt: number
   address: EnderecoResultado
+}
+
+interface CachedMapContext {
+  selectedId?: number | null
+  sidebarOpen?: boolean
+  filters?: ImoveisFilters
+  view?: { center: [number, number]; zoom: number } | null
 }
 
 function readCachedUserLocation() {
@@ -57,15 +65,34 @@ function cacheUserLocation(address: EnderecoResultado) {
   )
 }
 
+function readCachedMapContext(): CachedMapContext {
+  if (typeof window === "undefined") return {}
+  try {
+    return JSON.parse(window.sessionStorage.getItem(MAP_CONTEXT_CACHE_KEY) || "{}") as CachedMapContext
+  } catch {
+    window.sessionStorage.removeItem(MAP_CONTEXT_CACHE_KEY)
+    return {}
+  }
+}
+
+function cacheMapContext(context: CachedMapContext) {
+  if (typeof window === "undefined") return
+  const current = readCachedMapContext()
+  window.sessionStorage.setItem(MAP_CONTEXT_CACHE_KEY, JSON.stringify({ ...current, ...context }))
+}
+
 export function PropertiesPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const buscaParam = searchParams.get("busca") ?? ""
   const destaqueParam = searchParams.get("destaque")
   const mapParam = searchParams.get("map")
   const { data: imoveis = [], isLoading } = useImoveis()
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const cachedMapContextRef = useRef<CachedMapContext>(readCachedMapContext())
+  const [sidebarOpen, setSidebarOpen] = useState(cachedMapContextRef.current.sidebarOpen ?? true)
   const [isMobileLayout, setIsMobileLayout] = useState(false)
   const [selected, setSelected] = useState<Imovel | null>(null)
+  const [mobileMapExplore, setMobileMapExplore] = useState(false)
+  const [savedMapView, setSavedMapView] = useState(cachedMapContextRef.current.view ?? null)
   const [filtersPopover, setFiltersPopover] = useState<"map" | "sidebar" | null>(null)
   const [showPointsOfInterest, setShowPointsOfInterest] = useState(true)
   const [heroVideoReady, setHeroVideoReady] = useState(false)
@@ -107,6 +134,7 @@ export function PropertiesPage() {
   const mapShadow = useSpring(rawMapShadow, { stiffness: 150, damping: 28, mass: 0.4 })
   const [filters, setFilters] = useState<ImoveisFilters>({
     ...defaultFilters,
+    ...cachedMapContextRef.current.filters,
     search: buscaParam,
   })
   const propertySearchQuery = propertySearch.trim()
@@ -462,6 +490,10 @@ export function PropertiesPage() {
   }, [controlsVisible, resultsLoadingKey, showResultsLoading])
 
   useEffect(() => {
+    if (!controlsVisible) setMobileMapExplore(false)
+  }, [controlsVisible])
+
+  useEffect(() => {
     if (isLoading || !controlsVisible) return
     requestUserLocation()
   }, [controlsVisible, isLoading, requestUserLocation])
@@ -508,12 +540,32 @@ export function PropertiesPage() {
     const media = window.matchMedia("(max-width: 767px)")
     const syncSidebar = () => {
       setIsMobileLayout(media.matches)
-      if (media.matches) setSidebarOpen(false)
+      if (media.matches && cachedMapContextRef.current.sidebarOpen === undefined) setSidebarOpen(false)
     }
     syncSidebar()
     media.addEventListener("change", syncSidebar)
     return () => media.removeEventListener("change", syncSidebar)
   }, [])
+
+  useEffect(() => {
+    if (selected || !imoveis.length) return
+    const cachedSelectedId = cachedMapContextRef.current.selectedId
+    if (!cachedSelectedId) return
+    const cachedSelected = imoveis.find((imovel) => imovel.id === cachedSelectedId)
+    if (cachedSelected) setSelected(cachedSelected)
+  }, [imoveis, selected])
+
+  useEffect(() => {
+    cacheMapContext({ selectedId: selected?.id ?? null })
+  }, [selected?.id])
+
+  useEffect(() => {
+    cacheMapContext({ sidebarOpen })
+  }, [sidebarOpen])
+
+  useEffect(() => {
+    cacheMapContext({ filters })
+  }, [filters])
 
   useEffect(() => {
     if (!isMobileLayout || !sidebarOpen) return
@@ -529,6 +581,16 @@ export function PropertiesPage() {
     setPropertySearchResults([])
     setHasSearchedProperties(false)
     setIsSearchingProperties(false)
+  }, [])
+
+  const handleMapViewChange = useCallback((view: { center: [number, number]; zoom: number }) => {
+    setSavedMapView(view)
+    cacheMapContext({ view })
+  }, [])
+
+  const showSelectedInList = useCallback((imovel: Imovel) => {
+    setSelected(imovel)
+    setSidebarOpen(true)
   }, [])
 
   const resultsAreLoading = isLoading || resultsLoading || (propertySearchActive && isSearchingProperties)
@@ -657,8 +719,12 @@ export function PropertiesPage() {
                   selectedAddress={selectedAddress ?? userLocationAddress}
                   scrollWheelZoom={mapInteractive}
                   showPointsOfInterest={showPointsOfInterest}
+                  mobileDragEnabled={mobileMapExplore}
+                  initialView={savedMapView}
                   onSelect={setSelected}
                   onClearSelect={() => setSelected(null)}
+                  onShowInList={showSelectedInList}
+                  onViewChange={handleMapViewChange}
                 />
               </Suspense>
               <MapLoadingOverlay visible={controlsVisible && resultsAreLoading} />
@@ -687,6 +753,20 @@ export function PropertiesPage() {
                   <div className="pointer-events-auto absolute right-4 top-4 z-[790] md:right-5 md:top-5">
                     <AccountMenuButton />
                   </div>
+
+                  <Button
+                    type="button"
+                    variant={mobileMapExplore ? "default" : "outline"}
+                    className={cn(
+                      "absolute right-3 z-[760] h-11 rounded-full px-4 text-sm shadow-[0_18px_50px_rgba(0,0,0,0.14)] backdrop-blur-xl md:hidden",
+                      selected ? "bottom-[calc(13.5rem+env(safe-area-inset-bottom))]" : "bottom-[calc(4.75rem+env(safe-area-inset-bottom))]",
+                      mobileMapExplore ? "bg-foreground text-white hover:bg-foreground/90" : "border-border/70 bg-white/94 hover:bg-white",
+                    )}
+                    onClick={() => setMobileMapExplore((enabled) => !enabled)}
+                  >
+                    <Hand className="size-4" />
+                    {mobileMapExplore ? "Concluir" : "Explorar mapa"}
+                  </Button>
 
                   <Button
                     type="button"
@@ -898,8 +978,9 @@ function MapFiltersPopover({
           {activeCount ? <span className="grid min-w-5 place-items-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-bold text-white">{activeCount}</span> : null}
         </Button>
         <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="bottom-0 left-0 top-auto max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-b-none rounded-t-[28px] p-0 md:hidden">
-            <DialogHeader className="border-b border-border/70 px-5 py-4 text-left">
+          <DialogContent className="bottom-0 left-0 top-auto max-h-[min(88dvh,calc(100dvh-env(safe-area-inset-top)-10px))] w-full max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-b-none rounded-t-[30px] border-white/70 p-0 shadow-[0_-18px_70px_rgba(0,0,0,0.16)] md:hidden">
+            <DialogHeader className="border-b border-border/70 px-5 pb-4 pt-3 text-left">
+              <span className="mx-auto mb-2 block h-1 w-11 rounded-full bg-border" />
               <DialogTitle>Filtros</DialogTitle>
               <DialogDescription>Refine os imóveis exibidos no mapa.</DialogDescription>
             </DialogHeader>

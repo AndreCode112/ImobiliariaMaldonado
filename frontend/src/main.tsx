@@ -19,6 +19,15 @@ const queryClient = new QueryClient({
   },
 })
 
+function lockDocumentZoom() {
+  const preventZoom = (event: Event) => event.preventDefault()
+  document.addEventListener("gesturestart", preventZoom, { passive: false })
+  document.addEventListener("gesturechange", preventZoom, { passive: false })
+  document.addEventListener("gestureend", preventZoom, { passive: false })
+}
+
+lockDocumentZoom()
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

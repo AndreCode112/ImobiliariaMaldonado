@@ -1,11 +1,11 @@
 import { motion } from "framer-motion"
-import { Bath, BedDouble, Camera, Car, Home, MapPin, MapPinned, Ruler, ShoppingCart, Store, TreePine, Utensils, X } from "lucide-react"
+import { Bath, BedDouble, Camera, Car, Home, List, MapPin, MapPinned, Ruler, ShoppingCart, Store, TreePine, Utensils, X } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 
 import { FavoriteButton } from "@/components/properties/FavoriteButton"
 import { Button } from "@/components/ui/button"
-import { Map, MapMarker, MapPopup, MapTileLayer, MapTooltip, MapZoomControl, useMap } from "@/components/ui/map"
+import { Map, MapMarker, MapMarkerClusterGroup, MapPopup, MapTileLayer, MapTooltip, MapZoomControl, useMap } from "@/components/ui/map"
 import type { EnderecoResultado, Imovel, PontoInteresse } from "@/types/imovel"
 
 interface PropertiesMapProps {
@@ -14,14 +14,30 @@ interface PropertiesMapProps {
   selectedAddress?: EnderecoResultado | null
   scrollWheelZoom?: boolean
   showPointsOfInterest?: boolean
+  mobileDragEnabled?: boolean
+  initialView?: { center: [number, number]; zoom: number } | null
   onSelect: (imovel: Imovel) => void
   onClearSelect?: () => void
+  onShowInList?: (imovel: Imovel) => void
+  onViewChange?: (view: { center: [number, number]; zoom: number }) => void
 }
 
 const DEFAULT_CENTER: [number, number] = [-23.55052, -46.633308]
 const MAP_TOUCH_HINT_KEY = "maldonado.map-touch-hint-seen"
 
-export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWheelZoom = true, showPointsOfInterest = false, onSelect, onClearSelect }: PropertiesMapProps) {
+export function PropertiesMap({
+  imoveis,
+  selectedId,
+  selectedAddress,
+  scrollWheelZoom = true,
+  showPointsOfInterest = false,
+  mobileDragEnabled = false,
+  initialView,
+  onSelect,
+  onClearSelect,
+  onShowInList,
+  onViewChange,
+}: PropertiesMapProps) {
   const [isHoveringMap, setIsHoveringMap] = useState(false)
   const [showPontosInteresse, setShowPontosInteresse] = useState(false)
   const [isMobileLayout, setIsMobileLayout] = useState(false)
@@ -40,10 +56,11 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
   const center = useMemo<[number, number]>(() => {
     const selected = visibleImoveis.find((imovel) => imovel.id === selectedId)
     if (selected?.latitude && selected.longitude) return [selected.latitude, selected.longitude]
+    if (initialView?.center) return initialView.center
     const first = visibleImoveis[0]
     if (first?.latitude && first.longitude) return [first.latitude, first.longitude]
     return DEFAULT_CENTER
-  }, [selectedId, visibleImoveis])
+  }, [initialView, selectedId, visibleImoveis])
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 767px)")
@@ -64,16 +81,16 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
 
   return (
     <div
-      className="relative size-full overflow-hidden rounded-none bg-secondary [touch-action:pan-y_pinch-zoom] md:[touch-action:auto]"
+      className={mobileDragEnabled ? "relative size-full overflow-hidden rounded-none bg-secondary [touch-action:none] md:[touch-action:auto]" : "relative size-full overflow-hidden rounded-none bg-secondary [touch-action:pan-y_pinch-zoom] md:[touch-action:auto]"}
       onMouseEnter={() => setIsHoveringMap(true)}
       onMouseLeave={() => setIsHoveringMap(false)}
     >
       <Map
         center={center}
-        zoom={visibleImoveis.length === 1 ? 15 : visibleImoveis.length ? 13 : 11}
+        zoom={initialView?.zoom ?? (visibleImoveis.length === 1 ? 15 : visibleImoveis.length ? 13 : 11)}
         className="size-full rounded-none"
         scrollWheelZoom={false}
-        dragging={!isMobileLayout}
+        dragging={!isMobileLayout || mobileDragEnabled}
         touchZoom
         doubleClickZoom={!isMobileLayout}
       >
@@ -86,7 +103,8 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
           updateWhenZooming
         />
         <MapWheelZoomController enabled={scrollWheelZoom && isHoveringMap} />
-        <MapMobileTouchController mobile={isMobileLayout} />
+        <MapMobileTouchController mobile={isMobileLayout} dragEnabled={mobileDragEnabled} />
+        <MapViewReporter onChange={onViewChange} />
         <MapSelectionFocus imovel={selectedImovel} mobile={isMobileLayout} />
         <MapPointsOfInterestZoomGate onChange={setShowPontosInteresse} />
         <MapExternalControls imoveis={visibleImoveis} selectedAddress={selectedAddress} />
@@ -122,26 +140,34 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
             </MapMarker>
           ))
         ) : null}
-        {visibleImoveis.map((imovel) => (
-          <MapMarker
-            key={imovel.id}
-            position={[imovel.latitude as number, imovel.longitude as number]}
-            icon={<HomePin />}
-            iconAnchor={[21, 42]}
-            popupAnchor={[0, -42]}
-            eventHandlers={{ click: () => onSelect(imovel), popupopen: () => onSelect(imovel) }}
-          >
-            {!isMobileLayout ? (
-              <MapPopup
-                closeButton={false}
-                closeOnClick
-                className="property-map-popup w-[320px] rounded-[28px] border-0 bg-white p-0 shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
-              >
-                <Preview imovel={imovel} />
-              </MapPopup>
-            ) : null}
-          </MapMarker>
-        ))}
+        <MapMarkerClusterGroup
+          chunkedLoading
+          maxClusterRadius={42}
+          disableClusteringAtZoom={17}
+          showCoverageOnHover={false}
+          icon={(count) => <ClusterPin count={count} />}
+        >
+          {visibleImoveis.map((imovel) => (
+            <MapMarker
+              key={imovel.id}
+              position={[imovel.latitude as number, imovel.longitude as number]}
+              icon={<HomePin active={imovel.id === selectedId} />}
+              iconAnchor={[21, 42]}
+              popupAnchor={[0, -42]}
+              eventHandlers={{ click: () => onSelect(imovel), popupopen: () => onSelect(imovel) }}
+            >
+              {!isMobileLayout ? (
+                <MapPopup
+                  closeButton={false}
+                  closeOnClick
+                  className="property-map-popup w-[320px] rounded-[28px] border-0 bg-white p-0 shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
+                >
+                  <Preview imovel={imovel} />
+                </MapPopup>
+              ) : null}
+            </MapMarker>
+          ))}
+        </MapMarkerClusterGroup>
       </Map>
       {isMobileLayout && showTouchHint ? (
         <motion.div
@@ -154,7 +180,7 @@ export function PropertiesMap({ imoveis, selectedId, selectedAddress, scrollWhee
           Use dois dedos para aproximar o mapa
         </motion.div>
       ) : null}
-      {isMobileLayout && selectedImovel ? <MobilePreview imovel={selectedImovel} onClose={onClearSelect} /> : null}
+      {isMobileLayout && selectedImovel ? <MobilePreview imovel={selectedImovel} onClose={onClearSelect} onShowInList={onShowInList} /> : null}
     </div>
   )
 }
@@ -216,14 +242,15 @@ function MapSelectionFocus({ imovel, mobile }: { imovel?: Imovel; mobile: boolea
   return null
 }
 
-function MapMobileTouchController({ mobile }: { mobile: boolean }) {
+function MapMobileTouchController({ mobile, dragEnabled }: { mobile: boolean; dragEnabled: boolean }) {
   const map = useMap()
 
   useEffect(() => {
     const touchMap = map as typeof map & { tap?: { enable: () => void; disable: () => void } }
     if (mobile) {
       touchMap.tap?.disable()
-      map.dragging.disable()
+      if (dragEnabled) map.dragging.enable()
+      else map.dragging.disable()
       map.touchZoom.enable()
       map.doubleClickZoom.disable()
       return
@@ -233,7 +260,25 @@ function MapMobileTouchController({ mobile }: { mobile: boolean }) {
     map.dragging.enable()
     map.touchZoom.enable()
     map.doubleClickZoom.enable()
-  }, [map, mobile])
+  }, [dragEnabled, map, mobile])
+
+  return null
+}
+
+function MapViewReporter({ onChange }: { onChange?: (view: { center: [number, number]; zoom: number }) => void }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (!onChange) return
+    const report = () => {
+      const center = map.getCenter()
+      onChange({ center: [center.lat, center.lng], zoom: map.getZoom() })
+    }
+    map.on("moveend zoomend", report)
+    return () => {
+      map.off("moveend zoomend", report)
+    }
+  }, [map, onChange])
 
   return null
 }
@@ -352,10 +397,18 @@ function AddressPin() {
   )
 }
 
-function HomePin() {
+function HomePin({ active = false }: { active?: boolean }) {
   return (
-    <div className="grid size-11 animate-[pin-pop_420ms_ease-out] place-items-center rounded-full border-[3px] border-white bg-primary text-white shadow-[0_18px_46px_rgba(255,56,92,0.34)] transition duration-200 hover:scale-105">
+    <div className={`grid size-11 animate-[pin-pop_420ms_ease-out] place-items-center rounded-full border-[3px] border-white bg-primary text-white shadow-[0_18px_46px_rgba(255,56,92,0.34)] transition duration-200 hover:scale-105 ${active ? "scale-110 ring-4 ring-primary/18" : ""}`}>
       <Home className="size-5" />
+    </div>
+  )
+}
+
+function ClusterPin({ count }: { count: number }) {
+  return (
+    <div className="grid size-11 place-items-center rounded-full border-[3px] border-white bg-foreground text-sm font-bold text-white shadow-[0_18px_46px_rgba(15,23,42,0.24)]">
+      {count}
     </div>
   )
 }
@@ -416,7 +469,7 @@ function Preview({ imovel }: { imovel: Imovel }) {
   )
 }
 
-function MobilePreview({ imovel, onClose }: { imovel: Imovel; onClose?: () => void }) {
+function MobilePreview({ imovel, onClose, onShowInList }: { imovel: Imovel; onClose?: () => void; onShowInList?: (imovel: Imovel) => void }) {
   function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: { offset: { y: number }; velocity: { y: number } }) {
     if (info.offset.y > 70 || info.velocity.y > 620) onClose?.()
   }
@@ -460,10 +513,15 @@ function MobilePreview({ imovel, onClose }: { imovel: Imovel; onClose?: () => vo
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-[1fr_auto] gap-2 border-t border-border/70 p-3">
-        <Button asChild className="h-11 rounded-full">
+      <div className="grid grid-cols-[1fr_auto_auto] gap-2 border-t border-border/70 p-3">
+        <Button asChild className="h-11 rounded-full shadow-[0_14px_34px_rgba(255,56,92,0.22)]">
           <Link to={`/imoveis/${imovel.uuid}`}>Ver detalhes</Link>
         </Button>
+        {onShowInList ? (
+          <Button type="button" variant="outline" className="size-11 rounded-full border-border bg-white px-0 shadow-none" onClick={() => onShowInList(imovel)} aria-label="Ver imóvel na lista">
+            <List className="size-4" />
+          </Button>
+        ) : null}
         <FavoriteButton id={imovel.id} className="size-11 border border-border bg-white shadow-none" />
       </div>
     </motion.div>
