@@ -115,6 +115,7 @@ export function PropertiesPage() {
   const mapRegionActiveRef = useRef(false)
   const resultsLoadingTimeoutRef = useRef<number | null>(null)
   const selectedAddressQueryRef = useRef("")
+  const restoredSelectedRef = useRef(false)
   const { scrollYProgress } = useScroll({
     target: transitionRef,
     offset: ["start start", "end end"],
@@ -494,6 +495,10 @@ export function PropertiesPage() {
   }, [controlsVisible])
 
   useEffect(() => {
+    if (selected || sidebarOpen) setMobileMapExplore(false)
+  }, [selected, sidebarOpen])
+
+  useEffect(() => {
     if (isLoading || !controlsVisible) return
     requestUserLocation()
   }, [controlsVisible, isLoading, requestUserLocation])
@@ -548,7 +553,8 @@ export function PropertiesPage() {
   }, [])
 
   useEffect(() => {
-    if (selected || !imoveis.length) return
+    if (restoredSelectedRef.current || selected || !imoveis.length) return
+    restoredSelectedRef.current = true
     const cachedSelectedId = cachedMapContextRef.current.selectedId
     if (!cachedSelectedId) return
     const cachedSelected = imoveis.find((imovel) => imovel.id === cachedSelectedId)
@@ -591,6 +597,13 @@ export function PropertiesPage() {
   const showSelectedInList = useCallback((imovel: Imovel) => {
     setSelected(imovel)
     setSidebarOpen(true)
+  }, [])
+
+  const clearSelectedImovel = useCallback(() => {
+    restoredSelectedRef.current = true
+    cachedMapContextRef.current.selectedId = null
+    cacheMapContext({ selectedId: null })
+    setSelected(null)
   }, [])
 
   const resultsAreLoading = isLoading || resultsLoading || (propertySearchActive && isSearchingProperties)
@@ -722,7 +735,7 @@ export function PropertiesPage() {
                   mobileDragEnabled={mobileMapExplore}
                   initialView={savedMapView}
                   onSelect={setSelected}
-                  onClearSelect={() => setSelected(null)}
+                  onClearSelect={clearSelectedImovel}
                   onShowInList={showSelectedInList}
                   onViewChange={handleMapViewChange}
                 />
@@ -756,20 +769,6 @@ export function PropertiesPage() {
 
                   <Button
                     type="button"
-                    variant={mobileMapExplore ? "default" : "outline"}
-                    className={cn(
-                      "absolute right-3 z-[760] h-11 rounded-full px-4 text-sm shadow-[0_18px_50px_rgba(0,0,0,0.14)] backdrop-blur-xl md:hidden",
-                      selected ? "bottom-[calc(13.5rem+env(safe-area-inset-bottom))]" : "bottom-[calc(4.75rem+env(safe-area-inset-bottom))]",
-                      mobileMapExplore ? "bg-foreground text-white hover:bg-foreground/90" : "border-border/70 bg-white/94 hover:bg-white",
-                    )}
-                    onClick={() => setMobileMapExplore((enabled) => !enabled)}
-                  >
-                    <Hand className="size-4" />
-                    {mobileMapExplore ? "Concluir" : "Explorar mapa"}
-                  </Button>
-
-                  <Button
-                    type="button"
                     variant="outline"
                     className="absolute left-4 top-1/2 z-[760] hidden h-11 -translate-y-1/2 rounded-full border-border/70 bg-white/94 px-4 text-sm shadow-[0_18px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl md:inline-flex md:left-5"
                     onClick={() => setSidebarOpen((open) => !open)}
@@ -780,15 +779,29 @@ export function PropertiesPage() {
                   </Button>
 
                   {!sidebarOpen && !selected ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="absolute bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-1/2 z-[760] h-12 -translate-x-1/2 rounded-full border-border/70 bg-white/94 px-5 text-sm shadow-[0_18px_50px_rgba(0,0,0,0.14)] backdrop-blur-xl md:hidden"
-                      onClick={() => setSidebarOpen(true)}
-                    >
-                      <List className="size-4" />
-                      Ver {visibleImoveis.length} {visibleImoveis.length === 1 ? "imóvel" : "imóveis"}
-                    </Button>
+                    <div className="absolute bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-1/2 z-[760] flex -translate-x-1/2 items-center gap-2 md:hidden">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-12 rounded-full border-border/70 bg-white/94 px-4 text-sm shadow-[0_18px_50px_rgba(0,0,0,0.14)] backdrop-blur-xl"
+                        onClick={() => setSidebarOpen(true)}
+                      >
+                        <List className="size-4" />
+                        Ver {visibleImoveis.length} {visibleImoveis.length === 1 ? "imóvel" : "imóveis"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={mobileMapExplore ? "default" : "outline"}
+                        className={cn(
+                          "h-12 rounded-full px-4 text-sm shadow-[0_18px_50px_rgba(0,0,0,0.14)] backdrop-blur-xl",
+                          mobileMapExplore ? "bg-foreground text-white hover:bg-foreground/90" : "border-border/70 bg-white/94 hover:bg-white",
+                        )}
+                        onClick={() => setMobileMapExplore((enabled) => !enabled)}
+                      >
+                        <Hand className="size-4" />
+                        {mobileMapExplore ? "Concluir" : "Explorar"}
+                      </Button>
+                    </div>
                   ) : null}
                 </>
               ) : null}
