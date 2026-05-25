@@ -46,7 +46,7 @@ export function normalizeImovel(api: ImovelApi): Imovel {
     livingRooms: api.salas ?? 0,
     balconies: api.varandas ?? 0,
     area: numberFrom(api.area),
-    type: api.tipo?.nome ?? "Residencial",
+    type: api.tipo?.nome ?? "",
     images: imagens.map((image) => image.url),
     isFeatured: api.destaque,
     isNew: isNew(api.criado_em),

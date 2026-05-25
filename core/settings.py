@@ -36,6 +36,8 @@ APPEND_SLASH = False
 GEOAPIFY_API_KEY = os.getenv('GEOAPIFY_API_KEY', '')
 FOURSQUARE_API_KEY = os.getenv('FOURSQUARE_API_KEY', '')
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "").strip()
+SITE_DOMAIN = "maldonadocorretorimoveis.com.br"
+PUBLIC_BASE_URL = f"https://{SITE_DOMAIN}"
 
 # Application definition
 INSTALLED_APPS = [

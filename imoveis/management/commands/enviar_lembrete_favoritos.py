@@ -229,16 +229,11 @@ class Command(BaseCommand):
         }
 
     def _build_imovel_url(self, imovel: Imovel) -> str:
-        base_url = self._public_base_url("FRONTEND_BASE_URL", "SITE_URL")
+        base_url = self._public_base_url()
         return f"{base_url.rstrip('/')}/imoveis/{imovel.uuid}"
 
-    def _public_base_url(self, *names: str) -> str:
-        base_url = self._setting_or_env(*names)
-        if base_url and "localhost" not in base_url and "127.0.0.1" not in base_url:
-            return base_url
-
-        email_domain = settings.EMAIL_HOST_USER.split("@")[-1]
-        return f"https://{email_domain}"
+    def _public_base_url(self) -> str:
+        return settings.PUBLIC_BASE_URL
 
     def _image_path(self, image_file) -> str:
         try:

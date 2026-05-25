@@ -1,4 +1,5 @@
-import { ArrowLeft, Bath, BedDouble, Car, ChevronLeft, ChevronRight, Copy, Home, Images, MapPin, Ruler, Send, Share2, Sofa, Utensils, X } from "lucide-react"
+import { ArrowLeft, BadgeCheck, Bath, BedDouble, Building2, Car, CheckCircle2, ChevronLeft, ChevronRight, Copy, Home, Images, MapPin, Ruler, Send, Share2, Sofa, Utensils, X } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import { useEffect, useLayoutEffect, useState } from "react"
 import { createPortal } from "react-dom"
@@ -141,6 +142,8 @@ export function PropertyDetailPage() {
     )
   }
 
+  const structureFeatures = buildStructureFeatures(imovel)
+
   return (
     <motion.section {...pageTransition} className="relative min-h-svh bg-white">
       <DetailTopControls />
@@ -253,8 +256,13 @@ export function PropertyDetailPage() {
 
             <Section id="estrutura" title="Estrutura e diferenciais">
               <div className="grid gap-3 sm:grid-cols-2">
-                {[imovel.type, ...imovel.amenities].filter(Boolean).map((item) => (
-                  <div key={item} className="rounded-2xl border bg-white p-4 text-sm font-medium">{item}</div>
+                {structureFeatures.map(({ label, icon: Icon }) => (
+                  <div key={label} className="flex items-center gap-3 rounded-2xl border border-border/80 bg-white p-4 text-sm font-medium shadow-[0_14px_36px_rgba(15,23,42,0.04)]">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                      <Icon className="size-5" />
+                    </span>
+                    <span className="min-w-0 leading-5 text-foreground">{label}</span>
+                  </div>
                 ))}
               </div>
             </Section>
@@ -364,6 +372,36 @@ function normalizeWhatsappNumber(value?: string) {
   if (digits.startsWith("55")) return digits
   if (digits.length === 10 || digits.length === 11) return `55${digits}`
   return digits
+}
+
+function normalizeFeatureKey(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase()
+}
+
+function titleCaseFeature(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return ""
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1)
+}
+
+function buildStructureFeatures(imovel: Imovel) {
+  const rawItems = [
+    { label: imovel.type, icon: Building2 },
+    ...imovel.amenities.map((item) => ({
+      label: item,
+      icon: normalizeFeatureKey(item).includes("disponivel") ? BadgeCheck : CheckCircle2,
+    })),
+  ]
+  const seen = new Set<string>()
+
+  return rawItems.reduce<Array<{ label: string; icon: LucideIcon }>>((items, item) => {
+    const label = titleCaseFeature(item.label || "")
+    const key = normalizeFeatureKey(label)
+    if (!key || seen.has(key)) return items
+    seen.add(key)
+    items.push({ label, icon: item.icon })
+    return items
+  }, [])
 }
 
 function WhatsappIcon({ className }: { className?: string }) {

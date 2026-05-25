@@ -505,7 +505,7 @@ function MobilePreview({ imovel, onClose, onShowInList }: { imovel: Imovel; onCl
           <h3 className="line-clamp-2 pr-1 text-sm font-semibold leading-5">{imovel.title}</h3>
           <p className="mt-1 truncate text-xs text-muted-foreground">{[imovel.neighborhood, imovel.city].filter(Boolean).join(", ")}</p>
           <p className="mt-2 text-sm font-bold text-primary">{imovel.priceLabel}</p>
-          <div className="mt-2 grid grid-cols-4 gap-1 text-[11px] text-muted-foreground">
+          <div className="mt-2 grid grid-cols-4 gap-1 text-[10px] text-muted-foreground">
             <Mini icon={Ruler} label={`${imovel.area} m²`} />
             <Mini icon={BedDouble} label={`${imovel.bedrooms}`} />
             <Mini icon={Bath} label={`${imovel.bathrooms}`} />
@@ -530,9 +530,9 @@ function MobilePreview({ imovel, onClose, onShowInList }: { imovel: Imovel; onCl
 
 function Mini({ icon: Icon, label }: { icon: typeof Ruler; label: string }) {
   return (
-    <span className="flex items-center justify-center gap-1 rounded-full bg-secondary px-2 py-1">
-      <Icon className="size-3" />
-      {label}
+    <span className="flex min-w-0 items-center justify-center gap-0.5 rounded-full bg-secondary px-1.5 py-1">
+      <Icon className="size-3 shrink-0" />
+      <span className="truncate">{label}</span>
     </span>
   )
 }

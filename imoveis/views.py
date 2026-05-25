@@ -349,7 +349,7 @@ def ApiUsuarioResetLinkView(request, user_id):
 
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
-    frontend_base_url = os.getenv("FRONTEND_BASE_URL") or request.headers.get("Origin") or request.build_absolute_uri("/").rstrip("/")
+    frontend_base_url = settings.PUBLIC_BASE_URL
     reset_url = f"{frontend_base_url.rstrip('/')}/resetar-senha/{uid}/{token}/"
     return JsonResponse(
         {
