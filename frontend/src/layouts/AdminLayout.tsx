@@ -39,6 +39,7 @@ export function AdminLayout() {
   const username = session?.user?.username ?? "Admin"
   const userInitial = username[0]?.toUpperCase() ?? "A"
   const activeNav = NAV.find((item) => item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)) ?? NAV[0]
+  const logsRoute = location.pathname.startsWith("/admin/logs")
 
   return (
     <section className="flex h-svh min-w-0 overflow-hidden bg-secondary">
@@ -193,8 +194,8 @@ export function AdminLayout() {
             </div>
           </header>
 
-          <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-0 premium-scrollbar">
-            <div className="min-h-full min-w-0 px-3 py-4 sm:p-4 md:p-6">
+          <main className={cn("min-h-0 min-w-0 flex-1 overflow-x-hidden overscroll-contain p-0 premium-scrollbar", logsRoute ? "overflow-hidden" : "overflow-y-auto")}>
+            <div className={cn("min-w-0 px-3 py-4 sm:p-4 md:p-6", logsRoute ? "h-full overflow-hidden" : "min-h-full")}>
               <Outlet />
             </div>
           </main>

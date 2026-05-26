@@ -84,7 +84,7 @@ export function AdminLogsPage() {
   }
 
   return (
-    <div className="flex h-[calc(100svh-8rem)] min-h-0 min-w-0 flex-col gap-5 overflow-hidden">
+    <div className="flex h-full min-h-0 min-w-0 flex-col gap-5 overflow-hidden">
       <div className="shrink-0">
         <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
@@ -99,7 +99,7 @@ export function AdminLogsPage() {
         </div>
       </div>
 
-      <div className="premium-scrollbar min-h-0 min-w-0 flex-1 overflow-auto pr-1">
+      <div className="premium-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden pr-1">
         <div className="min-w-0 space-y-5">
       <Card className="min-w-0 rounded-[28px] border-border/80 bg-white shadow-none">
         <CardContent className="min-w-0 space-y-4 p-4 md:p-5">
