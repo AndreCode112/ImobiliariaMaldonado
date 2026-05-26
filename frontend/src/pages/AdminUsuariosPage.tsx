@@ -1,6 +1,7 @@
 import { BadgeCheck, Copy, Edit, KeyRound, Mail, Search, Shield, UserRound, Users } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { AxiosError } from "axios"
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -71,8 +72,11 @@ export function AdminUsuariosPage() {
       setGeneratedLink(link)
       await navigator.clipboard?.writeText(link.reset_url)
       toast.success("Link de redefinição copiado")
-    } catch {
-      toast.error("Não foi possível gerar o link")
+    } catch (error) {
+      const message = error instanceof AxiosError
+        ? error.response?.data?.message || error.response?.data?.detail || `Erro ${error.response?.status ?? "desconhecido"} ao gerar o link`
+        : "Não foi possível gerar o link"
+      toast.error("Não foi possível gerar o link", { description: message })
     }
   }
 

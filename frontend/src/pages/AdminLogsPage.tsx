@@ -84,8 +84,9 @@ export function AdminLogsPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div className="flex h-[calc(100svh-8rem)] min-h-0 min-w-0 flex-col gap-5 overflow-hidden">
+      <div className="shrink-0">
+        <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Painel administrativo</p>
           <h1 className="mt-2 text-3xl font-semibold">Logs do sistema</h1>
@@ -95,11 +96,14 @@ export function AdminLogsPage() {
           <RefreshCw className={cn("size-4", isFetching && "animate-spin")} />
           Atualizar
         </Button>
+        </div>
       </div>
 
-      <Card className="rounded-[28px] border-border/80 bg-white shadow-none">
-        <CardContent className="space-y-4 p-4 md:p-5">
-          <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-[minmax(260px,1.4fr)_minmax(240px,1fr)_minmax(180px,0.7fr)_minmax(160px,0.6fr)_minmax(240px,0.85fr)]">
+      <div className="premium-scrollbar min-h-0 min-w-0 flex-1 overflow-auto pr-1">
+        <div className="min-w-0 space-y-5">
+      <Card className="min-w-0 rounded-[28px] border-border/80 bg-white shadow-none">
+        <CardContent className="min-w-0 space-y-4 p-4 md:p-5">
+          <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(220px,1.4fr)_minmax(200px,1fr)_minmax(150px,0.7fr)_minmax(140px,0.6fr)_minmax(200px,0.85fr)]">
             <FilterField label="Buscar nos logs">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -187,7 +191,7 @@ export function AdminLogsPage() {
               ) : null}
             </div>
 
-            <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center xl:w-auto">
+            <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center xl:w-auto">
               {hasFilters ? (
                 <Button variant="ghost" className="h-11 w-full rounded-full text-muted-foreground sm:w-auto" onClick={clearFilters}>
                   <X className="size-4" />
@@ -212,7 +216,7 @@ export function AdminLogsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-3">
+      <div className="grid min-w-0 gap-3">
         {isLoading ? Array.from({ length: 5 }).map((_, index) => <Skeleton key={index} className="h-36 rounded-[24px]" />) : null}
 
         {!isLoading && logs.map((item) => {
@@ -263,6 +267,8 @@ export function AdminLogsPage() {
             </p>
           </div>
         ) : null}
+      </div>
+        </div>
       </div>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
