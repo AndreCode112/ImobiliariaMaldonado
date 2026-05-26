@@ -1,6 +1,6 @@
 import { AlertTriangle, ArrowDownUp, CheckCircle2, FileWarning, ListFilter, RefreshCw, Search, Trash2, X } from "lucide-react"
 import type { ReactNode } from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -36,6 +36,18 @@ export function AdminLogsPage() {
   const selectedCount = selectedIds.size
   const allVisibleSelected = logs.length > 0 && logs.every((item) => selectedIds.has(item.id))
   const hasFilters = Boolean(filters.query || filters.route || filters.date || filters.time || filters.order !== "recent")
+
+  useEffect(() => {
+    const previousHtmlOverflow = document.documentElement.style.overflow
+    const previousBodyOverflow = document.body.style.overflow
+    document.documentElement.style.overflow = "hidden"
+    document.body.style.overflow = "hidden"
+
+    return () => {
+      document.documentElement.style.overflow = previousHtmlOverflow
+      document.body.style.overflow = previousBodyOverflow
+    }
+  }, [])
 
   function updateFilter<Key extends keyof SystemLogFilters>(key: Key, value: SystemLogFilters[Key]) {
     setSelectedIds(new Set())
