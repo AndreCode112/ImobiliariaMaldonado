@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import subprocess
 import time
 import traceback
@@ -47,22 +48,27 @@ from .rate_limits import (
 SERVER_LOG_SOURCES = {
     "nginx_error": {
         "label": "Nginx error",
-        "command": ["tail", "-n", "{lines}", "/var/log/nginx/error.log"],
+        "type": "file",
+        "path": "/var/log/nginx/error.log",
     },
     "cron": {
         "label": "Cron",
+        "type": "journal",
         "command": ["journalctl", "-u", "cron", "-n", "{lines}", "--no-pager", "-o", "short-iso"],
     },
     "lembrete_favoritos": {
         "label": "Lembrete favoritos",
-        "command": ["tail", "-n", "{lines}", str(settings.BASE_DIR / "logs" / "lembrete_favoritos.log")],
+        "type": "file",
+        "path": str(settings.BASE_DIR / "logs" / "lembrete_favoritos.log"),
     },
     "journal": {
         "label": "Journal",
+        "type": "journal",
         "command": ["journalctl", "-xe", "-n", "{lines}", "--no-pager", "-o", "short-iso"],
     },
     "app_service": {
         "label": "Serviço Django",
+        "type": "journal",
         "command": ["journalctl", "-u", "imobiliaria-maldonado.service", "-n", "{lines}", "--no-pager", "-o", "short-iso"],
     },
 }
@@ -85,6 +91,36 @@ def _request_int(value, fallback, minimum=1, maximum=500):
     except (TypeError, ValueError):
         return fallback
     return max(minimum, min(parsed, maximum))
+
+
+def _tail_file(path, lines):
+    if not os.path.exists(path):
+        return False, f"Arquivo não encontrado: {path}"
+    try:
+        with open(path, "rb") as file:
+            file.seek(0, os.SEEK_END)
+            position = file.tell()
+            chunks = []
+            line_count = 0
+            block_size = 8192
+            while position > 0 and line_count <= lines:
+                read_size = min(block_size, position)
+                position -= read_size
+                file.seek(position)
+                chunk = file.read(read_size)
+                chunks.append(chunk)
+                line_count += chunk.count(b"\n")
+            data = b"".join(reversed(chunks))
+        output = data.decode("utf-8", errors="replace").splitlines()[-lines:]
+        return True, "\n".join(output) or "Sem registros para exibir."
+    except PermissionError:
+        return False, f"Sem permissão para ler: {path}"
+    except OSError as exc:
+        return False, f"Não foi possível ler o arquivo: {exc}"
+
+
+def _journalctl_path():
+    return shutil.which("journalctl") or "/usr/bin/journalctl"
 
 
 def _superuser_unauthorized_response(request):
@@ -133,7 +169,21 @@ def ApiServerLogsView(request):
     if not config:
         return JsonResponse({"message": "Fonte de log inválida."}, status=400)
 
+    if config.get("type") == "file":
+        ok, output = _tail_file(config["path"], lines)
+        return JsonResponse(
+            {
+                "source": source,
+                "label": config["label"],
+                "lines": lines,
+                "ok": ok,
+                "output": output,
+            }
+        )
+
     command = [part.format(lines=str(lines)) for part in config["command"]]
+    if command and command[0] == "journalctl":
+        command[0] = _journalctl_path()
     try:
         result = subprocess.run(command, capture_output=True, text=True, timeout=4, check=False)
     except FileNotFoundError:
