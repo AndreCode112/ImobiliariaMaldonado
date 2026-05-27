@@ -37,6 +37,12 @@ interface CachedMapContext {
   view?: { center: [number, number]; zoom: number } | null
 }
 
+interface CityMapTarget {
+  city: string
+  center?: [number, number]
+  bounds?: [number, number][]
+}
+
 function readCachedUserLocation() {
   if (typeof window === "undefined") return null
   try {
@@ -169,6 +175,28 @@ export function PropertiesPage() {
     })
   }, [pontosInteressePorCidade, visibleImoveis])
 
+  const selectedCityMapTarget = useMemo<CityMapTarget | null>(() => {
+    if (!filters.cidade) return null
+
+    const cityImoveis = imoveis.filter((imovel) => normalizeText(imovel.city) === normalizeText(filters.cidade))
+    const cityWithCoordinates = cityImoveis.find((imovel) => {
+      const latitude = Number(imovel.raw.cidade?.latitude)
+      const longitude = Number(imovel.raw.cidade?.longitude)
+      return Number.isFinite(latitude) && Number.isFinite(longitude)
+    })
+    const cityLatitude = Number(cityWithCoordinates?.raw.cidade?.latitude)
+    const cityLongitude = Number(cityWithCoordinates?.raw.cidade?.longitude)
+    const bounds = cityImoveis
+      .filter((imovel) => imovel.latitude !== null && imovel.longitude !== null)
+      .map((imovel) => [imovel.latitude as number, imovel.longitude as number] as [number, number])
+
+    return {
+      city: filters.cidade,
+      center: Number.isFinite(cityLatitude) && Number.isFinite(cityLongitude) ? [cityLatitude, cityLongitude] : bounds[0],
+      bounds: bounds.length > 1 ? bounds : undefined,
+    }
+  }, [filters.cidade, imoveis])
+
   const selectedAddress = useMemo<EnderecoResultado | null>(() => {
     const latitude = searchParams.get("endereco_lat")
     const longitude = searchParams.get("endereco_lng")
@@ -271,7 +299,9 @@ export function PropertiesPage() {
       (position) => {
         void applyUserLocation(position.coords.latitude, position.coords.longitude)
       },
-      () => undefined,
+      () => {
+        geolocationRequestedRef.current = false
+      },
       {
         enableHighAccuracy: true,
         maximumAge: 1000 * 60 * 8,
@@ -499,9 +529,9 @@ export function PropertiesPage() {
   }, [selected, sidebarOpen])
 
   useEffect(() => {
-    if (isLoading || !controlsVisible) return
+    if (isLoading || !controlsVisible || userLocationAddress) return
     requestUserLocation()
-  }, [controlsVisible, isLoading, requestUserLocation])
+  }, [controlsVisible, isLoading, requestUserLocation, userLocationAddress])
 
   useEffect(() => {
     if (!userLocationAddress || !imoveis.length || filters.cidade) return
@@ -730,6 +760,7 @@ export function PropertiesPage() {
                   imoveis={visibleImoveisWithPoints}
                   selectedId={selected?.id}
                   selectedAddress={selectedAddress ?? userLocationAddress}
+                  cityTarget={selectedCityMapTarget}
                   scrollWheelZoom={mapInteractive}
                   showPointsOfInterest={showPointsOfInterest}
                   mobileDragEnabled={mobileMapExplore}

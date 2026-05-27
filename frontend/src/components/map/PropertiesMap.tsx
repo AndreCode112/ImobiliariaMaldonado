@@ -12,6 +12,11 @@ interface PropertiesMapProps {
   imoveis: Imovel[]
   selectedId?: number
   selectedAddress?: EnderecoResultado | null
+  cityTarget?: {
+    city: string
+    center?: [number, number]
+    bounds?: [number, number][]
+  } | null
   scrollWheelZoom?: boolean
   showPointsOfInterest?: boolean
   mobileDragEnabled?: boolean
@@ -29,6 +34,7 @@ export function PropertiesMap({
   imoveis,
   selectedId,
   selectedAddress,
+  cityTarget,
   scrollWheelZoom = true,
   showPointsOfInterest = false,
   mobileDragEnabled = false,
@@ -106,6 +112,7 @@ export function PropertiesMap({
         <MapMobileTouchController mobile={isMobileLayout} dragEnabled={mobileDragEnabled} />
         <MapViewReporter onChange={onViewChange} />
         <MapSelectionFocus imovel={selectedImovel} mobile={isMobileLayout} />
+        <MapCityFilterFocus target={cityTarget} mobile={isMobileLayout} />
         <MapPointsOfInterestZoomGate onChange={setShowPontosInteresse} />
         <MapExternalControls imoveis={visibleImoveis} selectedAddress={selectedAddress} />
         <MapZoomControl
@@ -242,6 +249,51 @@ function MapSelectionFocus({ imovel, mobile }: { imovel?: Imovel; mobile: boolea
   return null
 }
 
+function MapCityFilterFocus({
+  target,
+  mobile,
+}: {
+  target?: {
+    city: string
+    center?: [number, number]
+    bounds?: [number, number][]
+  } | null
+  mobile: boolean
+}) {
+  const map = useMap()
+  const previousCityRef = useRef("")
+
+  useEffect(() => {
+    if (!target?.city) return
+    const cityKey = target.city.trim().toLocaleLowerCase("pt-BR")
+    if (!cityKey || previousCityRef.current === cityKey) return
+    previousCityRef.current = cityKey
+
+    map.stop()
+    if (target.bounds?.length) {
+      map.flyToBounds(target.bounds, {
+        animate: true,
+        duration: 0.9,
+        easeLinearity: 0.18,
+        maxZoom: mobile ? 14 : 15,
+        paddingTopLeft: mobile ? [34, 110] : [90, 110],
+        paddingBottomRight: mobile ? [34, 170] : [90, 90],
+      })
+      return
+    }
+
+    if (target.center) {
+      map.flyTo(target.center, Math.max(map.getZoom(), 13), {
+        animate: true,
+        duration: 0.9,
+        easeLinearity: 0.18,
+      })
+    }
+  }, [map, mobile, target])
+
+  return null
+}
+
 function MapMobileTouchController({ mobile, dragEnabled }: { mobile: boolean; dragEnabled: boolean }) {
   const map = useMap()
 
@@ -287,15 +339,32 @@ function MapPointsOfInterestZoomGate({ onChange }: { onChange: (visible: boolean
   const map = useMap()
 
   useEffect(() => {
-    const minZoomToShowPoints = 13
+    const minZoomToShowPoints = 16
+    const baseZoom = map.getZoom()
+    let zoomInSteps = 0
+    let wheelZoomInGestures = 0
     const syncVisibility = () => {
-      onChange(map.getZoom() >= minZoomToShowPoints)
+      const touchDevice = window.matchMedia("(hover: none), (pointer: coarse)").matches
+      const hasIntentionalZoom = touchDevice ? zoomInSteps >= 3 : wheelZoomInGestures >= 3
+      onChange(map.getZoom() >= minZoomToShowPoints && hasIntentionalZoom)
+    }
+    const handleWheel = (event: WheelEvent) => {
+      if (event.deltaY < 0) {
+        wheelZoomInGestures = Math.min(3, wheelZoomInGestures + 1)
+      }
+    }
+    const handleZoomEnd = () => {
+      zoomInSteps = Math.max(zoomInSteps, Math.round(map.getZoom() - baseZoom))
+      syncVisibility()
     }
 
+    const container = map.getContainer()
     syncVisibility()
-    map.on("zoomend", syncVisibility)
+    container.addEventListener("wheel", handleWheel, { passive: true })
+    map.on("zoomend", handleZoomEnd)
     return () => {
-      map.off("zoomend", syncVisibility)
+      container.removeEventListener("wheel", handleWheel)
+      map.off("zoomend", handleZoomEnd)
     }
   }, [map, onChange])
 
