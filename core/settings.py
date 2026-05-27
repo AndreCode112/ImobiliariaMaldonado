@@ -214,7 +214,7 @@ CONTENT_SECURITY_POLICY = os.getenv(
     "default-src 'self'; "
     "script-src 'self' 'unsafe-inline'; "
     "style-src 'self' 'unsafe-inline' https://unpkg.com; "
-    "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://*.cartocdn.com; "
+    "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://*.cartocdn.com https://server.arcgisonline.com; "
     "font-src 'self' data:; "
     "connect-src 'self' https://nominatim.openstreetmap.org https://overpass-api.de https://api.geoapify.com https://api.foursquare.com; "
     "media-src 'self' blob:; "

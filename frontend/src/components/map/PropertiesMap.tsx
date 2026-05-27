@@ -5,7 +5,7 @@ import { Link } from "react-router-dom"
 
 import { FavoriteButton } from "@/components/properties/FavoriteButton"
 import { Button } from "@/components/ui/button"
-import { Map, MapMarker, MapMarkerClusterGroup, MapPopup, MapTileLayer, MapTooltip, MapZoomControl, useMap } from "@/components/ui/map"
+import { Map, MapLayers, MapLayersControl, MapMarker, MapMarkerClusterGroup, MapPopup, MapTileLayer, MapTooltip, MapZoomControl, useMap } from "@/components/ui/map"
 import type { EnderecoResultado, Imovel, PontoInteresse } from "@/types/imovel"
 
 interface PropertiesMapProps {
@@ -50,6 +50,7 @@ export function PropertiesMap({
   const [showTouchHint, setShowTouchHint] = useState(false)
   const visibleImoveis = imoveis.filter((imovel) => imovel.latitude !== null && imovel.longitude !== null)
   const selectedImovel = visibleImoveis.find((imovel) => imovel.id === selectedId)
+  const visibleMarkerKey = useMemo(() => visibleImoveis.map((imovel) => imovel.id).sort((a, b) => a - b).join("-") || "empty", [visibleImoveis])
   const pontosInteresse = useMemo(() => {
     const unique = new globalThis.Map<string, PontoInteresse>()
     visibleImoveis.forEach((imovel) => {
@@ -101,13 +102,29 @@ export function PropertiesMap({
         doubleClickZoom={!isMobileLayout}
       >
         <MapViewportStabilizer />
-        <MapTileLayer
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO'
-          keepBuffer={6}
-          updateWhenIdle={false}
-          updateWhenZooming
-        />
+        <MapLayers defaultTileLayer="Mapa">
+          <MapTileLayer
+            name="Mapa"
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO'
+            keepBuffer={8}
+            updateWhenIdle={false}
+            updateWhenZooming
+          />
+          <MapTileLayer
+            name="Satélite"
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            attribution="Tiles &copy; Esri"
+            keepBuffer={8}
+            updateWhenIdle={false}
+            updateWhenZooming
+          />
+          <MapLayersControl
+            tileLayersLabel="Visualização"
+            position="top-20 right-3 md:right-6"
+            className="rounded-full border-border/70 bg-white/94 text-foreground shadow-[0_16px_44px_rgba(15,23,42,0.14)] backdrop-blur-xl hover:bg-white"
+          />
+        </MapLayers>
         <MapWheelZoomController enabled={scrollWheelZoom && isHoveringMap} />
         <MapMobileTouchController mobile={isMobileLayout} dragEnabled={mobileDragEnabled} />
         <MapViewReporter onChange={onViewChange} />
@@ -148,9 +165,11 @@ export function PropertiesMap({
           ))
         ) : null}
         <MapMarkerClusterGroup
+          key={visibleMarkerKey}
           chunkedLoading
           maxClusterRadius={42}
           disableClusteringAtZoom={17}
+          removeOutsideVisibleBounds
           showCoverageOnHover={false}
           icon={(count) => <ClusterPin count={count} />}
         >
@@ -161,7 +180,17 @@ export function PropertiesMap({
               icon={<HomePin active={imovel.id === selectedId} />}
               iconAnchor={[21, 42]}
               popupAnchor={[0, -42]}
-              eventHandlers={{ click: () => onSelect(imovel), popupopen: () => onSelect(imovel) }}
+              eventHandlers={{
+                click: (event) => {
+                  onSelect(imovel)
+                  if (!isMobileLayout) {
+                    window.requestAnimationFrame(() => {
+                      event.target.openPopup()
+                    })
+                  }
+                },
+                popupopen: () => onSelect(imovel),
+              }}
             >
               {!isMobileLayout ? (
                 <MapPopup
@@ -458,6 +487,22 @@ function addressTitle(address: EnderecoResultado) {
   return address.address?.road || address.address?.pedestrian || address.address?.suburb || address.address?.city || address.display_name.split(",")[0] || "Endereço"
 }
 
+function compactLocation(parts: string[]) {
+  const uniqueParts: string[] = []
+  parts.forEach((part) => {
+    const cleanPart = part.trim()
+    if (!cleanPart) return
+    const normalized = normalizeText(cleanPart)
+    if (uniqueParts.some((item) => normalizeText(item) === normalized)) return
+    uniqueParts.push(cleanPart)
+  })
+  return uniqueParts.join(", ")
+}
+
+function normalizeText(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").trim()
+}
+
 function AddressPin() {
   return (
     <div className="relative grid size-9 place-items-center rounded-full border-[3px] border-white bg-zinc-950 text-white shadow-[0_18px_44px_rgba(0,0,0,0.32)]">
@@ -509,7 +554,7 @@ function PontoInteressePin({ categoria }: { categoria: string }) {
 }
 
 function Preview({ imovel }: { imovel: Imovel }) {
-  const location = [imovel.neighborhood, imovel.city].filter(Boolean).join(", ")
+  const location = compactLocation([imovel.neighborhood, imovel.city])
 
   return (
     <div className="w-[340px] overflow-hidden rounded-[24px] bg-white">
@@ -533,26 +578,18 @@ function Preview({ imovel }: { imovel: Imovel }) {
         </div>
       </div>
 
-      <div className="space-y-4 p-4">
-        <div className="space-y-1.5">
-          <div className="flex items-start justify-between gap-3">
-            <h3 className="line-clamp-2 text-base font-semibold leading-5 text-foreground">{imovel.title}</h3>
-            <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
-              {statusLabel(imovel.status)}
-            </span>
-          </div>
+      <div className="space-y-3 p-4">
+        <div className="space-y-2">
+          <h3 className="line-clamp-2 text-left text-base font-semibold leading-5 text-foreground">{imovel.title}</h3>
           {location ? (
-            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <MapPin className="size-3.5 shrink-0" />
+            <p className="grid grid-cols-[16px_minmax(0,1fr)] items-center gap-1.5 text-left text-sm leading-5 text-muted-foreground">
+              <MapPin className="size-3.5 self-center" />
               <span className="truncate">{location}</span>
             </p>
           ) : null}
         </div>
 
-        <div className="rounded-[18px] bg-secondary/80 p-3">
-          <p className="text-xs font-semibold uppercase text-muted-foreground">Valor</p>
-          <p className="mt-1 text-lg font-bold text-primary">{imovel.priceLabel}</p>
-        </div>
+        <p className="rounded-[16px] bg-secondary/80 px-3 py-2.5 text-center text-base font-bold text-primary">{imovel.priceLabel}</p>
 
         <div className="grid grid-cols-4 gap-1.5 text-xs text-muted-foreground">
           <Mini icon={Ruler} label={`${imovel.area} m²`} />
@@ -561,26 +598,12 @@ function Preview({ imovel }: { imovel: Imovel }) {
           <Mini icon={Car} label={`${imovel.parking}`} />
         </div>
 
-        <div className="grid grid-cols-[1fr_auto] gap-2">
-          <Button asChild className="h-11 rounded-full shadow-[0_14px_34px_rgba(255,56,92,0.22)]">
-            <Link to={`/imoveis/${imovel.uuid}`}>Ver detalhes</Link>
-          </Button>
-          <Button asChild variant="outline" className="h-11 rounded-full border-border bg-white px-4 shadow-none">
-            <Link to={`/imoveis/${imovel.uuid}`}>Abrir</Link>
-          </Button>
-        </div>
+        <Button asChild className="h-11 w-full rounded-full shadow-[0_14px_34px_rgba(255,56,92,0.22)]">
+          <Link to={`/imoveis/${imovel.uuid}`}>Ver detalhes</Link>
+        </Button>
       </div>
     </div>
   )
-}
-
-function statusLabel(status: string) {
-  return {
-    disponivel: "Disponível",
-    vendido: "Vendido",
-    alugado: "Alugado",
-    reservado: "Reservado",
-  }[status] ?? status
 }
 
 function MobilePreview({ imovel, onClose, onShowInList }: { imovel: Imovel; onClose?: () => void; onShowInList?: (imovel: Imovel) => void }) {

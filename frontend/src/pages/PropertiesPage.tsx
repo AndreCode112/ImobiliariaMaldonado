@@ -235,6 +235,9 @@ export function PropertiesPage() {
     return countableFilters.filter(Boolean).length + (selectedAddress ? 1 : 0) + (destaqueParam === "1" ? 1 : 0)
   }, [destaqueParam, filters, selectedAddress])
 
+  const hasManualFilters = activeFilterCount > (selectedAddress ? 1 : 0)
+  const mapAddress = selectedAddress ?? (hasManualFilters ? null : userLocationAddress)
+
   const resultsLoadingKey = useMemo(() => {
     return JSON.stringify({
       filters,
@@ -273,28 +276,20 @@ export function PropertiesPage() {
       // Mantem a localização bruta caso o reverse geocode não responda.
     }
 
-    const userCity = cityFromAddress(address)
-    const matchedCity = findMatchingCity(userCity, imoveis)
     const nextAddress = {
       ...address,
-      display_name: address.display_name || matchedCity || userCity || "Sua localização atual",
+      display_name: address.display_name || cityFromAddress(address) || "Sua localização atual",
       latitude: String(address.latitude || latitude),
       longitude: String(address.longitude || longitude),
     }
     setUserLocationAddress(nextAddress)
     cacheUserLocation(nextAddress)
-    setFilters((current) => ({
-      ...current,
-      cidade: matchedCity || current.cidade,
-      bairro: "",
-    }))
-  }, [imoveis, showResultsLoading])
+  }, [showResultsLoading])
 
   const requestUserLocation = useCallback(() => {
     const cachedLocation = readCachedUserLocation()
     if (cachedLocation) {
       setUserLocationAddress(cachedLocation)
-      return true
     }
 
     if (geolocationRequestedRef.current || typeof navigator === "undefined" || !navigator.geolocation) return false
@@ -544,14 +539,6 @@ export function PropertiesPage() {
   }, [controlsVisible, isLoading, requestUserLocation, userLocationAddress])
 
   useEffect(() => {
-    if (!userLocationAddress || !imoveis.length || filters.cidade) return
-    const userCity = cityFromAddress(userLocationAddress)
-    const matchedCity = findMatchingCity(userCity, imoveis)
-    if (!matchedCity) return
-    setFilters((current) => current.cidade ? current : { ...current, cidade: matchedCity, bairro: "" })
-  }, [filters.cidade, imoveis, userLocationAddress])
-
-  useEffect(() => {
     const video = heroVideoRef.current
     if (!video) return
 
@@ -769,7 +756,7 @@ export function PropertiesPage() {
                 <PropertiesMap
                   imoveis={visibleImoveisWithPoints}
                   selectedId={selected?.id}
-                  selectedAddress={selectedAddress ?? userLocationAddress}
+                  selectedAddress={mapAddress}
                   cityTarget={selectedCityMapTarget}
                   scrollWheelZoom={mapInteractive}
                   showPointsOfInterest={showPointsOfInterest}
@@ -1220,12 +1207,6 @@ function addressTitle(address: EnderecoResultado) {
 function cityFromAddress(address: EnderecoResultado) {
   const data = address.address ?? {}
   return data.city || data.town || data.village || data.municipality || data.county || ""
-}
-
-function findMatchingCity(city: string, imoveis: Imovel[]) {
-  if (!city) return ""
-  const normalizedCity = normalizeText(city)
-  return unique(imoveis.map((imovel) => imovel.city).filter(Boolean)).find((item) => normalizeText(item) === normalizedCity) ?? ""
 }
 
 function normalizeText(value: string) {
