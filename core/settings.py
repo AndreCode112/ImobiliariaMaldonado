@@ -218,6 +218,7 @@ CONTENT_SECURITY_POLICY = os.getenv(
     "font-src 'self' data:; "
     "connect-src 'self' https://nominatim.openstreetmap.org https://overpass-api.de https://api.geoapify.com https://api.foursquare.com; "
     "media-src 'self' blob:; "
+    "frame-src 'self' https://www.openstreetmap.org; "
     "frame-ancestors 'none'; "
     "base-uri 'self'; "
     "form-action 'self'",

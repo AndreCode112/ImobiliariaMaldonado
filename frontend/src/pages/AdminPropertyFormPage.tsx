@@ -108,6 +108,16 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
+function buildCoordinateMapEmbedUrl(latitude?: string, longitude?: string) {
+  const lat = Number(latitude)
+  const lng = Number(longitude)
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return ""
+
+  const padding = 0.006
+  const bbox = [lng - padding, lat - padding, lng + padding, lat + padding].join(",")
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${encodeURIComponent(`${lat},${lng}`)}`
+}
+
 function onlyDigits(value: string) {
   return value.replace(/\D/g, "")
 }
@@ -272,6 +282,10 @@ export function AdminPropertyFormPage() {
   const [addressDialogOpen, setAddressDialogOpen] = useState(false)
   const [addressResult, setAddressResult] = useState<EnderecoResultado | null>(null)
   const imageFilesRef = useRef<ImageFilePreview[]>([])
+  const addressMapUrl = useMemo(
+    () => buildCoordinateMapEmbedUrl(addressResult?.latitude, addressResult?.longitude),
+    [addressResult?.latitude, addressResult?.longitude],
+  )
 
   const visibleExistingImages = useMemo(
     () => (imovel?.raw.imagens ?? []).filter((image) => !removedImageIds.includes(image.id)),
@@ -868,6 +882,17 @@ export function AdminPropertyFormPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Endereço retornado</p>
             <p className="mt-2 text-sm leading-6 text-foreground">{addressResult?.display_name}</p>
           </div>
+          {addressMapUrl ? (
+            <div className="overflow-hidden rounded-2xl border bg-secondary shadow-sm">
+              <iframe
+                title="Mapa das coordenadas encontradas"
+                src={addressMapUrl}
+                className="h-56 w-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+          ) : null}
           <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <Field label="Latitude">
               <Input readOnly className="h-11 bg-secondary" value={addressResult?.latitude ?? ""} />
