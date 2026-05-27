@@ -1,11 +1,12 @@
 import { motion } from "framer-motion"
-import { Bath, BedDouble, Camera, Car, Home, List, MapPin, MapPinned, Ruler, ShoppingCart, Store, TreePine, Utensils, X } from "lucide-react"
+import { Bath, BedDouble, Camera, Car, Home, List, MapPin, MapPinned, Ruler, ShoppingCart, Store, TreePine, Utensils, Wallet, X, type LucideIcon } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 
 import { FavoriteButton } from "@/components/properties/FavoriteButton"
 import { Button } from "@/components/ui/button"
 import { Map, MapLayers, MapLayersControl, MapMarker, MapMarkerClusterGroup, MapPopup, MapTileLayer, MapTooltip, MapZoomControl, useMap } from "@/components/ui/map"
+import { cn } from "@/lib/utils"
 import type { EnderecoResultado, Imovel, PontoInteresse } from "@/types/imovel"
 
 interface PropertiesMapProps {
@@ -180,14 +181,12 @@ export function PropertiesMap({
               icon={<HomePin active={imovel.id === selectedId} />}
               iconAnchor={[21, 42]}
               popupAnchor={[0, -42]}
+              riseOnHover={false}
+              riseOffset={0}
               eventHandlers={{
                 click: (event) => {
                   onSelect(imovel)
-                  if (!isMobileLayout) {
-                    window.requestAnimationFrame(() => {
-                      event.target.openPopup()
-                    })
-                  }
+                  if (!isMobileLayout) event.target.openPopup()
                 },
                 popupopen: () => onSelect(imovel),
               }}
@@ -513,7 +512,7 @@ function AddressPin() {
 
 function HomePin({ active = false }: { active?: boolean }) {
   return (
-    <div className={`grid size-11 place-items-center rounded-full border-[3px] border-white bg-primary text-white shadow-[0_18px_46px_rgba(255,56,92,0.34)] transition duration-200 hover:scale-105 ${active ? "scale-110 ring-4 ring-primary/18" : ""}`}>
+    <div className={`grid size-11 place-items-center rounded-full border-[3px] border-white bg-primary text-white shadow-[0_18px_46px_rgba(255,56,92,0.34)] ${active ? "ring-4 ring-primary/18" : ""}`}>
       <Home className="size-5" />
     </div>
   )
@@ -578,18 +577,16 @@ function Preview({ imovel }: { imovel: Imovel }) {
         </div>
       </div>
 
-      <div className="space-y-3 p-4">
-        <div className="space-y-2">
+      <div className="space-y-4 p-4">
+        <div className="space-y-3">
           <h3 className="line-clamp-2 text-left text-base font-semibold leading-5 text-foreground">{imovel.title}</h3>
-          {location ? (
-            <p className="grid grid-cols-[16px_minmax(0,1fr)] items-center gap-1.5 text-left text-sm leading-5 text-muted-foreground">
-              <MapPin className="size-3.5 self-center" />
-              <span className="truncate">{location}</span>
-            </p>
-          ) : null}
+          <div className="grid gap-2">
+            {location ? (
+              <InfoLine icon={MapPin} value={location} />
+            ) : null}
+            <InfoLine icon={Wallet} value={imovel.priceLabel} strong />
+          </div>
         </div>
-
-        <p className="rounded-[16px] bg-secondary/80 px-3 py-2.5 text-center text-base font-bold text-primary">{imovel.priceLabel}</p>
 
         <div className="grid grid-cols-4 gap-1.5 text-xs text-muted-foreground">
           <Mini icon={Ruler} label={`${imovel.area} m²`} />
@@ -602,6 +599,19 @@ function Preview({ imovel }: { imovel: Imovel }) {
           <Link to={`/imoveis/${imovel.uuid}`}>Ver detalhes</Link>
         </Button>
       </div>
+    </div>
+  )
+}
+
+function InfoLine({ icon: Icon, value, strong = false }: { icon: LucideIcon; value: string; strong?: boolean }) {
+  return (
+    <div className="grid min-w-0 grid-cols-[20px_minmax(0,1fr)] items-center gap-2 text-left">
+      <span className={cn("grid size-5 place-items-center rounded-full", strong ? "bg-primary/10 text-primary" : "bg-secondary text-primary")}>
+        <Icon className="size-3.5" strokeWidth={2.4} />
+      </span>
+      <span className={cn("block min-w-0 truncate leading-5", strong ? "text-base font-bold text-foreground" : "text-sm text-muted-foreground")} title={value}>
+        {value}
+      </span>
     </div>
   )
 }
