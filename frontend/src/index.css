@@ -147,11 +147,11 @@ img {
 
 .property-map-popup .leaflet-popup-content-wrapper {
   overflow: visible !important;
-  border-radius: 28px !important;
+  border-radius: 24px !important;
 }
 
 .property-map-popup .leaflet-popup-content {
-  width: 320px !important;
+  width: 340px !important;
   margin: 0 !important;
 }
 
@@ -298,15 +298,4 @@ img {
   background: #ff385c !important;
   color: white !important;
   font: 700 13px/30px Inter, sans-serif !important;
-}
-
-@keyframes pin-pop {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.82);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }

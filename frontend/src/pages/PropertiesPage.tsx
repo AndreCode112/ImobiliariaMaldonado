@@ -49,15 +49,21 @@ function readCachedUserLocation() {
     const raw = window.localStorage.getItem(USER_LOCATION_CACHE_KEY)
     if (!raw) return null
     const cached = JSON.parse(raw) as Partial<CachedUserLocation>
-    if (!cached.expiresAt || cached.expiresAt <= Date.now() || !cached.address?.latitude || !cached.address.longitude) {
+    if (!cached.expiresAt || cached.expiresAt <= Date.now() || !hasValidCoordinates(cached.address)) {
       window.localStorage.removeItem(USER_LOCATION_CACHE_KEY)
       return null
     }
-    return cached.address
+    return cached.address ?? null
   } catch {
     window.localStorage.removeItem(USER_LOCATION_CACHE_KEY)
     return null
   }
+}
+
+function hasValidCoordinates(address?: Partial<EnderecoResultado>) {
+  const latitude = Number(address?.latitude)
+  const longitude = Number(address?.longitude)
+  return Number.isFinite(latitude) && Number.isFinite(longitude) && latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180
 }
 
 function cacheUserLocation(address: EnderecoResultado) {
@@ -117,7 +123,7 @@ export function PropertiesPage() {
   const [resultsLoading, setResultsLoading] = useState(false)
   const transitionRef = useRef<HTMLDivElement | null>(null)
   const heroVideoRef = useRef<HTMLVideoElement | null>(null)
-  const geolocationRequestedRef = useRef(Boolean(userLocationAddress))
+  const geolocationRequestedRef = useRef(false)
   const mapRegionActiveRef = useRef(false)
   const resultsLoadingTimeoutRef = useRef<number | null>(null)
   const selectedAddressQueryRef = useRef("")
@@ -287,7 +293,6 @@ export function PropertiesPage() {
   const requestUserLocation = useCallback(() => {
     const cachedLocation = readCachedUserLocation()
     if (cachedLocation) {
-      geolocationRequestedRef.current = true
       setUserLocationAddress(cachedLocation)
       return true
     }
@@ -304,7 +309,7 @@ export function PropertiesPage() {
       },
       {
         enableHighAccuracy: true,
-        maximumAge: 1000 * 60 * 8,
+        maximumAge: 0,
         timeout: 9000,
       },
     )
@@ -410,6 +415,11 @@ export function PropertiesPage() {
     const timeout = window.setTimeout(scrollToMap, 120)
     return () => window.clearTimeout(timeout)
   }, [mapParam, scrollToMap])
+
+  useEffect(() => {
+    if (isLoading || userLocationAddress) return
+    requestUserLocation()
+  }, [isLoading, requestUserLocation, userLocationAddress])
 
   useEffect(() => {
     setFilters((current) => current.search === buscaParam ? current : { ...current, search: buscaParam })
@@ -997,9 +1007,23 @@ function MapFiltersPopover({
   contentAlign?: "start" | "center" | "end"
   isMobile?: boolean
 }) {
+  const [draftFilters, setDraftFilters] = useState(filters)
+  const previousOpenRef = useRef(open)
   const cidades = unique(imoveis.map((item) => item.city).filter(Boolean))
   const tipos = unique(imoveis.map((item) => item.type).filter(Boolean))
-  const update = (key: keyof ImoveisFilters, value: string) => setFilters({ ...filters, [key]: value })
+  const update = (key: keyof ImoveisFilters, value: string) => setDraftFilters((current) => ({ ...current, [key]: value }))
+  const clearDraft = () => setDraftFilters(defaultFilters)
+  const applyDraft = () => {
+    setFilters(draftFilters)
+    onOpenChange(false)
+  }
+
+  useEffect(() => {
+    if (open && !previousOpenRef.current) setDraftFilters(filters)
+    if (!open) setDraftFilters(filters)
+    previousOpenRef.current = open
+  }, [filters, open])
+
   const trigger = (
     <Button type="button" variant="outline" className={cn("h-11 rounded-full border-border/70 bg-white px-3 text-sm shadow-none hover:bg-secondary sm:px-4", triggerClassName)}>
       <SlidersHorizontal className="size-4" />
@@ -1029,12 +1053,12 @@ function MapFiltersPopover({
               <DialogDescription>Refine os imóveis exibidos no mapa.</DialogDescription>
             </DialogHeader>
             <FiltersPanel
-              filters={filters}
+              filters={draftFilters}
               update={update}
               cidades={cidades}
               tipos={tipos}
-              onClear={() => setFilters(defaultFilters)}
-              onApply={() => onOpenChange(false)}
+              onClear={clearDraft}
+              onApply={applyDraft}
             />
           </DialogContent>
         </Dialog>
@@ -1047,18 +1071,24 @@ function MapFiltersPopover({
       <PopoverTrigger asChild>
         {trigger}
       </PopoverTrigger>
-      <PopoverContent side={contentSide} align={contentAlign} className="z-[900] w-[min(420px,calc(100vw-2rem))] rounded-[20px] p-0">
+      <PopoverContent
+        side={contentSide}
+        align={contentAlign}
+        avoidCollisions
+        collisionPadding={16}
+        className="z-[900] max-h-[min(680px,calc(100dvh-2rem))] w-[min(420px,calc(100vw-2rem))] rounded-[20px] p-0"
+      >
         <div className="border-b border-border/60 px-5 py-4">
           <h2 className="text-base font-semibold">Filtros</h2>
           <p className="mt-1 text-sm text-muted-foreground">Refine os imóveis exibidos no mapa.</p>
         </div>
         <FiltersPanel
-          filters={filters}
+          filters={draftFilters}
           update={update}
           cidades={cidades}
           tipos={tipos}
-          onClear={() => setFilters(defaultFilters)}
-          onApply={() => onOpenChange(false)}
+          onClear={clearDraft}
+          onApply={applyDraft}
         />
       </PopoverContent>
     </Popover>
@@ -1082,15 +1112,15 @@ function FiltersPanel({
 }) {
   return (
     <>
-      <div className="premium-scrollbar grid max-h-[58svh] grid-cols-1 gap-3 overflow-y-auto p-5 sm:grid-cols-2">
+      <div className="premium-scrollbar grid max-h-[min(58svh,520px)] min-w-0 grid-cols-1 gap-3 overflow-y-auto overscroll-contain p-5 sm:grid-cols-2">
         <Field label="Cidade">
-          <select className="h-11 rounded-[14px] border border-input bg-white px-3 text-sm" value={filters.cidade} onChange={(event) => update("cidade", event.target.value)}>
+          <select className="h-11 min-w-0 rounded-[14px] border border-input bg-white px-3 text-sm outline-none transition focus:border-primary/45 focus:ring-4 focus:ring-primary/10" value={filters.cidade} onChange={(event) => update("cidade", event.target.value)}>
             <option value="">Todas</option>
             {cidades.map((cidade) => <option key={cidade}>{cidade}</option>)}
           </select>
         </Field>
         <Field label="Tipo">
-          <select className="h-11 rounded-[14px] border border-input bg-white px-3 text-sm" value={filters.tipo} onChange={(event) => update("tipo", event.target.value)}>
+          <select className="h-11 min-w-0 rounded-[14px] border border-input bg-white px-3 text-sm outline-none transition focus:border-primary/45 focus:ring-4 focus:ring-primary/10" value={filters.tipo} onChange={(event) => update("tipo", event.target.value)}>
             <option value="">Todos</option>
             {tipos.map((tipo) => <option key={tipo}>{tipo}</option>)}
           </select>
@@ -1106,7 +1136,7 @@ function FiltersPanel({
         <MaskedNumberField label="Area minima" value={filters.areaMin} onChange={(value) => update("areaMin", value)} formatter={formatAreaInput} placeholder="0 m²" />
         <MaskedNumberField label="Area maxima" value={filters.areaMax} onChange={(value) => update("areaMax", value)} formatter={formatAreaInput} placeholder="0 m²" />
       </div>
-      <div className="flex justify-between gap-3 border-t border-border/60 bg-white p-4">
+      <div className="flex shrink-0 justify-between gap-3 border-t border-border/60 bg-white p-4">
         <Button type="button" variant="ghost" className="h-11 rounded-full" onClick={onClear}>Limpar</Button>
         <Button type="button" className="h-11 rounded-full px-5" onClick={onApply}>Aplicar</Button>
       </div>

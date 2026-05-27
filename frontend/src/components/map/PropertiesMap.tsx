@@ -167,7 +167,7 @@ export function PropertiesMap({
                 <MapPopup
                   closeButton={false}
                   closeOnClick
-                  className="property-map-popup w-[320px] rounded-[28px] border-0 bg-white p-0 shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
+                  className="property-map-popup w-[340px] rounded-[24px] border-0 bg-white p-0 shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
                 >
                   <Preview imovel={imovel} />
                 </MapPopup>
@@ -468,7 +468,7 @@ function AddressPin() {
 
 function HomePin({ active = false }: { active?: boolean }) {
   return (
-    <div className={`grid size-11 animate-[pin-pop_420ms_ease-out] place-items-center rounded-full border-[3px] border-white bg-primary text-white shadow-[0_18px_46px_rgba(255,56,92,0.34)] transition duration-200 hover:scale-105 ${active ? "scale-110 ring-4 ring-primary/18" : ""}`}>
+    <div className={`grid size-11 place-items-center rounded-full border-[3px] border-white bg-primary text-white shadow-[0_18px_46px_rgba(255,56,92,0.34)] transition duration-200 hover:scale-105 ${active ? "scale-110 ring-4 ring-primary/18" : ""}`}>
       <Home className="size-5" />
     </div>
   )
@@ -509,33 +509,78 @@ function PontoInteressePin({ categoria }: { categoria: string }) {
 }
 
 function Preview({ imovel }: { imovel: Imovel }) {
+  const location = [imovel.neighborhood, imovel.city].filter(Boolean).join(", ")
+
   return (
-    <div className="w-[320px] overflow-hidden rounded-[28px] bg-white">
-      <div className="relative aspect-[1.45] bg-secondary">
-        {imovel.images[0] ? <img src={imovel.images[0]} alt={imovel.title} className="size-full object-cover" /> : null}
-        <FavoriteButton id={imovel.id} className="absolute right-4 top-4 z-10" />
+    <div className="w-[340px] overflow-hidden rounded-[24px] bg-white">
+      <div className="relative aspect-[1.48] bg-secondary">
+        {imovel.images[0] ? (
+          <img src={imovel.images[0]} alt={imovel.title} className="size-full object-cover" />
+        ) : (
+          <div className="grid size-full place-items-center bg-secondary text-muted-foreground">
+            <Home className="size-10" />
+          </div>
+        )}
+        <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-3 bg-linear-to-b from-black/42 to-transparent p-3">
+          <span className="rounded-full bg-white/94 px-3 py-1 text-xs font-bold text-foreground shadow-[0_10px_28px_rgba(15,23,42,0.14)] backdrop-blur">
+            {imovel.type || "Imóvel"}
+          </span>
+          <FavoriteButton id={imovel.id} className="z-10 border-0 bg-white/94 shadow-[0_10px_28px_rgba(15,23,42,0.14)] backdrop-blur" />
+        </div>
+        <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-black/58 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+          <Camera className="size-3.5" />
+          {imovel.images.length || 1}
+        </div>
       </div>
-      <div className="space-y-3 p-4">
-        <div>
-          <h3 className="line-clamp-1 text-center text-base font-semibold">{imovel.title}</h3>
-          <p className="text-center text-sm text-muted-foreground">{[imovel.neighborhood, imovel.city].filter(Boolean).join(", ")}</p>
+
+      <div className="space-y-4 p-4">
+        <div className="space-y-1.5">
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="line-clamp-2 text-base font-semibold leading-5 text-foreground">{imovel.title}</h3>
+            <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
+              {statusLabel(imovel.status)}
+            </span>
+          </div>
+          {location ? (
+            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <MapPin className="size-3.5 shrink-0" />
+              <span className="truncate">{location}</span>
+            </p>
+          ) : null}
         </div>
-        <div className="flex items-center justify-between text-sm font-semibold">
-          <span>{imovel.priceLabel}</span>
-          <span className="text-xs font-medium text-muted-foreground">{imovel.type}</span>
+
+        <div className="rounded-[18px] bg-secondary/80 p-3">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Valor</p>
+          <p className="mt-1 text-lg font-bold text-primary">{imovel.priceLabel}</p>
         </div>
+
         <div className="grid grid-cols-4 gap-1.5 text-xs text-muted-foreground">
           <Mini icon={Ruler} label={`${imovel.area} m²`} />
           <Mini icon={BedDouble} label={`${imovel.bedrooms}`} />
           <Mini icon={Bath} label={`${imovel.bathrooms}`} />
           <Mini icon={Car} label={`${imovel.parking}`} />
         </div>
-        <Button asChild className="h-11 w-full rounded-full">
-          <Link to={`/imoveis/${imovel.uuid}`}>Ver detalhes</Link>
-        </Button>
+
+        <div className="grid grid-cols-[1fr_auto] gap-2">
+          <Button asChild className="h-11 rounded-full shadow-[0_14px_34px_rgba(255,56,92,0.22)]">
+            <Link to={`/imoveis/${imovel.uuid}`}>Ver detalhes</Link>
+          </Button>
+          <Button asChild variant="outline" className="h-11 rounded-full border-border bg-white px-4 shadow-none">
+            <Link to={`/imoveis/${imovel.uuid}`}>Abrir</Link>
+          </Button>
+        </div>
       </div>
     </div>
   )
+}
+
+function statusLabel(status: string) {
+  return {
+    disponivel: "Disponível",
+    vendido: "Vendido",
+    alugado: "Alugado",
+    reservado: "Reservado",
+  }[status] ?? status
 }
 
 function MobilePreview({ imovel, onClose, onShowInList }: { imovel: Imovel; onClose?: () => void; onShowInList?: (imovel: Imovel) => void }) {
