@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion"
-import { Bath, BedDouble, Car, ChevronDown, ChevronUp, Eye, Filter, Images, LoaderCircle, MapPin, Minimize2, Ruler, Search, Share2, X } from "lucide-react"
+import { Bath, BedDouble, Car, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Eye, Filter, Images, LoaderCircle, MapPin, Minimize2, Ruler, Search, Share2, X } from "lucide-react"
 import type { MouseEvent, ReactNode } from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
 
@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import type { Imovel } from "@/types/imovel"
+
+const SIDEBAR_PAGE_SIZE = 10
 
 interface PropertiesSidebarProps {
   imoveis: Imovel[]
@@ -47,13 +49,30 @@ export function PropertiesSidebar({
 }: PropertiesSidebarProps) {
   const [mobileSnap, setMobileSnap] = useState<"peek" | "mid" | "full">("mid")
   const [isMobileSheet, setIsMobileSheet] = useState(false)
+  const [page, setPage] = useState(1)
   const listRef = useRef<HTMLDivElement | null>(null)
   const isPeek = mobileSnap === "peek"
   const isFull = mobileSnap === "full"
+  const totalPages = Math.max(1, Math.ceil(imoveis.length / SIDEBAR_PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const pageStart = imoveis.length ? (currentPage - 1) * SIDEBAR_PAGE_SIZE + 1 : 0
+  const pageEnd = Math.min(currentPage * SIDEBAR_PAGE_SIZE, imoveis.length)
+  const paginatedImoveis = useMemo(() => {
+    const start = (currentPage - 1) * SIDEBAR_PAGE_SIZE
+    return imoveis.slice(start, start + SIDEBAR_PAGE_SIZE)
+  }, [currentPage, imoveis])
 
   useEffect(() => {
     if (!open) setMobileSnap("mid")
   }, [open])
+
+  useEffect(() => {
+    setPage(1)
+  }, [imoveis, searchValue])
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 767px)")
@@ -66,7 +85,7 @@ export function PropertiesSidebar({
   useEffect(() => {
     if (!open || !selectedId) return
     window.setTimeout(() => {
-      listRef.current?.querySelector(`[data-property-id="${selectedId}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" })
+      listRef.current?.querySelector(`[data-property-id="${selectedId}"]`)?.scrollIntoView({ block: "nearest", behavior: "instant" })
     }, 220)
   }, [open, selectedId])
 
@@ -165,7 +184,7 @@ export function PropertiesSidebar({
                 {isLoading ? <SidebarSkeleton /> : null}
                 {!isLoading && (
                   <div className="divide-y divide-border/70">
-                    {imoveis.map((imovel) => (
+                    {paginatedImoveis.map((imovel) => (
                       <SidebarPropertyItem key={imovel.id} imovel={imovel} active={selectedId === imovel.id} onFocus={onFocus} />
                     ))}
                     {hasSearchedProperties && searchValue.trim().length >= 2 && imoveis.length === 0 ? (
@@ -176,6 +195,46 @@ export function PropertiesSidebar({
                   </div>
                 )}
               </div>
+              {!isLoading && !isPeek && imoveis.length > SIDEBAR_PAGE_SIZE ? (
+                <div className="border-t border-border/70 bg-white/96 px-4 py-3 backdrop-blur-xl">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="min-w-0 text-xs font-medium text-muted-foreground">
+                      {pageStart}-{pageEnd} de {imoveis.length}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 rounded-full bg-white px-3 text-xs"
+                        onClick={() => {
+                          setPage((current) => Math.max(1, current - 1))
+                          listRef.current?.scrollTo({ top: 0, behavior: "instant" })
+                        }}
+                        disabled={currentPage <= 1}
+                      >
+                        <ChevronLeft className="size-4" />
+                        Anterior
+                      </Button>
+                      <span className="hidden min-w-14 text-center text-xs font-bold text-foreground sm:inline">
+                        {currentPage}/{totalPages}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 rounded-full bg-white px-3 text-xs"
+                        onClick={() => {
+                          setPage((current) => Math.min(totalPages, current + 1))
+                          listRef.current?.scrollTo({ top: 0, behavior: "instant" })
+                        }}
+                        disabled={currentPage >= totalPages}
+                      >
+                        Próxima
+                        <ChevronRight className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </motion.aside>
         )}
@@ -276,8 +335,6 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
       whileHover={{ y: -1 }}
       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
       className={cn("group bg-white transition-[background-color,box-shadow] duration-200 hover:bg-secondary/55 hover:shadow-[0_14px_34px_rgba(15,23,42,0.06)]", active && "bg-primary/[0.04]")}
-      onMouseEnter={() => onFocus(imovel)}
-      onFocus={() => onFocus(imovel)}
     >
       <Link to={`/imoveis/${imovel.uuid}`} className="grid grid-cols-[96px_minmax(0,1fr)] gap-3 p-3 sm:grid-cols-[112px_minmax(0,1fr)]" onClick={() => onFocus(imovel)}>
         <div className="relative h-24 overflow-hidden rounded-[14px] bg-secondary sm:h-28">

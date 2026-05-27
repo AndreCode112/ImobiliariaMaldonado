@@ -26,7 +26,6 @@ export function PropertyCard({ imovel, active, onFocus }: PropertyCardProps) {
         "hover:border-border/80 hover:shadow-[0_18px_54px_rgba(15,23,42,0.08)]",
         active && "border-primary/40 shadow-[0_24px_80px_rgba(255,56,92,0.12)]",
       )}
-      onMouseEnter={() => onFocus?.(imovel)}
     >
       <Link to={`/imoveis/${imovel.uuid}`} className="block" onClick={() => onFocus?.(imovel)}>
         <div className="relative aspect-[1.28] overflow-hidden rounded-[18px] bg-secondary">
