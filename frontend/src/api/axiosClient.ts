@@ -15,6 +15,14 @@ function isAuthRefreshRequest(url?: string) {
   return Boolean(url?.includes("/api/auth/refresh/"))
 }
 
+function isAuthEntryRequest(url?: string) {
+  return Boolean(
+    url?.includes("/api/auth/login/") ||
+    url?.includes("/api/auth/register/") ||
+    url?.includes("/api/auth/password-reset/confirm/"),
+  )
+}
+
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -23,7 +31,8 @@ axiosClient.interceptors.response.use(
       !originalRequest ||
       error.response?.status !== 401 ||
       originalRequest._retry ||
-      isAuthRefreshRequest(originalRequest.url)
+      isAuthRefreshRequest(originalRequest.url) ||
+      isAuthEntryRequest(originalRequest.url)
     ) {
       return Promise.reject(error)
     }
@@ -35,8 +44,7 @@ axiosClient.interceptors.response.use(
         if (response.data?.user) authStore.setSession({ user: response.data.user })
         return true
       })
-      .catch((refreshError) => {
-        console.error("Falha ao renovar access token.", refreshError)
+      .catch(() => {
         authStore.clear()
         return false
       })

@@ -4,9 +4,16 @@ import type { AuthSession, LoginCredentials } from "@/types/auth"
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthSession> {
-    const { data } = await axiosClient.post<AuthSession>("/api/auth/login/", credentials)
-    authStore.setSession(data)
-    return data
+    authStore.clear()
+    await axiosClient.post("/api/auth/logout/").catch(() => undefined)
+    try {
+      const { data } = await axiosClient.post<AuthSession>("/api/auth/login/", credentials)
+      authStore.setSession(data)
+      return data
+    } catch (error) {
+      authStore.clear()
+      throw error
+    }
   },
 
   async me(): Promise<AuthSession> {

@@ -326,11 +326,15 @@ def ApiUsuarioDetailView(request, user_id):
     if email and User.objects.exclude(pk=user.pk).filter(email=email).exists():
         return JsonResponse({"message": "Este e-mail já está em uso."}, status=400)
 
+    next_is_active = _request_bool(data, "is_active", user.is_active)
+    if user.pk == request.user.pk and not next_is_active:
+        return JsonResponse({"message": "Você não pode desativar o usuário em uso."}, status=400)
+
     user.username = username
     user.email = email
     user.first_name = (data.get("first_name") or "").strip()
     user.last_name = (data.get("last_name") or "").strip()
-    user.is_active = _request_bool(data, "is_active", user.is_active)
+    user.is_active = next_is_active
     user.is_staff = _request_bool(data, "is_staff", user.is_staff)
     if user.pk != request.user.pk:
         user.is_superuser = _request_bool(data, "is_superuser", user.is_superuser)

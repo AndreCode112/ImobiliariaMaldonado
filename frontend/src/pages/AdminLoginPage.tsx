@@ -1,5 +1,6 @@
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Shield, UserPlus } from "lucide-react"
 import { motion } from "framer-motion"
+import { AxiosError } from "axios"
 import { useState, type FormEvent } from "react"
 import { Link, Navigate, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
@@ -34,9 +35,12 @@ export function AdminLoginPage() {
       window.setTimeout(() => {
         navigate(session.user.is_superuser ? "/admin" : "/", { replace: true })
       }, 240)
-    } catch {
+    } catch (error) {
+      const description = error instanceof AxiosError
+        ? error.response?.data?.detail || "Confira e-mail e senha e tente novamente."
+        : "Confira e-mail e senha e tente novamente."
       toast.error("Não foi possível entrar", {
-        description: "Confira e-mail e senha e tente novamente.",
+        description,
       })
     } finally {
       setIsSubmitting(false)
@@ -67,12 +71,12 @@ export function AdminLoginPage() {
             <Shield className="size-6" />
           </span>
           <h1 className="mt-5 text-2xl font-semibold">Entrar</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Use seu e-mail ou usuário para acessar favoritos ou o painel administrativo.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Use seu e-mail para acessar favoritos ou o painel administrativo.</p>
         </div>
         <div className="grid gap-4">
           <Label className="grid gap-2">
-            E-mail ou usuário
-            <Input name="email" type="text" inputMode="email" autoComplete="username" required />
+            Email
+            <Input name="email" type="email" inputMode="email" autoComplete="email" required />
           </Label>
           <Label className="grid gap-2">
             Senha

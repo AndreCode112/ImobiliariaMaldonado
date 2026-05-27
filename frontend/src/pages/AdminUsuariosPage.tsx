@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useAuth } from "@/contexts/AuthContext"
 import { useUpdateUsuario, useUsuarioResetLink, useUsuarios } from "@/hooks/useImoveis"
 import type { AdminUser, AdminUserPayload, PasswordResetLink } from "@/types/auth"
 
@@ -22,6 +23,7 @@ const EMPTY: AdminUserPayload = {
 }
 
 export function AdminUsuariosPage() {
+  const { session } = useAuth()
   const { data: usuarios = [], isLoading } = useUsuarios()
   const updateUsuario = useUpdateUsuario()
   const resetLink = useUsuarioResetLink()
@@ -56,6 +58,10 @@ export function AdminUsuariosPage() {
       toast.error("Usuário é obrigatório")
       return
     }
+    if (editing.id === session?.user.id && !form.is_active) {
+      toast.error("Você não pode desativar o usuário em uso")
+      return
+    }
     try {
       await updateUsuario.mutateAsync({ id: editing.id, payload: form })
       toast.success("Usuário atualizado")
@@ -85,6 +91,8 @@ export function AdminUsuariosPage() {
     await navigator.clipboard?.writeText(generatedLink.reset_url)
     toast.success("Link copiado")
   }
+
+  const editingSelf = Boolean(editing && editing.id === session?.user.id)
 
   return (
     <div className="space-y-5">
@@ -168,10 +176,20 @@ export function AdminUsuariosPage() {
               <Field label="Sobrenome"><Input value={form.last_name} onChange={(event) => setForm((current) => ({ ...current, last_name: event.target.value }))} /></Field>
             </div>
             <div className="grid gap-3 rounded-2xl border bg-secondary/50 p-4 sm:grid-cols-3">
-              <Checkbox label="Ativo" checked={form.is_active} onChange={(value) => setForm((current) => ({ ...current, is_active: value }))} />
+              <Checkbox
+                label="Ativo"
+                checked={form.is_active}
+                disabled={editingSelf}
+                onChange={(value) => setForm((current) => ({ ...current, is_active: value }))}
+              />
               <Checkbox label="Equipe" checked={form.is_staff} onChange={(value) => setForm((current) => ({ ...current, is_staff: value }))} />
               <Checkbox label="Administrador" checked={form.is_superuser} onChange={(value) => setForm((current) => ({ ...current, is_superuser: value }))} />
             </div>
+            {editingSelf ? (
+              <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+                Por segurança, o usuário logado não pode desativar a própria conta.
+              </p>
+            ) : null}
             <div className="rounded-2xl border bg-white p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -207,10 +225,10 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return <Label className="grid min-w-0 gap-2 text-sm font-medium">{label}{children}</Label>
 }
 
-function Checkbox({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
+function Checkbox({ label, checked, disabled, onChange }: { label: string; checked: boolean; disabled?: boolean; onChange: (checked: boolean) => void }) {
   return (
-    <Label className="flex items-center gap-3 text-sm font-medium">
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+    <Label className={`flex items-center gap-3 text-sm font-medium ${disabled ? "cursor-not-allowed opacity-60" : ""}`}>
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(event) => onChange(event.target.checked)} />
       {label}
     </Label>
   )
