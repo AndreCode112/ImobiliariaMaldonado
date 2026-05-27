@@ -4,6 +4,8 @@ from pyexpat import model
 
 from django.conf import settings
 from django.db import models
+from django.db.models.signals import post_delete, pre_save
+from django.dispatch import receiver
 from django.urls import reverse
 from django.utils import timezone
 
@@ -248,6 +250,32 @@ class ImagemImovel(models.Model):
         if self.principal:
             ImagemImovel.objects.filter(imovel=self.imovel, principal=True).exclude(pk=self.pk).update(principal=False)
         super().save(*args, **kwargs)
+
+
+def _delete_file_field(file_field):
+    if not file_field:
+        return
+    storage = file_field.storage
+    name = file_field.name
+    if name and storage.exists(name):
+        storage.delete(name)
+
+
+@receiver(post_delete, sender=ImagemImovel)
+def delete_imovel_image_file(sender, instance, **kwargs):
+    _delete_file_field(instance.imagem)
+
+
+@receiver(pre_save, sender=ImagemImovel)
+def delete_replaced_imovel_image_file(sender, instance, **kwargs):
+    if not instance.pk:
+        return
+    try:
+        previous = sender.objects.get(pk=instance.pk)
+    except sender.DoesNotExist:
+        return
+    if previous.imagem and previous.imagem.name != instance.imagem.name:
+        _delete_file_field(previous.imagem)
 
 
 class FavoritoImovel(models.Model):
