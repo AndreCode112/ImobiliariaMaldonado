@@ -792,7 +792,7 @@ export function AdminPropertyFormPage() {
                         <LoaderCircle className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
                       ) : null}
                       {form.endereco.trim().length >= 3 && (addressResults.length > 0 || hasSearchedAddress || isSearchingAddress) ? (
-                        <div className="absolute left-0 top-[calc(100%+8px)] z-[9020] w-full overflow-hidden rounded-2xl border border-border/80 bg-white shadow-[0_22px_60px_rgba(15,23,42,0.16)]">
+                        <div className="absolute left-0 top-[calc(100%+8px)] z-[9020] w-full overflow-hidden rounded-2xl border border-border/80 bg-white">
                           <div className="max-h-72 overflow-y-auto py-1 premium-scrollbar">
                             {addressResults.map((address) => (
                               <button
@@ -887,7 +887,7 @@ export function AdminPropertyFormPage() {
               </div>
 
               <div className="min-w-0 border-t px-4 py-5 sm:px-7 sm:py-6 lg:border-l lg:border-t-0 lg:pl-8">
-                <div className="rounded-lg border bg-background p-4 shadow-sm sm:p-5">
+                <div className="rounded-lg border bg-background p-4 sm:p-5">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                     <Label className="text-base font-bold text-foreground">Fotos do imóvel</Label>
                     <span className="text-sm font-semibold text-muted-foreground">
@@ -1011,7 +1011,7 @@ export function AdminPropertyFormPage() {
             <p className="mt-2 text-sm leading-6 text-foreground">{addressResult?.display_name}</p>
           </div>
           {addressMapUrl ? (
-            <div className="overflow-hidden rounded-2xl border bg-secondary shadow-sm">
+            <div className="overflow-hidden rounded-2xl border bg-secondary">
               <iframe
                 title="Mapa das coordenadas encontradas"
                 src={addressMapUrl}

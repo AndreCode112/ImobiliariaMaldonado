@@ -57,7 +57,7 @@ function PageTopControls() {
       <Button
         asChild
         variant="outline"
-        className="pointer-events-auto size-11 rounded-full border-border/80 bg-white/82 px-0 shadow-[0_18px_50px_rgba(0,0,0,0.10)] backdrop-blur-xl hover:bg-white"
+        className="pointer-events-auto size-11 rounded-full border-border/80 bg-white/82 px-0 hover:bg-white"
       >
         <Link to="/" aria-label="Voltar para a página inicial">
           <ArrowLeft className="size-4" />
@@ -65,7 +65,7 @@ function PageTopControls() {
       </Button>
       <AccountMenuButton
         wrapperClassName="pointer-events-auto block"
-        className="inline-flex border-border/80 bg-white/82 shadow-[0_18px_50px_rgba(0,0,0,0.10)] backdrop-blur-xl hover:bg-white"
+        className="inline-flex border-border/80 bg-white/82 hover:bg-white"
         menuClassName="top-[calc(100%+10px)]"
       />
     </div>

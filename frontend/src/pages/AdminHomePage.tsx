@@ -41,7 +41,7 @@ export function AdminHomePage() {
 
       <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
         {cards.map(({ label, value, icon: Icon, color }) => (
-          <Card key={label} className="min-w-0 overflow-hidden rounded-[24px] border-border/80 bg-white shadow-none">
+          <Card key={label} className="min-w-0 overflow-hidden rounded-[24px] border-border/80 bg-white">
             <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-3">
               <CardTitle className="min-w-0 text-sm font-medium leading-5 text-muted-foreground">{label}</CardTitle>
               <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-secondary">
@@ -60,7 +60,7 @@ export function AdminHomePage() {
         ))}
       </div>
 
-      <Card className="rounded-[28px] border-border/80 bg-white shadow-none">
+      <Card className="rounded-[28px] border-border/80 bg-white">
         <CardHeader className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
             <CardTitle className="flex min-w-0 items-center gap-2 text-lg">

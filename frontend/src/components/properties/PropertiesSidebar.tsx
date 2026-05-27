@@ -111,7 +111,7 @@ export function PropertiesSidebar({
             exit={{ opacity: 0, x: -22, y: 28, filter: "blur(8px)" }}
             transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
             className={cn(
-              "fixed inset-x-0 bottom-0 z-[820] rounded-t-[30px] border border-white/70 bg-white/94 shadow-[0_-18px_70px_rgba(0,0,0,0.16)] backdrop-blur-xl md:relative md:inset-auto md:z-auto md:h-full md:max-h-none md:w-full md:rounded-none md:border-y-0 md:border-l-0 md:border-r md:border-border/70 md:bg-white/92 md:shadow-[16px_0_80px_rgba(0,0,0,0.06)]",
+              "fixed inset-x-0 bottom-0 z-[820] rounded-t-[30px] border border-white/70 bg-white/94 md:relative md:inset-auto md:z-auto md:h-full md:max-h-none md:w-full md:rounded-none md:border-y-0 md:border-l-0 md:border-r md:border-border/70 md:bg-white/92 md:",
               mobileSnap === "peek" && "h-[112px]",
               mobileSnap === "mid" && "h-[min(58dvh,520px)]",
               mobileSnap === "full" && "h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)-10px))]",
@@ -125,7 +125,7 @@ export function PropertiesSidebar({
             <div className="flex h-full flex-col">
               <button
                 type="button"
-                className="mx-auto mt-3 inline-flex h-10 min-w-40 items-center justify-center gap-2 rounded-full border border-border/70 bg-white px-4 text-sm font-semibold text-foreground shadow-[0_10px_28px_rgba(15,23,42,0.08)] transition active:scale-[0.98] md:hidden"
+                className="mx-auto mt-3 inline-flex h-10 min-w-40 items-center justify-center gap-2 rounded-full border border-border/70 bg-white px-4 text-sm font-semibold text-foreground transition active:scale-[0.98] md:hidden"
                 onClick={() => setMobileSnap((snap) => snap === "full" ? "mid" : "full")}
                 aria-label={isFull ? "Reduzir lista" : "Expandir lista"}
               >
@@ -196,7 +196,7 @@ export function PropertiesSidebar({
                 )}
               </div>
               {!isLoading && !isPeek && imoveis.length > SIDEBAR_PAGE_SIZE ? (
-                <div className="border-t border-border/70 bg-white/96 px-4 py-3 backdrop-blur-xl">
+                <div className="border-t border-border/70 bg-white/96 px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <p className="min-w-0 text-xs font-medium text-muted-foreground">
                       {pageStart}-{pageEnd} de {imoveis.length}
@@ -261,7 +261,7 @@ function SidebarSearchField({
       <div className="flex h-11 items-center rounded-full border border-border/70 bg-white px-3 transition duration-200 focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/10">
         <Search className="ml-1 size-4 shrink-0 text-muted-foreground" />
         <Input
-          className="h-full border-0 bg-transparent px-2 text-sm shadow-none placeholder:text-muted-foreground/78 focus-visible:ring-0"
+          className="h-full border-0 bg-transparent px-2 text-sm placeholder:text-muted-foreground/78 focus-visible:ring-0"
           value={value}
           placeholder="Buscar imóvel pelo nome"
           onChange={(event) => onChange(event.target.value)}
@@ -336,7 +336,7 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
       data-property-id={imovel.id}
       whileHover={{ y: -1 }}
       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-      className={cn("group bg-white transition-[background-color,box-shadow] duration-200 hover:bg-secondary/55 hover:shadow-[0_14px_34px_rgba(15,23,42,0.06)]", active && "bg-primary/[0.04]")}
+      className={cn("group bg-white transition-colors duration-200 hover:bg-secondary/55", active && "bg-primary/[0.04]")}
     >
       <Link to={`/imoveis/${imovel.uuid}`} state={{ from: returnToMap }} className="grid grid-cols-[96px_minmax(0,1fr)] gap-3 p-3 sm:grid-cols-[112px_minmax(0,1fr)]" onClick={() => onFocus(imovel)}>
         <div className="relative h-24 overflow-hidden rounded-[14px] bg-secondary sm:h-28">
@@ -352,14 +352,14 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
         <div className="relative min-w-0 pr-20">
           <button
             type="button"
-            className="absolute right-10 top-0 grid size-8 place-items-center rounded-full border border-border bg-white text-muted-foreground shadow-none transition hover:border-primary/35 hover:text-primary"
+            className="absolute right-10 top-0 grid size-8 place-items-center rounded-full border border-border bg-white text-muted-foreground transition hover:border-primary/35 hover:text-primary"
             onClick={shareProperty}
             aria-label="Compartilhar imóvel"
             title="Compartilhar imóvel"
           >
             <Share2 className="size-4" />
           </button>
-          <FavoriteButton id={imovel.id} className="absolute right-0 top-0 size-8 border border-border bg-white shadow-none" />
+          <FavoriteButton id={imovel.id} className="absolute right-0 top-0 size-8 border border-border bg-white" />
           <h3 className="line-clamp-2 pr-2 text-sm font-semibold leading-5 text-foreground">{imovel.title}</h3>
           <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
             <MapPin className="size-3.5 shrink-0" />

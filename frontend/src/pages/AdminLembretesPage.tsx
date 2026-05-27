@@ -1,4 +1,5 @@
 import { CalendarClock, Clock, Eye, Heart, Home, Mail, MessageCircle, Pencil, Phone, Save, Send, Users } from "lucide-react"
+import { AxiosError } from "axios"
 import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
@@ -86,8 +87,11 @@ export function AdminLembretesPage() {
       toast.success(response.message ?? "Configuração salva")
       setScheduleOpen(false)
       setMessageOpen(false)
-    } catch {
-      toast.error("Não foi possível salvar a configuração")
+    } catch (error) {
+      const message = error instanceof AxiosError
+        ? error.response?.data?.message || error.response?.data?.detail || "Tente novamente."
+        : "Tente novamente."
+      toast.error("Não foi possível salvar a configuração", { description: message })
     }
   }
 
@@ -113,7 +117,7 @@ export function AdminLembretesPage() {
 
       <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
         {cards.map(({ label, value, icon: Icon }) => (
-          <Card key={label} className="min-w-0 rounded-[24px] border-border/80 bg-white shadow-none">
+          <Card key={label} className="min-w-0 rounded-[24px] border-border/80 bg-white">
             <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-2">
               <CardTitle className="min-w-0 text-sm font-medium leading-5 text-muted-foreground">{label}</CardTitle>
               <Icon className="size-5 shrink-0 text-primary" />
@@ -126,7 +130,7 @@ export function AdminLembretesPage() {
       </div>
 
       <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <Card className="min-w-0 max-w-full overflow-hidden rounded-[28px] border-border/80 bg-white shadow-none">
+        <Card className="min-w-0 max-w-full overflow-hidden rounded-[28px] border-border/80 bg-white">
           <CardHeader className="px-4 sm:px-6">
             <CardTitle className="flex min-w-0 items-center gap-2 text-base sm:text-lg">
               <Clock className="size-5 shrink-0 text-primary" />
@@ -146,7 +150,7 @@ export function AdminLembretesPage() {
           </CardContent>
         </Card>
 
-        <Card className="min-w-0 max-w-full overflow-hidden rounded-[28px] border-border/80 bg-white shadow-none">
+        <Card className="min-w-0 max-w-full overflow-hidden rounded-[28px] border-border/80 bg-white">
           <CardHeader className="px-4 sm:px-6">
             <CardTitle className="flex min-w-0 items-center gap-2 text-base sm:text-lg">
               <MessageCircle className="size-5 shrink-0 text-primary" />
@@ -183,7 +187,7 @@ export function AdminLembretesPage() {
         </Card>
       </div>
 
-      <Card className="rounded-[28px] border-border/80 bg-white shadow-none">
+      <Card className="rounded-[28px] border-border/80 bg-white">
         <CardHeader>
           <CardTitle className="text-lg">Imóveis mais favoritados</CardTitle>
         </CardHeader>
@@ -234,7 +238,7 @@ export function AdminLembretesPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-[28px] border-border/80 bg-white shadow-none">
+      <Card className="rounded-[28px] border-border/80 bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Clock className="size-5 text-primary" />

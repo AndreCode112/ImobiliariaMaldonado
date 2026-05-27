@@ -221,8 +221,8 @@ export function AdminCorretoresPage() {
                 onDragLeave={(event) => { event.preventDefault(); setDragActive(false) }}
                 onDrop={(event) => { event.preventDefault(); setDragActive(false); addPhoto(event.dataTransfer.files) }}
                 className={cn(
-                  "mt-2 flex aspect-square cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[20px] bg-white text-center shadow-[0_18px_50px_rgba(15,23,42,0.10)] ring-1 ring-border/60 transition",
-                  dragActive && "ring-2 ring-primary/35",
+                  "mt-2 flex aspect-square cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[20px] border bg-white text-center transition",
+                  dragActive && "border-primary/50",
                 )}
               >
                 {photoPreview || (!form.remove_foto && editing?.foto_url) ? (

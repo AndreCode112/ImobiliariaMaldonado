@@ -132,12 +132,12 @@ export function AdminDashboardPage() {
         <div className="grid gap-4">
           {isLoading && Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-28 rounded-[24px]" />)}
           {!isLoading && filtered.map((imovel) => (
-            <Card key={imovel.id} className="rounded-[24px] border-border/80 bg-white shadow-none">
+            <Card key={imovel.id} className="rounded-[24px] border-border/80 bg-white">
               <CardContent className="flex min-w-0 flex-col gap-4 p-4 md:flex-row md:items-center">
                 <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-[18px] bg-secondary md:w-40">
                   {imovel.images[0] ? <img src={imovel.images[0]} alt={imovel.title} className="size-full object-cover" /> : null}
                   {imovel.isFeatured ? (
-                    <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/92 px-2.5 py-1 text-[11px] font-bold text-primary shadow-sm">
+                    <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/92 px-2.5 py-1 text-[11px] font-bold text-primary">
                       <Sparkles className="size-3" />
                       Destaque
                     </span>

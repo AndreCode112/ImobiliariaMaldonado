@@ -126,7 +126,7 @@ export function PremiumHeader() {
           visible ? "translate-y-0 opacity-100 blur-0" : "-translate-y-[calc(100%+24px)] opacity-0 blur-[6px]",
         )}
       >
-        <div className="pointer-events-auto mx-auto mt-3 flex h-16 max-w-[calc(100vw-1rem)] items-center gap-2 rounded-[20px] border border-white/60 bg-white/84 px-3 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-2xl sm:max-w-[calc(100vw-2rem)] sm:px-4 md:mt-5 md:h-[76px] md:gap-5 md:px-8 xl:max-w-[calc(100vw-7rem)] xl:px-12">
+        <div className="pointer-events-auto mx-auto mt-3 flex h-16 max-w-[calc(100vw-1rem)] items-center gap-2 rounded-[20px] border border-white/60 bg-white/84 px-3 sm:max-w-[calc(100vw-2rem)] sm:px-4 md:mt-5 md:h-[76px] md:gap-5 md:px-8 xl:max-w-[calc(100vw-7rem)] xl:px-12">
           <Link to="/" className="flex min-w-0 shrink items-center">
             <img src={LOGO_SRC} alt="Maldonado Imóveis" className="h-10 w-[136px] object-contain sm:w-[168px] md:h-[54px] md:w-[224px]" />
           </Link>
@@ -135,7 +135,7 @@ export function PremiumHeader() {
             <Button
               type="button"
               variant="outline"
-              className="inline-flex size-10 rounded-full border-border/80 bg-white/72 px-0 shadow-none hover:bg-white"
+              className="inline-flex size-10 rounded-full border-border/80 bg-white/72 px-0 hover:bg-white"
               onClick={() => setMobileSearchOpen(true)}
               aria-label="Buscar imóveis"
             >
@@ -144,7 +144,7 @@ export function PremiumHeader() {
             <AccountMenuButton
               includeNavigation
               wrapperClassName="block"
-              className="inline-flex size-10 border-border/80 bg-white/72 shadow-none hover:bg-white"
+              className="inline-flex size-10 border-border/80 bg-white/72 hover:bg-white"
               menuClassName="right-0 w-[min(260px,calc(100vw-2rem))]"
             />
           </div>
@@ -156,10 +156,10 @@ export function PremiumHeader() {
           </nav>
 
         <div className="relative ml-auto hidden w-[min(345px,24vw)] min-w-[270px] flex-none lg:block">
-          <div className="flex h-11 items-center rounded-full border border-border/60 bg-white/88 px-3 shadow-[0_8px_24px_rgba(15,23,42,0.07)] transition duration-200 focus-within:border-primary/35 focus-within:bg-white focus-within:shadow-[0_14px_36px_rgba(15,23,42,0.1)] focus-within:ring-4 focus-within:ring-primary/8">
+          <div className="flex h-11 items-center rounded-full border border-border/60 bg-white/88 px-3 transition duration-200 focus-within:border-primary/35 focus-within:bg-white focus-within:ring-4 focus-within:ring-primary/8">
             <Search className="ml-1 size-4 shrink-0 text-muted-foreground" />
             <Input
-              className="h-full border-0 bg-transparent px-2 text-[15px] shadow-none placeholder:text-muted-foreground/82 focus-visible:ring-0"
+              className="h-full border-0 bg-transparent px-2 text-[15px] placeholder:text-muted-foreground/82 focus-visible:ring-0"
               placeholder="Busque por cidade ou bairro"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
@@ -194,7 +194,7 @@ export function PremiumHeader() {
             {isSearchingAddress ? <LoaderCircle className="mr-1 size-4 shrink-0 animate-spin text-muted-foreground" /> : null}
           </div>
           {showAddressResults ? (
-            <div className="absolute left-1/2 top-[calc(100%+10px)] z-[1001] w-[min(430px,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-3xl border border-border/80 bg-white/98 shadow-[0_24px_70px_rgba(15,23,42,0.18)] backdrop-blur-xl">
+            <div className="absolute left-1/2 top-[calc(100%+10px)] z-[1001] w-[min(430px,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-3xl border border-border/80 bg-white/98">
               <div className="border-b border-border/60 px-4 py-3">
                 <p className="text-[11px] font-semibold uppercase text-muted-foreground">Endereços encontrados</p>
               </div>
@@ -231,7 +231,7 @@ export function PremiumHeader() {
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button className="hidden h-10 rounded-full px-4 text-sm shadow-[0_10px_24px_rgba(255,56,92,0.18)] lg:inline-flex">
+            <Button className="hidden h-10 rounded-full px-4 text-sm lg:inline-flex">
               <WhatsappIcon className="size-4" />
               Fale conosco
             </Button>
@@ -340,7 +340,7 @@ export function AccountMenuButton({
     <div ref={accountRef} className={cn("relative hidden lg:block", wrapperClassName)}>
       <Button
         variant="outline"
-        className={cn("hidden size-11 rounded-full border-border/80 bg-white/72 px-0 shadow-none hover:bg-white lg:inline-flex", className)}
+        className={cn("hidden size-11 rounded-full border-border/80 bg-white/72 px-0 hover:bg-white lg:inline-flex", className)}
         onClick={() => {
           setAccountOpen((open) => !open)
           setConfirmLogout(false)
@@ -356,7 +356,7 @@ export function AccountMenuButton({
             animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
             exit={{ opacity: 0, y: 8, scale: 0.96, filter: "blur(6px)" }}
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className={cn("absolute right-0 top-[calc(100%+12px)] z-[1001] w-56 origin-top-right overflow-hidden rounded-[20px] border border-border/70 bg-white/95 p-2 shadow-[0_24px_70px_rgba(15,23,42,0.16)] backdrop-blur-xl", menuClassName)}
+            className={cn("absolute right-0 top-[calc(100%+12px)] z-[1001] w-56 origin-top-right overflow-hidden rounded-[20px] border border-border/70 bg-white/95 p-2", menuClassName)}
           >
             <AnimatePresence mode="wait" initial={false}>
               {confirmLogout ? (
@@ -497,11 +497,11 @@ function MobileSearchDialog({
           <DialogDescription>Pesquise por endereço, bairro ou cidade.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 p-5">
-          <div className="flex h-12 items-center rounded-full border border-border/70 bg-white px-3 shadow-[0_10px_28px_rgba(0,0,0,0.08)] focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/10">
+          <div className="flex h-12 items-center rounded-full border border-border/70 bg-white px-3 focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/10">
             <Search className="ml-1 size-4 shrink-0 text-muted-foreground" />
             <Input
               autoFocus
-              className="h-full border-0 bg-transparent px-2 text-base shadow-none placeholder:text-muted-foreground/80 focus-visible:ring-0"
+              className="h-full border-0 bg-transparent px-2 text-base placeholder:text-muted-foreground/80 focus-visible:ring-0"
               placeholder="Cidade, bairro ou endereço"
               value={value}
               onChange={(event) => onChange(event.target.value)}

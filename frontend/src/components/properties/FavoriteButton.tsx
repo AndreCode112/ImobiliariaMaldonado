@@ -22,7 +22,7 @@ export function FavoriteButton({ id, className }: { id: number; className?: stri
       type="button"
       variant="secondary"
       size="icon"
-      className={cn("rounded-full bg-white/92 shadow-sm backdrop-blur hover:bg-white", className)}
+      className={cn("rounded-full bg-white/92 hover:bg-white", className)}
       disabled={isToggling}
       onClick={async (event) => {
         event.preventDefault()

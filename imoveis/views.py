@@ -652,7 +652,11 @@ def ApiLembreteFavoritosView(request):
         ]
     )
 
-    cron_ok, cron_message = sync_crontab(config)
+    try:
+        cron_ok, cron_message = sync_crontab(config)
+    except Exception as exc:
+        cron_ok = False
+        cron_message = f"Configuração salva. Não foi possível sincronizar o cron: {type(exc).__name__}."
     return JsonResponse(
         {
             "config": _lembrete_config_payload(config),

@@ -113,7 +113,7 @@ export function AdminLogsPage() {
 
       <div className="premium-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden pr-1">
         <div className="min-w-0 space-y-5">
-      <Card className="min-w-0 rounded-[28px] border-border/80 bg-white shadow-none">
+      <Card className="min-w-0 rounded-[28px] border-border/80 bg-white">
         <CardContent className="min-w-0 space-y-4 p-4 md:p-5">
           <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(220px,1.4fr)_minmax(200px,1fr)_minmax(150px,0.7fr)_minmax(140px,0.6fr)_minmax(200px,0.85fr)]">
             <FilterField label="Buscar nos logs">
@@ -234,7 +234,7 @@ export function AdminLogsPage() {
         {!isLoading && logs.map((item) => {
           const selected = selectedIds.has(item.id)
           return (
-            <Card key={item.id} className={cn("min-w-0 rounded-[24px] border-border/80 bg-white shadow-none transition", selected && "border-primary/40 bg-primary/[0.035]")}>
+            <Card key={item.id} className={cn("min-w-0 rounded-[24px] border-border/80 bg-white transition", selected && "border-primary/40 bg-primary/[0.035]")}>
               <CardContent className="grid gap-4 p-4 md:grid-cols-[auto_minmax(0,1fr)] md:p-5">
                 <label className="flex items-start gap-3 md:pt-1">
                   <input

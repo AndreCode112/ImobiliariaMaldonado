@@ -78,7 +78,7 @@ function PageTopControls() {
       <Button
         asChild
         variant="outline"
-        className="pointer-events-auto size-11 rounded-full border-border/80 bg-white/82 px-0 shadow-[0_18px_50px_rgba(0,0,0,0.10)] backdrop-blur-xl hover:bg-white"
+        className="pointer-events-auto size-11 rounded-full border-border/80 bg-white/82 px-0 hover:bg-white"
       >
         <Link to="/" aria-label="Voltar para a página inicial">
           <ArrowLeft className="size-4" />
@@ -86,7 +86,7 @@ function PageTopControls() {
       </Button>
       <AccountMenuButton
         wrapperClassName="pointer-events-auto block"
-        className="inline-flex border-border/80 bg-white/82 shadow-[0_18px_50px_rgba(0,0,0,0.10)] backdrop-blur-xl hover:bg-white"
+        className="inline-flex border-border/80 bg-white/82 hover:bg-white"
         menuClassName="top-[calc(100%+10px)]"
       />
     </div>
@@ -114,7 +114,7 @@ function ContactCard({ icon: Icon, title, detail, href, action }: { icon: typeof
 
   if (href) {
     return (
-      <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel={href.startsWith("http") ? "noreferrer" : undefined} className="min-w-0 rounded-[28px] border bg-white p-5 transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_18px_50px_rgba(0,0,0,0.08)] sm:p-6">
+      <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel={href.startsWith("http") ? "noreferrer" : undefined} className="min-w-0 rounded-[28px] border bg-white p-5 transition hover:-translate-y-0.5 hover:border-primary/30 sm:p-6">
         {content}
       </a>
     )

@@ -151,7 +151,7 @@ export function AdminLayout() {
             <div className="ml-auto shrink-0">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button type="button" className="flex items-center gap-2 rounded-full border bg-white p-1 pr-3 text-sm font-medium shadow-sm transition hover:bg-secondary">
+                  <button type="button" className="flex items-center gap-2 rounded-full border bg-white p-1 pr-3 text-sm font-medium transition hover:bg-secondary">
                     <Avatar>
                       <AvatarFallback className="bg-primary text-primary-foreground">{userInitial}</AvatarFallback>
                     </Avatar>

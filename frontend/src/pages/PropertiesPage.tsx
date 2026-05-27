@@ -729,7 +729,7 @@ export function PropertiesPage() {
             </p>
             <div className="mt-8 flex w-full max-w-sm flex-col gap-3 sm:w-auto sm:max-w-none sm:flex-row md:mt-9">
               <Button className="h-12 rounded-full px-7" onClick={scrollToMap}>Ver imóveis no mapa</Button>
-              <Button variant="outline" className="h-12 rounded-full border-white/40 bg-white/10 px-7 text-white backdrop-blur hover:bg-white/20 hover:text-white" onClick={scrollToMap}>
+              <Button variant="outline" className="h-12 rounded-full border-white/40 bg-white/10 px-7 text-white hover:bg-white/20 hover:text-white" onClick={scrollToMap}>
                 Explorar oportunidades
               </Button>
             </div>
@@ -739,7 +739,7 @@ export function PropertiesPage() {
               className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/70 transition hover:text-white md:flex"
             >
               Role para explorar
-              <span className="grid size-9 place-items-center rounded-full border border-white/30 bg-white/10 backdrop-blur">
+              <span className="grid size-9 place-items-center rounded-full border border-white/30 bg-white/10">
                 <ChevronDown className="size-4 animate-bounce" />
               </span>
             </button>
@@ -831,7 +831,7 @@ export function PropertiesPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="absolute left-4 top-1/2 z-[760] hidden h-11 -translate-y-1/2 rounded-full border-border/70 bg-white/94 px-4 text-sm shadow-[0_18px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl md:inline-flex md:left-5"
+                    className="absolute left-4 top-1/2 z-[760] hidden h-11 -translate-y-1/2 rounded-full border-border/70 bg-white/94 px-4 text-sm md:inline-flex md:left-5"
                     onClick={() => setSidebarOpen((open) => !open)}
                     aria-label={sidebarOpen ? "Ocultar lista" : "Ver imóveis"}
                   >
@@ -844,7 +844,7 @@ export function PropertiesPage() {
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-12 rounded-full border-border/70 bg-white/94 px-4 text-sm shadow-[0_18px_50px_rgba(0,0,0,0.14)] backdrop-blur-xl"
+                        className="h-12 rounded-full border-border/70 bg-white/94 px-4 text-sm"
                         onClick={() => setSidebarOpen(true)}
                       >
                         <List className="size-4" />
@@ -854,7 +854,7 @@ export function PropertiesPage() {
                         type="button"
                         variant={mobileMapExplore ? "default" : "outline"}
                         className={cn(
-                          "h-12 rounded-full px-4 text-sm shadow-[0_18px_50px_rgba(0,0,0,0.14)] backdrop-blur-xl",
+                          "h-12 rounded-full px-4 text-sm",
                           mobileMapExplore ? "bg-foreground text-white hover:bg-foreground/90" : "border-border/70 bg-white/94 hover:bg-white",
                         )}
                         onClick={() => setMobileMapExplore((enabled) => !enabled)}
@@ -916,10 +916,10 @@ function MapFloatingTop({
     <div className="pointer-events-none absolute inset-x-0 top-3 z-[780] flex justify-center px-3 md:top-5 md:px-4">
       <div className="pointer-events-auto flex w-full max-w-[760px] flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1">
-          <div className="flex h-12 items-center rounded-full border border-border/70 bg-white px-3 transition duration-200 focus-within:border-primary/40 focus-within:shadow-[0_10px_28px_rgba(0,0,0,0.08)] focus-within:ring-4 focus-within:ring-primary/10 sm:h-11 md:focus-within:scale-[1.01]">
+          <div className="flex h-12 items-center rounded-full border border-border/70 bg-white px-3 transition duration-200 focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/10 sm:h-11 md:focus-within:scale-[1.01]">
             <Search className="ml-1 size-4 shrink-0 text-muted-foreground" />
             <Input
-              className="h-full border-0 bg-transparent px-2 text-base shadow-none placeholder:text-muted-foreground/80 focus-visible:ring-0 sm:text-sm"
+              className="h-full border-0 bg-transparent px-2 text-base placeholder:text-muted-foreground/80 focus-visible:ring-0 sm:text-sm"
               placeholder="Pesquisar endereço, bairro ou cidade"
               value={value}
               onChange={(event) => onChange(event.target.value)}
@@ -937,7 +937,7 @@ function MapFloatingTop({
           </div>
 
           {showResults ? (
-            <div className="absolute left-0 top-[calc(100%+10px)] z-[900] w-full overflow-hidden rounded-[20px] border border-border/80 bg-white/98 shadow-[0_24px_70px_rgba(0,0,0,0.16)] backdrop-blur-xl">
+            <div className="absolute left-0 top-[calc(100%+10px)] z-[900] w-full overflow-hidden rounded-[20px] border border-border/80 bg-white/98">
               <div className="premium-scrollbar max-h-72 overflow-y-auto py-1.5">
                 {results.map((address) => (
                   <button key={address.place_id} type="button" className="group flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-secondary/80 focus:bg-secondary focus:outline-none" onClick={() => onSelectAddress(address)}>
@@ -968,7 +968,7 @@ function MapFloatingTop({
             onOpenChange={onFiltersOpenChange}
             triggerClassName="h-11 w-full sm:w-auto"
           />
-          <Button type="button" variant="outline" className="h-11 rounded-full border-border/70 bg-white px-3 text-sm shadow-none hover:bg-secondary sm:px-4" onClick={onCenter}>
+          <Button type="button" variant="outline" className="h-11 rounded-full border-border/70 bg-white px-3 text-sm hover:bg-secondary sm:px-4" onClick={onCenter}>
             <LocateFixed className="size-4" />
             <span>Centralizar</span>
           </Button>
@@ -983,14 +983,14 @@ function MapLoadingOverlay({ visible }: { visible: boolean }) {
     <AnimatePresence>
       {visible ? (
         <motion.div
-          className="pointer-events-none absolute inset-0 z-[720] grid place-items-center bg-white/58 backdrop-blur-[1px]"
+          className="pointer-events-none absolute inset-0 z-[720] grid place-items-center bg-white/58-[1px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         >
           <motion.div
-            className="grid size-12 place-items-center rounded-full bg-white/86 shadow-[0_18px_52px_rgba(15,23,42,0.12)] ring-1 ring-border/60 backdrop-blur-xl"
+            className="grid size-12 place-items-center rounded-full border bg-white/86"
             initial={{ scale: 0.92, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.92, opacity: 0 }}
@@ -1045,7 +1045,7 @@ function MapFiltersPopover({
   }, [filters, open])
 
   const trigger = (
-    <Button type="button" variant="outline" className={cn("h-11 rounded-full border-border/70 bg-white px-3 text-sm shadow-none hover:bg-secondary sm:px-4", triggerClassName)}>
+    <Button type="button" variant="outline" className={cn("h-11 rounded-full border-border/70 bg-white px-3 text-sm hover:bg-secondary sm:px-4", triggerClassName)}>
       <SlidersHorizontal className="size-4" />
       <span>Filtros</span>
       {activeCount ? <span className="grid min-w-5 place-items-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-bold text-white">{activeCount}</span> : null}
@@ -1058,7 +1058,7 @@ function MapFiltersPopover({
         <Button
           type="button"
           variant="outline"
-          className={cn("h-11 rounded-full border-border/70 bg-white px-3 text-sm shadow-none hover:bg-secondary", triggerClassName)}
+          className={cn("h-11 rounded-full border-border/70 bg-white px-3 text-sm hover:bg-secondary", triggerClassName)}
           onClick={() => onOpenChange(true)}
         >
           <SlidersHorizontal className="size-4" />
@@ -1066,7 +1066,7 @@ function MapFiltersPopover({
           {activeCount ? <span className="grid min-w-5 place-items-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-bold text-white">{activeCount}</span> : null}
         </Button>
         <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="bottom-0 left-0 top-auto max-h-[min(88dvh,calc(100dvh-env(safe-area-inset-top)-10px))] w-full max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-b-none rounded-t-[30px] border-white/70 p-0 shadow-[0_-18px_70px_rgba(0,0,0,0.16)] md:hidden">
+          <DialogContent className="bottom-0 left-0 top-auto max-h-[min(88dvh,calc(100dvh-env(safe-area-inset-top)-10px))] w-full max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-b-none rounded-t-[30px] border-white/70 p-0 md:hidden">
             <DialogHeader className="border-b border-border/70 px-5 pb-4 pt-3 text-left">
               <span className="mx-auto mb-2 block h-1 w-11 rounded-full bg-border" />
               <DialogTitle>Filtros</DialogTitle>

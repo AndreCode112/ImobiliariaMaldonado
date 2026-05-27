@@ -40,7 +40,7 @@ export function ResetPasswordPage() {
 
   return (
     <section className="grid min-h-[calc(100svh-88px)] place-items-center bg-secondary px-6 py-12">
-      <form onSubmit={onSubmit} className="w-full max-w-md rounded-[32px] border bg-white p-8 shadow-[0_24px_80px_rgba(0,0,0,0.08)]">
+      <form onSubmit={onSubmit} className="w-full max-w-md rounded-[32px] border bg-white p-8">
         <div className="mb-8 text-center">
           <span className="mx-auto grid size-12 place-items-center rounded-full bg-primary text-white">
             <KeyRound className="size-6" />

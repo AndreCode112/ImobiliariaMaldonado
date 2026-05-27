@@ -24,9 +24,9 @@ export function PropertyCard({ imovel, active, onFocus }: PropertyCardProps) {
       whileHover={{ y: -2 }}
       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
-        "group overflow-hidden rounded-[22px] border border-transparent bg-white p-2 text-left transition-[border-color,box-shadow,background-color] duration-200",
-        "hover:border-border/80 hover:shadow-[0_18px_54px_rgba(15,23,42,0.08)]",
-        active && "border-primary/40 shadow-[0_24px_80px_rgba(255,56,92,0.12)]",
+        "group overflow-hidden rounded-[22px] border border-transparent bg-white p-2 text-left transition-[border-color,background-color] duration-200",
+        "hover:border-border/80 hover:",
+        active && "border-primary/40",
       )}
     >
       <Link to={`/imoveis/${imovel.uuid}`} state={{ from: returnToMap }} className="block" onClick={() => onFocus?.(imovel)}>

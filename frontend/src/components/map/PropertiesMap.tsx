@@ -132,10 +132,10 @@ export function PropertiesMap({
         <MapExternalControls imoveis={visibleImoveis} selectedAddress={selectedAddress} />
         <MapZoomControl
           position="bottom-24 right-3 md:bottom-6 md:right-6"
-          className="rounded-full bg-white/90 shadow-[0_14px_36px_rgba(0,0,0,0.14)] backdrop-blur-xl"
+          className="rounded-full bg-white/90"
         />
         {cityTarget?.city ? (
-          <div className="pointer-events-none absolute left-3 top-[92px] z-[760] rounded-full border border-border/70 bg-white/94 px-4 py-2 text-sm font-bold text-foreground shadow-[0_14px_38px_rgba(15,23,42,0.12)] backdrop-blur-xl md:left-5 md:top-5">
+          <div className="pointer-events-none absolute left-3 top-[92px] z-[760] rounded-full border border-border/70 bg-white/94 px-4 py-2 text-sm font-bold text-foreground md:left-5 md:top-5">
             {cityTarget.city}
           </div>
         ) : null}
@@ -147,7 +147,7 @@ export function PropertiesMap({
             iconAnchor={[18, 36]}
             tooltipAnchor={[0, -28]}
           >
-            <MapTooltip className="rounded-full border-0 bg-foreground px-3 py-1 font-medium text-background shadow-lg" sideOffset={12}>
+            <MapTooltip className="rounded-full border-0 bg-foreground px-3 py-1 font-medium text-background" sideOffset={12}>
               {addressTitle(selectedAddress)}
             </MapTooltip>
           </MapMarker>
@@ -161,7 +161,7 @@ export function PropertiesMap({
               iconAnchor={[12, 24]}
               tooltipAnchor={[0, -22]}
             >
-              <MapTooltip className="rounded-full border-0 bg-foreground px-3 py-1 font-medium text-background shadow-lg" sideOffset={12}>
+              <MapTooltip className="rounded-full border-0 bg-foreground px-3 py-1 font-medium text-background" sideOffset={12}>
                 {ponto.nome}
               </MapTooltip>
             </MapMarker>
@@ -198,7 +198,7 @@ export function PropertiesMap({
                   closeButton={false}
                   closeOnClick
                   autoPan={false}
-                  className="property-map-popup w-[340px] rounded-[24px] border-0 bg-white p-0 shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
+                  className="property-map-popup w-[340px] rounded-[24px] border-0 bg-white p-0"
                 >
                   <Preview imovel={imovel} />
                 </MapPopup>
@@ -209,7 +209,7 @@ export function PropertiesMap({
       </Map>
       {isMobileLayout && showTouchHint ? (
         <motion.div
-          className="pointer-events-none absolute left-1/2 top-[142px] z-[790] -translate-x-1/2 rounded-full border border-white/80 bg-white/94 px-4 py-2 text-center text-xs font-semibold text-foreground shadow-[0_14px_42px_rgba(15,23,42,0.14)] backdrop-blur-xl"
+          className="pointer-events-none absolute left-1/2 top-[142px] z-[790] -translate-x-1/2 rounded-full border border-white/80 bg-white/94 px-4 py-2 text-center text-xs font-semibold text-foreground"
           initial={{ opacity: 0, y: -8, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.96 }}
@@ -481,7 +481,7 @@ function normalizeText(value: string) {
 
 function AddressPin() {
   return (
-    <div className="relative grid size-9 place-items-center rounded-full border-2 border-white bg-zinc-900 text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)]">
+    <div className="relative grid size-9 place-items-center rounded-full border-2 border-white bg-zinc-900 text-white">
       <MapPin className="size-5" />
     </div>
   )
@@ -489,7 +489,7 @@ function AddressPin() {
 
 function HomePin({ active = false }: { active?: boolean }) {
   return (
-    <div className={`grid size-10 place-items-center rounded-full border-2 border-white bg-primary text-white shadow-[0_10px_24px_rgba(15,23,42,0.16)] ${active ? "ring-2 ring-primary/20" : ""}`}>
+    <div className={`grid size-10 place-items-center rounded-full border-2 border-white bg-primary text-white ${active ? "border-primary" : ""}`}>
       <Home className="size-[18px]" />
     </div>
   )
@@ -497,7 +497,7 @@ function HomePin({ active = false }: { active?: boolean }) {
 
 function ClusterPin({ count }: { count: number }) {
   return (
-    <div className="grid size-10 place-items-center rounded-full border-2 border-white bg-foreground text-sm font-bold text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)]">
+    <div className="grid size-10 place-items-center rounded-full border-2 border-white bg-foreground text-sm font-bold text-white">
       {count}
     </div>
   )
@@ -517,7 +517,7 @@ function PontoInteressePin({ categoria }: { categoria: string }) {
 
   return (
     <div
-      className="relative grid size-4 place-items-center rounded-full border border-white text-white shadow-[0_4px_10px_rgba(15,23,42,0.16)]"
+      className="relative grid size-4 place-items-center rounded-full border border-white text-white"
       style={{ backgroundColor: config.color }}
     >
       <Icon className="size-2.5" strokeWidth={3} />
@@ -544,13 +544,13 @@ function Preview({ imovel }: { imovel: Imovel }) {
             <Home className="size-10" />
           </div>
         )}
-        <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-3 bg-linear-to-b from-black/42 to-transparent p-3">
-          <span className="rounded-full bg-white/94 px-3 py-1 text-xs font-bold text-foreground shadow-[0_10px_28px_rgba(15,23,42,0.14)] backdrop-blur">
+        <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-3 bg-black/28 p-3">
+          <span className="rounded-full bg-white/94 px-3 py-1 text-xs font-bold text-foreground">
             {imovel.type || "Imóvel"}
           </span>
-          <FavoriteButton id={imovel.id} className="z-10 border-0 bg-white/94 shadow-[0_10px_28px_rgba(15,23,42,0.14)] backdrop-blur" />
+          <FavoriteButton id={imovel.id} className="z-10 border-0 bg-white/94" />
         </div>
-        <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-black/58 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+        <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-black/58 px-3 py-1 text-xs font-semibold text-white">
           <Camera className="size-3.5" />
           {imovel.images.length}
         </div>
@@ -574,7 +574,7 @@ function Preview({ imovel }: { imovel: Imovel }) {
           <Mini icon={Car} label={`${imovel.parking}`} />
         </div>
 
-        <Button asChild className="h-11 w-full rounded-full shadow-[0_14px_34px_rgba(255,56,92,0.22)]">
+        <Button asChild className="h-11 w-full rounded-full">
           <Link to={`/imoveis/${imovel.uuid}`} state={{ from: returnToMap }}>Ver detalhes</Link>
         </Button>
       </div>
@@ -605,7 +605,7 @@ function MobilePreview({ imovel, onClose, onShowInList }: { imovel: Imovel; onCl
 
   return (
     <motion.div
-      className="absolute inset-x-3 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-[880] overflow-hidden rounded-[24px] border border-border/70 bg-white/96 shadow-[0_24px_80px_rgba(0,0,0,0.18)] backdrop-blur-xl md:hidden"
+      className="absolute inset-x-3 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-[880] overflow-hidden rounded-[24px] border border-border/70 bg-white/96 md:hidden"
       drag="y"
       dragConstraints={{ top: 0, bottom: 0 }}
       dragElastic={{ top: 0.04, bottom: 0.24 }}
@@ -643,15 +643,15 @@ function MobilePreview({ imovel, onClose, onShowInList }: { imovel: Imovel; onCl
         </div>
       </div>
       <div className="grid grid-cols-[1fr_auto_auto] gap-2 border-t border-border/70 p-3">
-        <Button asChild className="h-11 rounded-full shadow-[0_14px_34px_rgba(255,56,92,0.22)]">
+        <Button asChild className="h-11 rounded-full">
           <Link to={`/imoveis/${imovel.uuid}`} state={{ from: returnToMap }}>Ver detalhes</Link>
         </Button>
         {onShowInList ? (
-          <Button type="button" variant="outline" className="size-11 rounded-full border-border bg-white px-0 shadow-none" onClick={() => onShowInList(imovel)} aria-label="Ver imóvel na lista">
+          <Button type="button" variant="outline" className="size-11 rounded-full border-border bg-white px-0" onClick={() => onShowInList(imovel)} aria-label="Ver imóvel na lista">
             <List className="size-4" />
           </Button>
         ) : null}
-        <FavoriteButton id={imovel.id} className="size-11 border border-border bg-white shadow-none" />
+        <FavoriteButton id={imovel.id} className="size-11 border border-border bg-white" />
       </div>
     </motion.div>
   )

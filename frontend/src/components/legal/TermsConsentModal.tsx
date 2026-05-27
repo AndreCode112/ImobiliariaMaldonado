@@ -60,7 +60,7 @@ export function TermsConsentModal() {
         showCloseButton={false}
         onEscapeKeyDown={(event) => event.preventDefault()}
         onPointerDownOutside={(event) => event.preventDefault()}
-        className="max-h-[calc(100dvh-1rem)] overflow-hidden rounded-[24px] border-border/70 bg-white p-0 shadow-[0_24px_80px_rgba(0,0,0,0.18)] sm:max-h-[calc(100dvh-2rem)] sm:max-w-2xl sm:rounded-[28px]"
+        className="max-h-[calc(100dvh-1rem)] overflow-hidden rounded-[24px] border-border/70 bg-white p-0 sm:max-h-[calc(100dvh-2rem)] sm:max-w-2xl sm:rounded-[28px]"
       >
         <DialogHeader className="border-b border-border/70 px-6 py-5 text-left">
           <div className="mb-3 grid size-11 place-items-center rounded-full bg-primary/10 text-primary">

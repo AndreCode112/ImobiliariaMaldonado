@@ -41,7 +41,7 @@ export function RegisterPage() {
       <Button
         asChild
         variant="outline"
-        className="absolute left-4 top-4 size-11 rounded-full border-border/80 bg-white/82 px-0 shadow-[0_18px_50px_rgba(0,0,0,0.10)] backdrop-blur-xl hover:bg-white md:left-8 md:top-8"
+        className="absolute left-4 top-4 size-11 rounded-full border-border/80 bg-white/82 px-0 hover:bg-white md:left-8 md:top-8"
       >
         <Link to="/" aria-label="Voltar para a página inicial">
           <ArrowLeft className="size-4" />
@@ -53,7 +53,7 @@ export function RegisterPage() {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -12, scale: 0.98 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-md rounded-[24px] border bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,0.08)] sm:rounded-[32px] sm:p-8"
+        className="w-full max-w-md rounded-[24px] border bg-white p-6 sm:rounded-[32px] sm:p-8"
       >
         <div className="text-center">
           <span className="mx-auto grid size-12 place-items-center rounded-full bg-primary text-white">

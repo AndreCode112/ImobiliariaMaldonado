@@ -31,7 +31,7 @@ export function FiltersPopover({ filters, setFilters, imoveis, open: controlledO
   return (
     <>
       {!hideFloatingButton ? (
-        <Button className="fixed bottom-[calc(env(safe-area-inset-bottom)+72px)] right-4 z-[830] rounded-full px-5 shadow-[0_18px_44px_rgba(0,0,0,0.16)] md:bottom-8 md:right-8" onClick={() => setOpen(true)}>
+        <Button className="fixed bottom-[calc(env(safe-area-inset-bottom)+72px)] right-4 z-[830] rounded-full px-5 md:bottom-8 md:right-8" onClick={() => setOpen(true)}>
           <SlidersHorizontal className="size-4" />
           Filtros
           {activeCount ? <span className="ml-1 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-primary">{activeCount}</span> : null}
@@ -43,14 +43,14 @@ export function FiltersPopover({ filters, setFilters, imoveis, open: controlledO
             <motion.button
               type="button"
               aria-label="Fechar filtros"
-              className="fixed inset-0 z-[920] bg-black/25 backdrop-blur-[2px]"
+              className="fixed inset-0 z-[920] bg-black/25-[2px]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
             />
             <motion.aside
-              className="fixed inset-x-0 bottom-0 z-[930] max-h-[88svh] overflow-hidden rounded-t-[30px] border border-white/70 bg-white shadow-[0_-22px_80px_rgba(0,0,0,0.18)] md:inset-x-auto md:bottom-8 md:right-8 md:w-[430px] md:rounded-[28px]"
+              className="fixed inset-x-0 bottom-0 z-[930] max-h-[88svh] overflow-hidden rounded-t-[30px] border border-white/70 bg-white md:inset-x-auto md:bottom-8 md:right-8 md:w-[430px] md:rounded-[28px]"
               initial={{ y: 36, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 36, opacity: 0 }}

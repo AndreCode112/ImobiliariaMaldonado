@@ -322,7 +322,7 @@ function PlaceAutocomplete({
                     <CommandList
                         data-state={showCommandList ? "open" : "closed"}
                         className={cn(
-                            "bg-popover border-input absolute top-full right-0 left-0 rounded-b-md border border-t-0 shadow-md",
+                            "bg-popover border-input absolute top-full right-0 left-0 rounded-b-md border border-t-0",
                             "data-[state=open]:animate-in data-[state=closed]:animate-out",
                             "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
                             "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",

@@ -217,13 +217,13 @@ export function PropertyDetailPage() {
           <GalleryImage src={imovel.images[4]} title={imovel.title} onClick={() => setPreviewIndex(4)} />
           {imovel.images.length ? (
             <>
-              <div className="absolute left-4 top-4 rounded-full bg-black/45 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur">
+              <div className="absolute left-4 top-4 rounded-full bg-black/45 px-3 py-1.5 text-sm font-semibold text-white">
                 1 / {imovel.images.length}
               </div>
               <Button
                 type="button"
                 variant="outline"
-                className="absolute bottom-4 right-4 h-10 rounded-full border-white/60 bg-white/90 px-4 shadow-[0_12px_34px_rgba(0,0,0,0.18)] backdrop-blur hover:bg-white"
+                className="absolute bottom-4 right-4 h-10 rounded-full border-white/60 bg-white/90 px-4 hover:bg-white"
                 onClick={() => setPreviewIndex(0)}
               >
                 <Images className="size-4" />
@@ -235,7 +235,7 @@ export function PropertyDetailPage() {
 
         <div className="grid gap-10 py-10 lg:grid-cols-[1fr_380px]">
           <article className="space-y-12">
-            <nav className="sticky top-[104px] z-20 -mx-1 flex gap-2 overflow-x-auto rounded-full border bg-white/88 p-1 shadow-[0_12px_36px_rgba(0,0,0,0.08)] backdrop-blur-xl">
+            <nav className="sticky top-[104px] z-20 -mx-1 flex gap-2 overflow-x-auto rounded-full border bg-white/88 p-1">
               {["Sobre", "Estrutura", "Localização"].map((item) => (
                 <a key={item} href={`#${item.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`} className="shrink-0 rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground">
                   {item}
@@ -261,7 +261,7 @@ export function PropertyDetailPage() {
             <Section id="estrutura" title="Estrutura e diferenciais">
               <div className="grid gap-3 sm:grid-cols-2">
                 {structureFeatures.map(({ label, icon: Icon }) => (
-                  <div key={label} className="flex items-center gap-3 rounded-2xl border border-border/80 bg-white p-4 text-sm font-medium shadow-[0_14px_36px_rgba(15,23,42,0.04)]">
+                  <div key={label} className="flex items-center gap-3 rounded-2xl border border-border/80 bg-white p-4 text-sm font-medium">
                     <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
                       <Icon className="size-5" />
                     </span>
@@ -280,12 +280,12 @@ export function PropertyDetailPage() {
           </article>
 
           <aside className="lg:sticky lg:top-28 lg:self-start">
-            <div className="rounded-[28px] border bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,0.08)]">
+            <div className="rounded-[28px] border bg-white p-6">
               <p className="text-sm text-muted-foreground">Preço de venda</p>
               <p className="mt-1 text-3xl font-semibold">{imovel.priceLabel}</p>
               <div className="mt-6 grid gap-3">
                 {whatsappHref ? (
-                  <Button asChild className="h-12 rounded-full bg-[#25D366] text-white shadow-[0_14px_34px_rgba(37,211,102,0.26)] hover:bg-[#1ebe5d]">
+                  <Button asChild className="h-12 rounded-full bg-[#25D366] text-white hover:bg-[#1ebe5d]">
                     <a href={whatsappHref} target="_blank" rel="noreferrer">
                       <WhatsappIcon className="size-5" />
                       Converse agora por WhatsApp
@@ -299,7 +299,7 @@ export function PropertyDetailPage() {
                 )}
               </div>
               <div className="mt-6 flex gap-3 rounded-2xl bg-secondary/70 p-4">
-                <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-full bg-white text-primary shadow-[0_12px_28px_rgba(15,23,42,0.10)] ring-1 ring-white/80">
+                <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-full border bg-white text-primary">
                   {realtor?.foto_url ? <img src={realtor.foto_url} alt={realtor.nome} className="size-full object-cover" /> : <span className="text-base font-bold">{(realtor?.nome ?? "M")[0]}</span>}
                 </div>
                 <div className="min-w-0">
@@ -338,7 +338,7 @@ function DetailTopControls({ returnTo }: { returnTo: string }) {
       <Button
         asChild
         variant="outline"
-        className="pointer-events-auto size-11 rounded-full border-border/80 bg-white/82 px-0 shadow-[0_18px_50px_rgba(0,0,0,0.10)] backdrop-blur-xl hover:bg-white"
+        className="pointer-events-auto size-11 rounded-full border-border/80 bg-white/82 px-0 hover:bg-white"
       >
         <Link to={returnTo} aria-label="Voltar para a região do mapa">
           <ArrowLeft className="size-4" />
@@ -346,7 +346,7 @@ function DetailTopControls({ returnTo }: { returnTo: string }) {
       </Button>
       <AccountMenuButton
         wrapperClassName="pointer-events-auto block"
-        className="inline-flex border-border/80 bg-white/82 shadow-[0_18px_50px_rgba(0,0,0,0.10)] backdrop-blur-xl hover:bg-white"
+        className="inline-flex border-border/80 bg-white/82 hover:bg-white"
         menuClassName="top-[calc(100%+10px)]"
       />
     </div>
@@ -492,13 +492,13 @@ function MobilePropertyGallery({
         )}
         {images.length ? (
           <>
-            <div className="absolute left-3 top-3 rounded-full bg-black/52 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+            <div className="absolute left-3 top-3 rounded-full bg-black/52 px-3 py-1.5 text-xs font-semibold text-white">
               {currentIndex + 1} / {images.length}
             </div>
             <Button
               type="button"
               variant="outline"
-              className="absolute bottom-3 right-3 h-9 rounded-full border-white/60 bg-white/92 px-3 text-xs shadow-[0_12px_34px_rgba(0,0,0,0.16)] backdrop-blur hover:bg-white"
+              className="absolute bottom-3 right-3 h-9 rounded-full border-white/60 bg-white/92 px-3 text-xs hover:bg-white"
               onClick={() => onOpen(currentIndex)}
             >
               <Images className="size-4" />
@@ -513,7 +513,7 @@ function MobilePropertyGallery({
             <button
               key={`${src}-${index}`}
               type="button"
-              className={`h-14 w-16 shrink-0 overflow-hidden rounded-[12px] border transition ${index === currentIndex ? "border-primary ring-2 ring-primary/20" : "border-transparent opacity-70"}`}
+              className={`h-14 w-16 shrink-0 overflow-hidden rounded-[12px] border transition ${index === currentIndex ? "border-primary" : "border-transparent opacity-70"}`}
               onClick={() => onChange(index)}
               aria-label={`Ver foto ${index + 1}`}
             >
@@ -576,7 +576,7 @@ function PhotoViewer({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/92 backdrop-blur-md" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/92" role="dialog" aria-modal="true">
       <button
         type="button"
         className="absolute right-5 top-5 z-10 grid size-11 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
@@ -603,7 +603,7 @@ function PhotoViewer({
           >
             <ChevronRight className="size-8" />
           </button>
-          <div className="absolute left-1/2 top-5 z-10 -translate-x-1/2 rounded-full bg-white/14 px-4 py-2 text-sm font-bold text-white shadow-[0_14px_38px_rgba(0,0,0,0.22)] ring-1 ring-white/16 backdrop-blur-xl">
+          <div className="absolute left-1/2 top-5 z-10 -translate-x-1/2 rounded-full border border-white/20 bg-white/14 px-4 py-2 text-sm font-bold text-white">
             {currentIndex + 1} / {count}
           </div>
         </>
@@ -630,7 +630,7 @@ function PhotoViewer({
       </div>
       {canNavigate ? (
         <div className="absolute inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-10 flex justify-center px-4">
-          <div className="flex max-w-full gap-2 overflow-x-auto rounded-2xl bg-black/24 p-2 backdrop-blur-xl">
+          <div className="flex max-w-full gap-2 overflow-x-auto rounded-2xl bg-black/24 p-2">
             {images.map((image, index) => (
               <button
                 key={`${image}-${index}`}

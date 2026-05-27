@@ -487,7 +487,7 @@ function MapTileLayerSegmentedControl({
     return (
         <div
             className={cn(
-                "absolute z-1000 inline-flex rounded-full border border-border/70 bg-white/94 p-1 shadow-[0_16px_44px_rgba(15,23,42,0.14)] backdrop-blur-xl",
+                "absolute z-1000 inline-flex rounded-full border border-border/70 bg-white/94 p-1",
                 position,
                 className
             )}>
@@ -499,7 +499,7 @@ function MapTileLayerSegmentedControl({
                         type="button"
                         className={cn(
                             "h-9 rounded-full px-3 text-xs font-bold text-muted-foreground transition-colors",
-                            selected && "bg-foreground text-white shadow-[0_8px_20px_rgba(15,23,42,0.16)]"
+                            selected && "bg-foreground text-white"
                         )}
                         onClick={() => setSelectedTileLayer(tileLayer.name)}
                         aria-pressed={selected}>
@@ -662,7 +662,7 @@ function MapPopup({
     return (
         <LeafletPopup
             className={cn(
-                "bg-popover text-popover-foreground animate-in fade-out-0 fade-in-0 zoom-out-95 zoom-in-95 slide-in-from-bottom-2 z-50 w-72 rounded-md border p-4 font-sans shadow-md outline-hidden",
+                "bg-popover text-popover-foreground animate-in fade-out-0 fade-in-0 zoom-out-95 zoom-in-95 slide-in-from-bottom-2 z-50 w-72 rounded-md border p-4 font-sans outline-hidden",
                 className
             )}
             {...props}
