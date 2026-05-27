@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { createPortal } from "react-dom"
 import { useNavigate, useParams } from "react-router-dom"
-import { ChevronLeft, ChevronRight, Home, Image as ImageIcon, MapPin, Minus, Plus, Save, Search, UploadCloud, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Home, Image as ImageIcon, LoaderCircle, MapPin, Minus, Plus, Save, Search, UploadCloud, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { axiosClient } from "@/api/axiosClient"
@@ -116,6 +116,18 @@ function buildCoordinateMapEmbedUrl(latitude?: string, longitude?: string) {
   const padding = 0.006
   const bbox = [lng - padding, lat - padding, lng + padding, lat + padding].join(",")
   return `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${encodeURIComponent(`${lat},${lng}`)}`
+}
+
+function addressTitle(address: EnderecoResultado) {
+  const primary = address.address?.road || address.address?.pedestrian || address.display_name.split(",")[0] || ""
+  const secondary = address.address?.suburb || address.address?.neighbourhood || address.address?.city || address.address?.town || ""
+  return [primary, secondary].filter(Boolean).join(", ") || address.display_name.split(",").slice(0, 2).map((part) => part.trim()).filter(Boolean).join(", ") || "Endereço"
+}
+
+function addressSubtitle(address: EnderecoResultado) {
+  const title = addressTitle(address)
+  const parts = address.display_name.split(",").map((part) => part.trim()).filter(Boolean)
+  return parts[0] === title ? parts.slice(1).join(", ") : address.display_name
 }
 
 function onlyDigits(value: string) {
@@ -281,7 +293,11 @@ export function AdminPropertyFormPage() {
   const [addressLoading, setAddressLoading] = useState(false)
   const [addressDialogOpen, setAddressDialogOpen] = useState(false)
   const [addressResult, setAddressResult] = useState<EnderecoResultado | null>(null)
+  const [addressResults, setAddressResults] = useState<EnderecoResultado[]>([])
+  const [isSearchingAddress, setIsSearchingAddress] = useState(false)
+  const [hasSearchedAddress, setHasSearchedAddress] = useState(false)
   const imageFilesRef = useRef<ImageFilePreview[]>([])
+  const selectedAddressQueryRef = useRef("")
   const addressMapUrl = useMemo(
     () => buildCoordinateMapEmbedUrl(addressResult?.latitude, addressResult?.longitude),
     [addressResult?.latitude, addressResult?.longitude],
@@ -315,6 +331,47 @@ export function AdminPropertyFormPage() {
   useEffect(() => {
     imageFilesRef.current = imageFiles
   }, [imageFiles])
+
+  useEffect(() => {
+    const query = form.endereco.trim()
+    if (selectedAddressQueryRef.current && selectedAddressQueryRef.current === query) {
+      setAddressResults([])
+      setHasSearchedAddress(false)
+      setIsSearchingAddress(false)
+      return
+    }
+    if (query.length < 3) {
+      setAddressResults([])
+      setHasSearchedAddress(false)
+      setIsSearchingAddress(false)
+      return
+    }
+
+    const controller = new AbortController()
+    const timeout = window.setTimeout(async () => {
+      setIsSearchingAddress(true)
+      try {
+        const { data } = await axiosClient.get<{ results: EnderecoResultado[] }>("/imoveis/api/buscar-endereco/", {
+          params: { query },
+          signal: controller.signal,
+        })
+        setAddressResults(data.results ?? [])
+        setHasSearchedAddress(true)
+      } catch {
+        if (!controller.signal.aborted) {
+          setAddressResults([])
+          setHasSearchedAddress(true)
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsSearchingAddress(false)
+      }
+    }, 300)
+
+    return () => {
+      controller.abort()
+      window.clearTimeout(timeout)
+    }
+  }, [form.endereco])
 
   useEffect(() => {
     return () => {
@@ -531,6 +588,11 @@ export function AdminPropertyFormPage() {
       return
     }
 
+    if (addressResults[0]) {
+      selecionarEndereco(addressResults[0])
+      return
+    }
+
     setAddressLoading(true)
     try {
       const { data } = await axiosClient.get<{ results: EnderecoResultado[] }>("/imoveis/api/buscar-endereco/", {
@@ -548,6 +610,17 @@ export function AdminPropertyFormPage() {
     } finally {
       setAddressLoading(false)
     }
+  }
+
+  function selecionarEndereco(address: EnderecoResultado) {
+    const title = addressTitle(address)
+    selectedAddressQueryRef.current = title
+    setForm((current) => ({ ...current, endereco: title }))
+    setAddressResults([])
+    setHasSearchedAddress(false)
+    setIsSearchingAddress(false)
+    setAddressResult(address)
+    setAddressDialogOpen(true)
   }
 
   function aplicarCoordenadasEndereco() {
@@ -695,7 +768,62 @@ export function AdminPropertyFormPage() {
                 </p>
                 <Field label="Endereço">
                   <div className="flex flex-col gap-2 sm:flex-row">
-                    <Input className="h-11 min-w-0" value={form.endereco} onChange={(event) => setForm((current) => ({ ...current, endereco: event.target.value }))} placeholder="Rua, número" />
+                    <div className="relative min-w-0 flex-1">
+                      <Input
+                        className="h-11 min-w-0 pr-10"
+                        value={form.endereco}
+                        onChange={(event) => {
+                          selectedAddressQueryRef.current = ""
+                          setForm((current) => ({ ...current, endereco: event.target.value }))
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault()
+                            void buscarCoordenadasEndereco()
+                          }
+                          if (event.key === "Escape") {
+                            setAddressResults([])
+                            setHasSearchedAddress(false)
+                          }
+                        }}
+                        placeholder="Rua, número"
+                      />
+                      {isSearchingAddress ? (
+                        <LoaderCircle className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                      ) : null}
+                      {form.endereco.trim().length >= 3 && (addressResults.length > 0 || hasSearchedAddress || isSearchingAddress) ? (
+                        <div className="absolute left-0 top-[calc(100%+8px)] z-[9020] w-full overflow-hidden rounded-2xl border border-border/80 bg-white shadow-[0_22px_60px_rgba(15,23,42,0.16)]">
+                          <div className="max-h-72 overflow-y-auto py-1 premium-scrollbar">
+                            {addressResults.map((address) => (
+                              <button
+                                key={address.place_id}
+                                type="button"
+                                className="group flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-secondary/80 focus:bg-secondary focus:outline-none"
+                                onMouseDown={(event) => event.preventDefault()}
+                                onClick={() => selecionarEndereco(address)}
+                              >
+                                <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-secondary text-muted-foreground transition group-hover:bg-white group-hover:text-primary">
+                                  <MapPin className="size-4" />
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate text-sm font-semibold leading-5 text-foreground">{addressTitle(address)}</span>
+                                  <span className="mt-0.5 line-clamp-2 text-xs leading-4 text-muted-foreground">{addressSubtitle(address)}</span>
+                                </span>
+                              </button>
+                            ))}
+                            {!isSearchingAddress && hasSearchedAddress && addressResults.length === 0 ? (
+                              <div className="px-4 py-5 text-sm text-muted-foreground">Nenhum endereço encontrado.</div>
+                            ) : null}
+                            {isSearchingAddress && addressResults.length === 0 ? (
+                              <div className="flex items-center gap-2 px-4 py-5 text-sm text-muted-foreground">
+                                <LoaderCircle className="size-4 animate-spin" />
+                                Buscando endereços...
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                     <Button type="button" variant="outline" className="h-11 w-full sm:w-auto sm:min-w-[118px]" onClick={buscarCoordenadasEndereco} disabled={addressLoading}>
                       <MapPin className="h-4 w-4" />
                       {addressLoading ? "Buscando..." : "Buscar"}

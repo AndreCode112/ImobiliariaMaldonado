@@ -469,6 +469,48 @@ function MapLayersControl({
     )
 }
 
+function MapTileLayerSegmentedControl({
+    position = "top-1 right-1",
+    className,
+}: {
+    position?: string
+    className?: string
+}) {
+    const layersContext = useMapLayersContext()
+    if (!layersContext) {
+        throw new Error("MapTileLayerSegmentedControl must be used within MapLayers")
+    }
+
+    const { tileLayers, selectedTileLayer, setSelectedTileLayer } = layersContext
+    if (tileLayers.length <= 1) return null
+
+    return (
+        <div
+            className={cn(
+                "absolute z-1000 inline-flex rounded-full border border-border/70 bg-white/94 p-1 shadow-[0_16px_44px_rgba(15,23,42,0.14)] backdrop-blur-xl",
+                position,
+                className
+            )}>
+            {tileLayers.map((tileLayer) => {
+                const selected = selectedTileLayer === tileLayer.name
+                return (
+                    <button
+                        key={tileLayer.name}
+                        type="button"
+                        className={cn(
+                            "h-9 rounded-full px-3 text-xs font-bold text-muted-foreground transition-colors",
+                            selected && "bg-foreground text-white shadow-[0_8px_20px_rgba(15,23,42,0.16)]"
+                        )}
+                        onClick={() => setSelectedTileLayer(tileLayer.name)}
+                        aria-pressed={selected}>
+                        {tileLayer.name}
+                    </button>
+                )
+            })}
+        </div>
+    )
+}
+
 function MapMarker({
     icon = <MapPinIcon className="size-6" />,
     iconAnchor = [12, 12],
@@ -1423,6 +1465,7 @@ export {
     MapLayerGroup,
     MapLayers,
     MapLayersControl,
+    MapTileLayerSegmentedControl,
     MapLocateControl,
     MapMarker,
     MapMarkerClusterGroup,

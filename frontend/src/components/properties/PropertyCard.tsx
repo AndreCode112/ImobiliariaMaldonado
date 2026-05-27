@@ -19,11 +19,11 @@ export function PropertyCard({ imovel, active, onFocus }: PropertyCardProps) {
   return (
     <motion.article
       layout
-      whileHover={{ y: -3 }}
-      transition={{ duration: 0.22 }}
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
-        "group overflow-hidden rounded-[22px] border border-transparent bg-white p-2 text-left transition-all",
-        "hover:border-border hover:shadow-[0_24px_80px_rgba(0,0,0,0.08)]",
+        "group overflow-hidden rounded-[22px] border border-transparent bg-white p-2 text-left transition-[border-color,box-shadow,background-color] duration-200",
+        "hover:border-border/80 hover:shadow-[0_18px_54px_rgba(15,23,42,0.08)]",
         active && "border-primary/40 shadow-[0_24px_80px_rgba(255,56,92,0.12)]",
       )}
       onMouseEnter={() => onFocus?.(imovel)}
@@ -36,7 +36,7 @@ export function PropertyCard({ imovel, active, onFocus }: PropertyCardProps) {
               alt={imovel.title}
               loading="lazy"
               decoding="async"
-              className="size-full object-cover transition duration-700 group-hover:scale-[1.04]"
+              className="size-full object-cover transition duration-500 group-hover:scale-[1.025]"
             />
           ) : (
             <div className="flex size-full items-center justify-center text-muted-foreground">

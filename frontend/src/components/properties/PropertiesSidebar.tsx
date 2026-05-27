@@ -273,14 +273,16 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
     <motion.article
       layout
       data-property-id={imovel.id}
-      className={cn("group bg-white transition duration-200 hover:bg-secondary/65", active && "bg-primary/[0.04]")}
+      whileHover={{ y: -1 }}
+      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+      className={cn("group bg-white transition-[background-color,box-shadow] duration-200 hover:bg-secondary/55 hover:shadow-[0_14px_34px_rgba(15,23,42,0.06)]", active && "bg-primary/[0.04]")}
       onMouseEnter={() => onFocus(imovel)}
       onFocus={() => onFocus(imovel)}
     >
       <Link to={`/imoveis/${imovel.uuid}`} className="grid grid-cols-[96px_minmax(0,1fr)] gap-3 p-3 sm:grid-cols-[112px_minmax(0,1fr)]" onClick={() => onFocus(imovel)}>
         <div className="relative h-24 overflow-hidden rounded-[14px] bg-secondary sm:h-28">
           {image ? (
-            <img src={image} alt={imovel.title} loading="lazy" decoding="async" className="size-full object-cover transition duration-700 group-hover:scale-[1.04]" />
+            <img src={image} alt={imovel.title} loading="lazy" decoding="async" className="size-full object-cover transition duration-500 group-hover:scale-[1.025]" />
           ) : (
             <div className="grid size-full place-items-center text-muted-foreground">
               <Images className="size-7" />

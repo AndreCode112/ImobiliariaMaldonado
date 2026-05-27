@@ -5,7 +5,7 @@ import { Link } from "react-router-dom"
 
 import { FavoriteButton } from "@/components/properties/FavoriteButton"
 import { Button } from "@/components/ui/button"
-import { Map, MapLayers, MapLayersControl, MapMarker, MapMarkerClusterGroup, MapPopup, MapTileLayer, MapTooltip, MapZoomControl, useMap } from "@/components/ui/map"
+import { Map, MapLayers, MapMarker, MapMarkerClusterGroup, MapPopup, MapTileLayer, MapTileLayerSegmentedControl, MapTooltip, MapZoomControl, useMap } from "@/components/ui/map"
 import { cn } from "@/lib/utils"
 import type { EnderecoResultado, Imovel, PontoInteresse } from "@/types/imovel"
 
@@ -120,16 +120,13 @@ export function PropertiesMap({
             updateWhenIdle={false}
             updateWhenZooming
           />
-          <MapLayersControl
-            tileLayersLabel="Visualização"
-            position="top-20 right-3 md:right-6"
-            className="rounded-full border-border/70 bg-white/94 text-foreground shadow-[0_16px_44px_rgba(15,23,42,0.14)] backdrop-blur-xl hover:bg-white"
+          <MapTileLayerSegmentedControl
+            position="bottom-40 right-3 md:bottom-auto md:top-20 md:right-6"
           />
         </MapLayers>
         <MapWheelZoomController enabled={scrollWheelZoom && isHoveringMap} />
         <MapMobileTouchController mobile={isMobileLayout} dragEnabled={mobileDragEnabled} />
         <MapViewReporter onChange={onViewChange} />
-        <MapSelectionFocus imovel={selectedImovel} mobile={isMobileLayout} />
         <MapCityFilterFocus target={cityTarget} mobile={isMobileLayout} />
         <MapPointsOfInterestZoomGate onChange={setShowPontosInteresse} />
         <MapExternalControls imoveis={visibleImoveis} selectedAddress={selectedAddress} />
@@ -137,6 +134,11 @@ export function PropertiesMap({
           position="bottom-24 right-3 md:bottom-6 md:right-6"
           className="rounded-full bg-white/90 shadow-[0_14px_36px_rgba(0,0,0,0.14)] backdrop-blur-xl"
         />
+        {cityTarget?.city ? (
+          <div className="pointer-events-none absolute left-3 top-[92px] z-[760] rounded-full border border-border/70 bg-white/94 px-4 py-2 text-sm font-bold text-foreground shadow-[0_14px_38px_rgba(15,23,42,0.12)] backdrop-blur-xl md:left-5 md:top-5">
+            {cityTarget.city}
+          </div>
+        ) : null}
         {selectedAddress ? <MapFlyTo address={selectedAddress} /> : null}
         {selectedAddress ? (
           <MapMarker
@@ -179,8 +181,8 @@ export function PropertiesMap({
               key={imovel.id}
               position={[imovel.latitude as number, imovel.longitude as number]}
               icon={<HomePin active={imovel.id === selectedId} />}
-              iconAnchor={[21, 42]}
-              popupAnchor={[0, -42]}
+              iconAnchor={[20, 40]}
+              popupAnchor={[0, -40]}
               riseOnHover={false}
               riseOffset={0}
               eventHandlers={{
@@ -195,6 +197,7 @@ export function PropertiesMap({
                 <MapPopup
                   closeButton={false}
                   closeOnClick
+                  autoPan={false}
                   className="property-map-popup w-[340px] rounded-[24px] border-0 bg-white p-0 shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
                 >
                   <Preview imovel={imovel} />
@@ -257,26 +260,6 @@ function MapViewportStabilizer() {
   return null
 }
 
-function MapSelectionFocus({ imovel, mobile }: { imovel?: Imovel; mobile: boolean }) {
-  const map = useMap()
-  const previousIdRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    if (!mobile || !imovel?.latitude || !imovel.longitude) return
-    if (previousIdRef.current === imovel.id) return
-    previousIdRef.current = imovel.id
-
-    const zoom = Math.max(map.getZoom(), 15)
-    const markerPoint = map.project([imovel.latitude, imovel.longitude], zoom)
-    const previewOffset = Math.min(190, Math.max(120, map.getSize().y * 0.22))
-    const center = map.unproject(markerPoint.add([0, previewOffset]), zoom)
-    map.stop()
-    map.flyTo(center, zoom, { animate: true, duration: 0.45 })
-  }, [imovel, map, mobile])
-
-  return null
-}
-
 function MapCityFilterFocus({
   target,
   mobile,
@@ -299,10 +282,8 @@ function MapCityFilterFocus({
 
     map.stop()
     if (target.bounds?.length) {
-      map.flyToBounds(target.bounds, {
-        animate: true,
-        duration: 0.9,
-        easeLinearity: 0.18,
+      map.fitBounds(target.bounds, {
+        animate: false,
         maxZoom: mobile ? 14 : 15,
         paddingTopLeft: mobile ? [34, 110] : [90, 110],
         paddingBottomRight: mobile ? [34, 170] : [90, 90],
@@ -311,11 +292,7 @@ function MapCityFilterFocus({
     }
 
     if (target.center) {
-      map.flyTo(target.center, Math.max(map.getZoom(), 13), {
-        animate: true,
-        duration: 0.9,
-        easeLinearity: 0.18,
-      })
+      map.setView(target.center, Math.max(map.getZoom(), 13), { animate: false })
     }
   }, [map, mobile, target])
 
@@ -429,10 +406,10 @@ function MapExternalControls({ imoveis, selectedAddress }: { imoveis: Imovel[]; 
 
       if (!bounds.length) return
       if (bounds.length === 1) {
-        map.flyTo(bounds[0], 16, { duration: 0.8 })
+        map.setView(bounds[0], 16, { animate: false })
         return
       }
-      map.fitBounds(bounds, { animate: true, duration: 0.8, padding: [120, 120], maxZoom: 15 })
+      map.fitBounds(bounds, { animate: false, padding: [120, 120], maxZoom: 15 })
     }
     const zoomIn = () => map.zoomIn()
     const zoomOut = () => map.zoomOut()
@@ -504,7 +481,7 @@ function normalizeText(value: string) {
 
 function AddressPin() {
   return (
-    <div className="relative grid size-9 place-items-center rounded-full border-[3px] border-white bg-zinc-950 text-white shadow-[0_18px_44px_rgba(0,0,0,0.32)]">
+    <div className="relative grid size-9 place-items-center rounded-full border-2 border-white bg-zinc-900 text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)]">
       <MapPin className="size-5" />
     </div>
   )
@@ -512,15 +489,15 @@ function AddressPin() {
 
 function HomePin({ active = false }: { active?: boolean }) {
   return (
-    <div className={`grid size-11 place-items-center rounded-full border-[3px] border-white bg-primary text-white shadow-[0_18px_46px_rgba(255,56,92,0.34)] ${active ? "ring-4 ring-primary/18" : ""}`}>
-      <Home className="size-5" />
+    <div className={`grid size-10 place-items-center rounded-full border-2 border-white bg-primary text-white shadow-[0_10px_24px_rgba(15,23,42,0.16)] ${active ? "ring-2 ring-primary/20" : ""}`}>
+      <Home className="size-[18px]" />
     </div>
   )
 }
 
 function ClusterPin({ count }: { count: number }) {
   return (
-    <div className="grid size-11 place-items-center rounded-full border-[3px] border-white bg-foreground text-sm font-bold text-white shadow-[0_18px_46px_rgba(15,23,42,0.24)]">
+    <div className="grid size-10 place-items-center rounded-full border-2 border-white bg-foreground text-sm font-bold text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)]">
       {count}
     </div>
   )
@@ -540,7 +517,7 @@ function PontoInteressePin({ categoria }: { categoria: string }) {
 
   return (
     <div
-      className="relative grid size-4 place-items-center rounded-full border border-white text-white shadow-[0_6px_14px_rgba(15,23,42,0.22)]"
+      className="relative grid size-4 place-items-center rounded-full border border-white text-white shadow-[0_4px_10px_rgba(15,23,42,0.16)]"
       style={{ backgroundColor: config.color }}
     >
       <Icon className="size-2.5" strokeWidth={3} />
@@ -573,7 +550,7 @@ function Preview({ imovel }: { imovel: Imovel }) {
         </div>
         <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-black/58 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
           <Camera className="size-3.5" />
-          {imovel.images.length || 1}
+          {imovel.images.length}
         </div>
       </div>
 
