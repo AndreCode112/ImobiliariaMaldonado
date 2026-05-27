@@ -1,6 +1,6 @@
 import { API_BASE_URL, axiosClient } from "@/api/axiosClient"
 import type { AdminUser, AdminUserPayload, PasswordResetLink } from "@/types/auth"
-import type { AdminStats, ApiHealthReport, Cidade, CidadePayload, CorretorPayload, CorretorResumo, EnderecoResultado, Imovel, ImovelApi, ImovelPayload, LembreteFavoritosPayload, LembreteFavoritosResponse, PaginatedResults, PontoInteresse, SystemLogFilters, SystemLogsResponse } from "@/types/imovel"
+import type { AdminStats, ApiHealthReport, Cidade, CidadePayload, CorretorPayload, CorretorResumo, EnderecoResultado, Imovel, ImovelApi, ImovelPayload, LembreteFavoritosPayload, LembreteFavoritosResponse, PaginatedResults, PontoInteresse, ServerLogSource, ServerLogTailResponse, SystemLogFilters, SystemLogsResponse } from "@/types/imovel"
 
 function numberFrom(value: string | number | undefined | null) {
   if (value === undefined || value === null || value === "") return 0
@@ -129,6 +129,13 @@ export const imoveisService = {
   async deleteLogs(ids: number[]): Promise<{ deleted: number; ids: number[] }> {
     const { data } = await axiosClient.delete<{ deleted: number; ids: number[] }>("/imoveis/api/logs/", {
       data: { ids },
+    })
+    return data
+  },
+
+  async serverLogs(source: ServerLogSource, lines = 180): Promise<ServerLogTailResponse> {
+    const { data } = await axiosClient.get<ServerLogTailResponse>("/imoveis/api/server-logs/", {
+      params: { source, lines },
     })
     return data
   },

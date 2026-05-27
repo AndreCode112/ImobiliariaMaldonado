@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 import time
 import traceback
 from json import JSONDecodeError
@@ -43,6 +44,30 @@ from .rate_limits import (
 )
 
 
+SERVER_LOG_SOURCES = {
+    "nginx_error": {
+        "label": "Nginx error",
+        "command": ["tail", "-n", "{lines}", "/var/log/nginx/error.log"],
+    },
+    "cron": {
+        "label": "Cron",
+        "command": ["journalctl", "-u", "cron", "-n", "{lines}", "--no-pager", "-o", "short-iso"],
+    },
+    "lembrete_favoritos": {
+        "label": "Lembrete favoritos",
+        "command": ["tail", "-n", "{lines}", str(settings.BASE_DIR / "logs" / "lembrete_favoritos.log")],
+    },
+    "journal": {
+        "label": "Journal",
+        "command": ["journalctl", "-xe", "-n", "{lines}", "--no-pager", "-o", "short-iso"],
+    },
+    "app_service": {
+        "label": "Serviço Django",
+        "command": ["journalctl", "-u", "imobiliaria-maldonado.service", "-n", "{lines}", "--no-pager", "-o", "short-iso"],
+    },
+}
+
+
 def _json_response(controller):
     if controller.status != 200:
         try:
@@ -52,6 +77,14 @@ def _json_response(controller):
             pass
     
     return JsonResponse(controller.response, status=controller.status)
+
+
+def _request_int(value, fallback, minimum=1, maximum=500):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return fallback
+    return max(minimum, min(parsed, maximum))
 
 
 def _superuser_unauthorized_response(request):
@@ -88,6 +121,52 @@ def ApiStatsView(request):
     controller = ApiStats()
     controller.execute(request)
     return _json_response(controller)
+
+
+@admin_api_rate_limit
+@api_view(["GET"])
+@permission_classes([IsSuperUser])
+def ApiServerLogsView(request):
+    source = request.GET.get("source") or "nginx_error"
+    lines = _request_int(request.GET.get("lines"), 180, maximum=500)
+    config = SERVER_LOG_SOURCES.get(source)
+    if not config:
+        return JsonResponse({"message": "Fonte de log inválida."}, status=400)
+
+    command = [part.format(lines=str(lines)) for part in config["command"]]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, timeout=4, check=False)
+    except FileNotFoundError:
+        return JsonResponse(
+            {
+                "source": source,
+                "label": config["label"],
+                "lines": lines,
+                "ok": False,
+                "output": f"Comando não encontrado: {command[0]}",
+            }
+        )
+    except subprocess.TimeoutExpired:
+        return JsonResponse(
+            {
+                "source": source,
+                "label": config["label"],
+                "lines": lines,
+                "ok": False,
+                "output": "Tempo limite ao consultar o log.",
+            }
+        )
+
+    output = result.stdout.strip() or result.stderr.strip() or "Sem registros para exibir."
+    return JsonResponse(
+        {
+            "source": source,
+            "label": config["label"],
+            "lines": lines,
+            "ok": result.returncode == 0,
+            "output": output,
+        }
+    )
 
 
 @admin_write_rate_limit

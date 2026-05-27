@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { imoveisService } from "@/services/imoveisService"
 import type { AdminUserPayload } from "@/types/auth"
-import type { CidadePayload, CorretorPayload, ImovelPayload, LembreteFavoritosPayload, SystemLogFilters } from "@/types/imovel"
+import type { CidadePayload, CorretorPayload, ImovelPayload, LembreteFavoritosPayload, ServerLogSource, SystemLogFilters } from "@/types/imovel"
 
 export function useAdminStats() {
   return useQuery({
@@ -32,6 +32,15 @@ export function useDeleteSystemLogs() {
   return useMutation({
     mutationFn: (ids: number[]) => imoveisService.deleteLogs(ids),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["system-logs"] }),
+  })
+}
+
+export function useServerLogs(source: ServerLogSource, lines = 180, refetchInterval?: number | false) {
+  return useQuery({
+    queryKey: ["server-logs", source, lines],
+    queryFn: () => imoveisService.serverLogs(source, lines),
+    refetchInterval,
+    refetchOnWindowFocus: false,
   })
 }
 

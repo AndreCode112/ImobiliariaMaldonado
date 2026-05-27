@@ -229,6 +229,16 @@ export interface SystemLogsResponse {
   order: "recent" | "oldest"
 }
 
+export type ServerLogSource = "nginx_error" | "cron" | "lembrete_favoritos" | "journal" | "app_service"
+
+export interface ServerLogTailResponse {
+  source: ServerLogSource
+  label: string
+  lines: number
+  ok: boolean
+  output: string
+}
+
 export interface LembreteFavoritosConfig {
   horario: string
   ativo: boolean

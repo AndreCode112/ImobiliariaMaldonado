@@ -9,9 +9,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useDeleteSystemLogs, useSystemLogs } from "@/hooks/useImoveis"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useDeleteSystemLogs, useServerLogs, useSystemLogs } from "@/hooks/useImoveis"
 import { cn } from "@/lib/utils"
-import type { SystemLogFilters } from "@/types/imovel"
+import type { ServerLogSource, SystemLogFilters } from "@/types/imovel"
 
 const ALL_ROUTES = "_"
 const DEFAULT_FILTERS: SystemLogFilters = {
@@ -23,9 +24,24 @@ const DEFAULT_FILTERS: SystemLogFilters = {
   limit: 250,
 }
 
+const SERVER_LOG_TABS: Array<{ source: ServerLogSource; label: string; command: string }> = [
+  { source: "nginx_error", label: "Nginx", command: "tail -f /var/log/nginx/error.log" },
+  { source: "cron", label: "Cron", command: "journalctl -u cron -f" },
+  { source: "lembrete_favoritos", label: "Lembretes", command: "tail -f logs/lembrete_favoritos.log" },
+  { source: "journal", label: "Journal", command: "journalctl -xe" },
+  { source: "app_service", label: "Django", command: "journalctl -u imobiliaria-maldonado.service -f" },
+]
+
 export function AdminLogsPage() {
   const [filters, setFilters] = useState<SystemLogFilters>(DEFAULT_FILTERS)
+  const [serverLogSource, setServerLogSource] = useState<ServerLogSource>("nginx_error")
+  const [autoRefreshServerLogs, setAutoRefreshServerLogs] = useState(false)
   const { data, isLoading, isFetching, refetch } = useSystemLogs(filters)
+  const {
+    data: serverLog,
+    isFetching: isFetchingServerLog,
+    refetch: refetchServerLog,
+  } = useServerLogs(serverLogSource, 180, autoRefreshServerLogs ? 8000 : false)
   const deleteLogs = useDeleteSystemLogs()
   const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set())
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -113,6 +129,54 @@ export function AdminLogsPage() {
 
       <div className="premium-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden pr-1">
         <div className="min-w-0 space-y-5">
+      <Card className="min-w-0 rounded-[28px] border-border/80 bg-white">
+        <CardContent className="min-w-0 space-y-4 p-4 md:p-5">
+          <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold">Logs do servidor</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Visualização leve das últimas linhas, sem manter processos abertos no servidor.</p>
+            </div>
+            <div className="flex w-full flex-col gap-2 sm:flex-row xl:w-auto">
+              <Button variant="outline" className="h-10 rounded-full bg-white" onClick={() => refetchServerLog()} disabled={isFetchingServerLog}>
+                <RefreshCw className={cn("size-4", isFetchingServerLog && "animate-spin")} />
+                Atualizar
+              </Button>
+              <Button
+                type="button"
+                variant={autoRefreshServerLogs ? "default" : "outline"}
+                className="h-10 rounded-full"
+                onClick={() => setAutoRefreshServerLogs((active) => !active)}
+              >
+                Auto {autoRefreshServerLogs ? "ligado" : "desligado"}
+              </Button>
+            </div>
+          </div>
+
+          <Tabs value={serverLogSource} onValueChange={(value) => setServerLogSource(value as ServerLogSource)}>
+            <TabsList className="max-w-full flex-wrap justify-start">
+              {SERVER_LOG_TABS.map((tab) => (
+                <TabsTrigger key={tab.source} value={tab.source} className="h-9 px-3">
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <code className="min-w-0 truncate rounded-full border bg-secondary/50 px-3 py-1.5 text-xs text-muted-foreground">
+              {SERVER_LOG_TABS.find((tab) => tab.source === serverLogSource)?.command}
+            </code>
+            <span className={cn("inline-flex w-fit items-center rounded-full px-3 py-1.5 text-xs font-semibold", serverLog?.ok === false ? "bg-destructive/10 text-destructive" : "bg-emerald-50 text-emerald-700")}>
+              {serverLog?.ok === false ? "Atenção" : "Online"}
+            </span>
+          </div>
+
+          <pre className="max-h-[420px] min-h-[220px] overflow-auto whitespace-pre-wrap break-words rounded-[18px] border border-border/70 bg-zinc-950 p-4 font-mono text-xs leading-5 text-zinc-100 premium-scrollbar">
+            {isFetchingServerLog && !serverLog ? "Carregando logs..." : serverLog?.output ?? "Sem registros para exibir."}
+          </pre>
+        </CardContent>
+      </Card>
+
       <Card className="min-w-0 rounded-[28px] border-border/80 bg-white">
         <CardContent className="min-w-0 space-y-4 p-4 md:p-5">
           <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(220px,1.4fr)_minmax(200px,1fr)_minmax(150px,0.7fr)_minmax(140px,0.6fr)_minmax(200px,0.85fr)]">
