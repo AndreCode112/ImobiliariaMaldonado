@@ -76,14 +76,14 @@ export function AdminLembretesPage() {
     }))
   }
 
-  async function save(nextForm = form) {
+  async function save(nextForm = form, syncCron = false) {
     if (messageOpen && !nextForm.whatsapp_corretor_id) {
       toast.error("Selecione um corretor para usar o telefone cadastrado")
       return
     }
 
     try {
-      const response = await update.mutateAsync(nextForm)
+      const response = await update.mutateAsync({ ...nextForm, sync_cron: syncCron })
       toast.success(response.message ?? "Configuração salva")
       setScheduleOpen(false)
       setMessageOpen(false)
@@ -305,7 +305,7 @@ export function AdminLembretesPage() {
           </div>
           <DialogFooter className="grid grid-cols-1 gap-2 sm:flex">
             <Button variant="outline" className="w-full rounded-full sm:w-auto" onClick={() => setScheduleOpen(false)}>Cancelar</Button>
-            <Button className="w-full rounded-full sm:w-auto" onClick={() => save()} disabled={update.isPending}>
+            <Button className="w-full rounded-full sm:w-auto" onClick={() => save(form, true)} disabled={update.isPending}>
               <Save className="size-4" />
               {update.isPending ? "Salvando..." : "Salvar"}
             </Button>
@@ -367,7 +367,7 @@ export function AdminLembretesPage() {
           </div>
           <DialogFooter className="grid grid-cols-1 gap-2 sm:flex">
             <Button variant="outline" className="w-full rounded-full sm:w-auto" onClick={() => setMessageOpen(false)}>Cancelar</Button>
-            <Button className="w-full rounded-full sm:w-auto" onClick={() => save()} disabled={update.isPending}>
+            <Button className="w-full rounded-full sm:w-auto" onClick={() => save(form, false)} disabled={update.isPending}>
               <Save className="size-4" />
               {update.isPending ? "Salvando..." : "Salvar"}
             </Button>

@@ -280,6 +280,7 @@ export interface LembreteFavoritosPayload {
   whatsapp_destino: "corretor" | "manual"
   whatsapp_corretor_id?: number | null
   whatsapp_numero_manual: string
+  sync_cron?: boolean
 }
 
 export interface LembreteFavoritosResponse {

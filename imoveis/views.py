@@ -634,6 +634,7 @@ def ApiLembreteFavoritosView(request):
             except (Corretor.DoesNotExist, ValueError, TypeError):
                 return JsonResponse({"message": "Corretor do WhatsApp não encontrado."}, status=400)
 
+    sync_cron = _request_bool(data, "sync_cron", False)
     config.horario = horario
     config.ativo = _request_bool(data, "ativo", config.ativo)
     config.whatsapp_mensagem = mensagem
@@ -652,11 +653,14 @@ def ApiLembreteFavoritosView(request):
         ]
     )
 
-    try:
-        cron_ok, cron_message = sync_crontab(config)
-    except Exception as exc:
-        cron_ok = False
-        cron_message = f"Configuração salva. Não foi possível sincronizar o cron: {type(exc).__name__}."
+    cron_ok = None
+    cron_message = "Configuração salva"
+    if sync_cron:
+        try:
+            cron_ok, cron_message = sync_crontab(config)
+        except Exception:
+            cron_ok = False
+            cron_message = "Configuração salva. Não foi possível sincronizar o cron no servidor."
     return JsonResponse(
         {
             "config": _lembrete_config_payload(config),

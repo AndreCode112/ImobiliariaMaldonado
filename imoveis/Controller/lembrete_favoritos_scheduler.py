@@ -1,5 +1,6 @@
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 
@@ -12,7 +13,7 @@ CRON_END = "# MALDONADO_LEMBRETE_FAVORITOS_END"
 
 
 def cron_available() -> bool:
-    return sys.platform.startswith("linux")
+    return sys.platform.startswith("linux") and shutil.which("crontab") is not None
 
 
 def build_cron_line(config) -> str:
@@ -31,7 +32,7 @@ def sync_crontab(config) -> tuple[bool, str]:
         config.cron_linha = ""
         config.ultima_atualizacao_cron = timezone.now()
         config.save(update_fields=["cron_instalado", "cron_linha", "ultima_atualizacao_cron", "atualizado_em"])
-        return False, "Agendamento via cron disponivel apenas em Linux."
+        return False, "Crontab não está instalado no servidor. A configuração foi salva, mas o agendamento automático não foi sincronizado."
 
     os.makedirs(settings.BASE_DIR / "logs", exist_ok=True)
     current = _read_crontab()
