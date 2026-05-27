@@ -3,6 +3,7 @@ import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
 
+import { DeleteConfirmPopover } from "@/components/admin/DeleteConfirmPopover"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -50,7 +51,6 @@ export function AdminDashboardPage() {
   const hasFilters = filters.search || filters.status !== ALL || filters.city !== ALL || filters.type !== ALL || filters.destaque !== ALL
 
   async function remove(id: number) {
-    if (!confirm("Excluir este imóvel?")) return
     try {
       await deleteImovel.mutateAsync(id)
       toast.success("Imóvel excluído")
@@ -171,10 +171,17 @@ export function AdminDashboardPage() {
                       Editar
                     </Link>
                   </Button>
-                  <Button variant="outline" className="w-full rounded-full text-destructive sm:w-auto" onClick={() => remove(imovel.id)}>
-                    <Trash2 className="size-4" />
-                    Excluir
-                  </Button>
+                  <DeleteConfirmPopover
+                    title="Excluir imóvel?"
+                    description={`Essa ação removerá ${imovel.title} do cadastro.`}
+                    isPending={deleteImovel.isPending}
+                    onConfirm={() => remove(imovel.id)}
+                  >
+                    <Button variant="outline" className="w-full rounded-full text-destructive sm:w-auto">
+                      <Trash2 className="size-4" />
+                      Excluir
+                    </Button>
+                  </DeleteConfirmPopover>
                 </div>
               </CardContent>
             </Card>

@@ -2,6 +2,7 @@ import { Compass, Edit, Fingerprint, LocateFixed, MapPin, Plus, Search, Trash2 }
 import { useState } from "react"
 import { toast } from "sonner"
 
+import { DeleteConfirmPopover } from "@/components/admin/DeleteConfirmPopover"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -56,7 +57,6 @@ export function AdminCidadesPage() {
   }
 
   async function remove(cidade: Cidade) {
-    if (!confirm(`Excluir ${cidade.nome}?`)) return
     try {
       await deleteCidade.mutateAsync(cidade.id)
       toast.success("Cidade removida")
@@ -113,7 +113,16 @@ export function AdminCidadesPage() {
                 <td className="px-5 py-4">
                   <div className="flex justify-end gap-2">
                     <Button size="icon" variant="ghost" className="rounded-full" onClick={() => openEdit(cidade)}><Edit className="size-4" /></Button>
-                    <Button size="icon" variant="ghost" className="rounded-full text-destructive" onClick={() => remove(cidade)}><Trash2 className="size-4" /></Button>
+                    <DeleteConfirmPopover
+                      title="Excluir cidade?"
+                      description={`Essa ação removerá ${cidade.nome} do cadastro.`}
+                      isPending={deleteCidade.isPending}
+                      onConfirm={() => remove(cidade)}
+                    >
+                      <Button size="icon" variant="ghost" className="rounded-full text-destructive" aria-label={`Excluir ${cidade.nome}`}>
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </DeleteConfirmPopover>
                   </div>
                 </td>
               </tr>

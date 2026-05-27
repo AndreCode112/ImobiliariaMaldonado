@@ -2,6 +2,7 @@ import { BadgeCheck, Edit, Mail, Phone, Plus, Search, ShieldCheck, Trash2, Uploa
 import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
+import { DeleteConfirmPopover } from "@/components/admin/DeleteConfirmPopover"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -108,7 +109,6 @@ export function AdminCorretoresPage() {
   }
 
   async function remove(corretor: CorretorResumo) {
-    if (!confirm(`Excluir ${corretor.nome}?`)) return
     try {
       await deleteCorretor.mutateAsync(corretor.id)
       toast.success("Corretor removido")
@@ -173,7 +173,16 @@ export function AdminCorretoresPage() {
                 <td className="px-5 py-4">
                   <div className="flex justify-end gap-2">
                     <Button size="icon" variant="ghost" className="rounded-full" onClick={() => openEdit(corretor)}><Edit className="size-4" /></Button>
-                    <Button size="icon" variant="ghost" className="rounded-full text-destructive" onClick={() => remove(corretor)}><Trash2 className="size-4" /></Button>
+                    <DeleteConfirmPopover
+                      title="Excluir corretor?"
+                      description={`Essa ação removerá ${corretor.nome} do cadastro.`}
+                      isPending={deleteCorretor.isPending}
+                      onConfirm={() => remove(corretor)}
+                    >
+                      <Button size="icon" variant="ghost" className="rounded-full text-destructive" aria-label={`Excluir ${corretor.nome}`}>
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </DeleteConfirmPopover>
                   </div>
                 </td>
               </tr>
