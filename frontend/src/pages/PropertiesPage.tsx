@@ -126,6 +126,7 @@ export function PropertiesPage() {
   const geolocationRequestedRef = useRef(false)
   const mapRegionActiveRef = useRef(false)
   const resultsLoadingTimeoutRef = useRef<number | null>(null)
+  const mapScrollSettleTimeoutRef = useRef<number | null>(null)
   const selectedAddressQueryRef = useRef("")
   const restoredSelectedRef = useRef(false)
   const { scrollYProgress } = useScroll({
@@ -388,17 +389,37 @@ export function PropertiesPage() {
     window.dispatchEvent(new CustomEvent(HEADER_VISIBILITY_EVENT, { detail: { visible: !mapRegionActive } }))
   })
 
-  const scrollToMap = useCallback(() => {
+  const alignMapToFinalRegion = useCallback((behavior: ScrollBehavior = "smooth") => {
     requestUserLocation()
     const transition = transitionRef.current
     if (!transition) return
-    const top = transition.offsetTop + transition.offsetHeight * (isMobileLayout ? 0.72 : 0.82)
-    window.scrollTo({ top, behavior: "smooth" })
+    const top = Math.max(0, transition.offsetTop + transition.offsetHeight - window.innerHeight)
+    window.scrollTo({ top, behavior })
+  }, [requestUserLocation])
+
+  const scrollToMap = useCallback(() => {
+    alignMapToFinalRegion("smooth")
+    if (mapScrollSettleTimeoutRef.current) {
+      window.clearTimeout(mapScrollSettleTimeoutRef.current)
+    }
+    mapScrollSettleTimeoutRef.current = window.setTimeout(() => {
+      alignMapToFinalRegion("smooth")
+      mapScrollSettleTimeoutRef.current = null
+    }, 520)
     setSearchParams((params) => {
       params.set("map", "1")
       return params
-    })
-  }, [isMobileLayout, requestUserLocation, setSearchParams])
+    }, { replace: true })
+  }, [alignMapToFinalRegion, setSearchParams])
+
+  useEffect(() => {
+    if (!("scrollRestoration" in window.history)) return
+    const previousScrollRestoration = window.history.scrollRestoration
+    window.history.scrollRestoration = "manual"
+    return () => {
+      window.history.scrollRestoration = previousScrollRestoration
+    }
+  }, [])
 
   useEffect(() => {
     window.addEventListener(SCROLL_TO_MAP_EVENT, scrollToMap)
@@ -407,9 +428,21 @@ export function PropertiesPage() {
 
   useEffect(() => {
     if (mapParam !== "1") return
-    const timeout = window.setTimeout(scrollToMap, 120)
-    return () => window.clearTimeout(timeout)
-  }, [mapParam, scrollToMap])
+    const firstPass = window.setTimeout(scrollToMap, 120)
+    const settledPass = window.setTimeout(() => alignMapToFinalRegion("smooth"), 680)
+    return () => {
+      window.clearTimeout(firstPass)
+      window.clearTimeout(settledPass)
+    }
+  }, [alignMapToFinalRegion, mapParam, scrollToMap])
+
+  useEffect(() => {
+    return () => {
+      if (mapScrollSettleTimeoutRef.current) {
+        window.clearTimeout(mapScrollSettleTimeoutRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (isLoading || userLocationAddress) return

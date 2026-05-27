@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { Bath, BedDouble, Car, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Eye, Filter, Images, LoaderCircle, MapPin, Minimize2, Ruler, Search, Share2, X } from "lucide-react"
 import type { MouseEvent, ReactNode } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 import { toast } from "sonner"
 
 import { FavoriteButton } from "@/components/properties/FavoriteButton"
@@ -305,6 +305,8 @@ function SidebarSkeleton() {
 function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; active?: boolean; onFocus: (imovel: Imovel) => void }) {
   const image = imovel.images[0]
   const propertyUrl = buildPropertyUrl(imovel.uuid)
+  const location = useLocation()
+  const returnToMap = buildMapReturnPath(location.search)
 
   async function shareProperty(event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault()
@@ -336,7 +338,7 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
       className={cn("group bg-white transition-[background-color,box-shadow] duration-200 hover:bg-secondary/55 hover:shadow-[0_14px_34px_rgba(15,23,42,0.06)]", active && "bg-primary/[0.04]")}
     >
-      <Link to={`/imoveis/${imovel.uuid}`} className="grid grid-cols-[96px_minmax(0,1fr)] gap-3 p-3 sm:grid-cols-[112px_minmax(0,1fr)]" onClick={() => onFocus(imovel)}>
+      <Link to={`/imoveis/${imovel.uuid}`} state={{ from: returnToMap }} className="grid grid-cols-[96px_minmax(0,1fr)] gap-3 p-3 sm:grid-cols-[112px_minmax(0,1fr)]" onClick={() => onFocus(imovel)}>
         <div className="relative h-24 overflow-hidden rounded-[14px] bg-secondary sm:h-28">
           {image ? (
             <img src={image} alt={imovel.title} loading="lazy" decoding="async" className="size-full object-cover transition duration-500 group-hover:scale-[1.025]" />
@@ -382,6 +384,12 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
 function buildPropertyUrl(uuid: string) {
   const origin = typeof window !== "undefined" ? window.location.origin : "https://maldonadocorretorimoveis.com.br"
   return `${origin}/imoveis/${uuid}`
+}
+
+function buildMapReturnPath(search: string) {
+  const params = new URLSearchParams(search)
+  params.set("map", "1")
+  return `/imoveis?${params.toString()}`
 }
 
 function Mini({ icon: Icon, label }: { icon: typeof Ruler; label: string }) {

@@ -1,7 +1,7 @@
 import { motion } from "framer-motion"
 import { Bath, BedDouble, Camera, Car, Home, List, MapPin, MapPinned, Ruler, ShoppingCart, Store, TreePine, Utensils, Wallet, X, type LucideIcon } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 
 import { FavoriteButton } from "@/components/properties/FavoriteButton"
 import { Button } from "@/components/ui/button"
@@ -531,6 +531,8 @@ function PontoInteressePin({ categoria }: { categoria: string }) {
 
 function Preview({ imovel }: { imovel: Imovel }) {
   const location = compactLocation([imovel.neighborhood, imovel.city])
+  const routerLocation = useLocation()
+  const returnToMap = buildMapReturnPath(routerLocation.search)
 
   return (
     <div className="w-[340px] overflow-hidden rounded-[24px] bg-white">
@@ -573,7 +575,7 @@ function Preview({ imovel }: { imovel: Imovel }) {
         </div>
 
         <Button asChild className="h-11 w-full rounded-full shadow-[0_14px_34px_rgba(255,56,92,0.22)]">
-          <Link to={`/imoveis/${imovel.uuid}`}>Ver detalhes</Link>
+          <Link to={`/imoveis/${imovel.uuid}`} state={{ from: returnToMap }}>Ver detalhes</Link>
         </Button>
       </div>
     </div>
@@ -594,6 +596,9 @@ function InfoLine({ icon: Icon, value, strong = false }: { icon: LucideIcon; val
 }
 
 function MobilePreview({ imovel, onClose, onShowInList }: { imovel: Imovel; onClose?: () => void; onShowInList?: (imovel: Imovel) => void }) {
+  const routerLocation = useLocation()
+  const returnToMap = buildMapReturnPath(routerLocation.search)
+
   function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: { offset: { y: number }; velocity: { y: number } }) {
     if (info.offset.y > 70 || info.velocity.y > 620) onClose?.()
   }
@@ -639,7 +644,7 @@ function MobilePreview({ imovel, onClose, onShowInList }: { imovel: Imovel; onCl
       </div>
       <div className="grid grid-cols-[1fr_auto_auto] gap-2 border-t border-border/70 p-3">
         <Button asChild className="h-11 rounded-full shadow-[0_14px_34px_rgba(255,56,92,0.22)]">
-          <Link to={`/imoveis/${imovel.uuid}`}>Ver detalhes</Link>
+          <Link to={`/imoveis/${imovel.uuid}`} state={{ from: returnToMap }}>Ver detalhes</Link>
         </Button>
         {onShowInList ? (
           <Button type="button" variant="outline" className="size-11 rounded-full border-border bg-white px-0 shadow-none" onClick={() => onShowInList(imovel)} aria-label="Ver imóvel na lista">
@@ -659,4 +664,10 @@ function Mini({ icon: Icon, label }: { icon: typeof Ruler; label: string }) {
       <span className="truncate">{label}</span>
     </span>
   )
+}
+
+function buildMapReturnPath(search: string) {
+  const params = new URLSearchParams(search)
+  params.set("map", "1")
+  return `/imoveis?${params.toString()}`
 }

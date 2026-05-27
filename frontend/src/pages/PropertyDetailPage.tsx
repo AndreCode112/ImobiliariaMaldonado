@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import { useEffect, useLayoutEffect, useState } from "react"
 import { createPortal } from "react-dom"
-import { Link, useParams } from "react-router-dom"
+import { Link, useLocation, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
 import { pageTransition } from "@/animations/page"
@@ -15,8 +15,12 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useCorretores, useImovel } from "@/hooks/useImoveis"
 import type { CorretorResumo, Imovel } from "@/types/imovel"
 
+const PROPERTIES_MAP_ROUTE = "/imoveis?map=1"
+
 export function PropertyDetailPage() {
   const { uuid } = useParams()
+  const location = useLocation()
+  const returnToMap = getPropertyMapReturnPath(location.state)
   const publicUuid = uuid && isUuidParam(uuid) ? uuid : undefined
   const { data: imovel, isLoading } = useImovel(publicUuid)
   const { data: corretores = [] } = useCorretores()
@@ -124,7 +128,7 @@ export function PropertyDetailPage() {
   if (isLoading) {
     return (
       <div className="relative min-h-svh bg-white">
-        <DetailTopControls />
+        <DetailTopControls returnTo={returnToMap} />
         <DetailSkeleton />
       </div>
     )
@@ -133,10 +137,10 @@ export function PropertyDetailPage() {
   if (!imovel) {
     return (
       <section className="relative min-h-svh bg-white px-6 py-24 text-center">
-        <DetailTopControls />
+        <DetailTopControls returnTo={returnToMap} />
         <h1 className="text-3xl font-semibold">Imóvel não encontrado</h1>
         <Button asChild className="mt-6 rounded-full">
-          <Link to="/imoveis">Voltar aos imóveis</Link>
+          <Link to={returnToMap}>Voltar aos imóveis</Link>
         </Button>
       </section>
     )
@@ -146,7 +150,7 @@ export function PropertyDetailPage() {
 
   return (
     <motion.section {...pageTransition} className="relative min-h-svh bg-white">
-      <DetailTopControls />
+      <DetailTopControls returnTo={returnToMap} />
       <div className="mx-auto max-w-[1280px] px-4 pb-28 pt-24 md:px-8 md:pb-8 md:pt-28">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
@@ -328,7 +332,7 @@ function buildPropertyUrl(uuid: string) {
   return `${window.location.origin}/imoveis/${uuid}`
 }
 
-function DetailTopControls() {
+function DetailTopControls({ returnTo }: { returnTo: string }) {
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-[80] flex items-center justify-between px-4 py-4 md:px-8">
       <Button
@@ -336,7 +340,7 @@ function DetailTopControls() {
         variant="outline"
         className="pointer-events-auto size-11 rounded-full border-border/80 bg-white/82 px-0 shadow-[0_18px_50px_rgba(0,0,0,0.10)] backdrop-blur-xl hover:bg-white"
       >
-        <Link to="/" aria-label="Voltar para a página inicial">
+        <Link to={returnTo} aria-label="Voltar para a região do mapa">
           <ArrowLeft className="size-4" />
         </Link>
       </Button>
@@ -347,6 +351,21 @@ function DetailTopControls() {
       />
     </div>
   )
+}
+
+function getPropertyMapReturnPath(state: unknown) {
+  if (state && typeof state === "object" && "from" in state) {
+    const from = (state as { from?: unknown }).from
+    if (typeof from === "string" && from.startsWith("/imoveis")) return ensureMapParam(from)
+  }
+  return PROPERTIES_MAP_ROUTE
+}
+
+function ensureMapParam(path: string) {
+  const [pathname, search = ""] = path.split("?")
+  const params = new URLSearchParams(search)
+  params.set("map", "1")
+  return `${pathname}?${params.toString()}`
 }
 
 function isUuidParam(value: string) {

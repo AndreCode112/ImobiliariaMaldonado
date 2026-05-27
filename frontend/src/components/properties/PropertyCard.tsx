@@ -1,6 +1,6 @@
 import { Bath, BedDouble, Car, Images, MapPin, Ruler } from "lucide-react"
 import { motion } from "framer-motion"
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 
 import { Badge } from "@/components/ui/badge"
 import { FavoriteButton } from "@/components/properties/FavoriteButton"
@@ -15,6 +15,8 @@ interface PropertyCardProps {
 
 export function PropertyCard({ imovel, active, onFocus }: PropertyCardProps) {
   const image = imovel.images[0]
+  const location = useLocation()
+  const returnToMap = buildMapReturnPath(location.search)
 
   return (
     <motion.article
@@ -27,7 +29,7 @@ export function PropertyCard({ imovel, active, onFocus }: PropertyCardProps) {
         active && "border-primary/40 shadow-[0_24px_80px_rgba(255,56,92,0.12)]",
       )}
     >
-      <Link to={`/imoveis/${imovel.uuid}`} className="block" onClick={() => onFocus?.(imovel)}>
+      <Link to={`/imoveis/${imovel.uuid}`} state={{ from: returnToMap }} className="block" onClick={() => onFocus?.(imovel)}>
         <div className="relative aspect-[1.28] overflow-hidden rounded-[18px] bg-secondary">
           {image ? (
             <img
@@ -72,6 +74,12 @@ export function PropertyCard({ imovel, active, onFocus }: PropertyCardProps) {
       </Link>
     </motion.article>
   )
+}
+
+function buildMapReturnPath(search: string) {
+  const params = new URLSearchParams(search)
+  params.set("map", "1")
+  return `/imoveis?${params.toString()}`
 }
 
 function Feature({ icon: Icon, label }: { icon: typeof Ruler; label: string }) {
