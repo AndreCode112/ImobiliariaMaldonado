@@ -167,6 +167,7 @@ class Imovel(models.Model):
     tipo = models.ForeignKey(TipoImovel, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Tipo")
     regiao = models.CharField("Regiao", max_length=20, choices=REGIAO_CHOICES, default="urbano")
     alqueres = models.DecimalField("Alqueres", max_digits=10, decimal_places=2, default=0)
+    hectares = models.DecimalField("Hectares", max_digits=10, decimal_places=2, default=0)
     casas = models.PositiveIntegerField("Casas no terreno", default=0)
     quartos = models.PositiveIntegerField("Quartos", default=0)
     banheiros = models.PositiveIntegerField("Banheiros", default=0)
@@ -231,6 +232,7 @@ class Imovel(models.Model):
             "varandas": self.varandas,
             "regiao": self.regiao,
             "alqueres": float(self.alqueres),
+            "hectares": float(self.hectares),
             "casas": self.casas,
             "area": float(self.area),
             "tipo": self.tipo.nome if self.tipo else "",

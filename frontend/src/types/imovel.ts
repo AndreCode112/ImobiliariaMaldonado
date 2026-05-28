@@ -66,6 +66,7 @@ export interface ImovelApi {
   area: string
   regiao?: "urbano" | "rural" | string
   alqueres?: string
+  hectares?: string
   casas?: number
   quartos: number
   banheiros: number
@@ -107,6 +108,7 @@ export interface Imovel {
   area: number
   propertyRegion: "urbano" | "rural"
   ruralArea: number
+  ruralHectares: number
   houses: number
   type: string
   images: string[]
@@ -147,6 +149,7 @@ export interface ImovelPayload {
   area: string
   regiao: "urbano" | "rural"
   alqueres: string
+  hectares: string
   casas: number
   quartos: number
   banheiros: number

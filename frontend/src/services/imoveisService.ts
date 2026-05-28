@@ -50,6 +50,7 @@ export function normalizeImovel(api: ImovelApi): Imovel {
     area: numberFrom(api.area),
     propertyRegion,
     ruralArea: numberFrom(api.alqueres),
+    ruralHectares: numberFrom(api.hectares),
     houses: api.casas ?? 0,
     type: api.tipo?.nome ?? "",
     images: imagens.map((image) => image.url),

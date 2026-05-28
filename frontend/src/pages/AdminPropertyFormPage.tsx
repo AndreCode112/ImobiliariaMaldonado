@@ -56,6 +56,7 @@ type FormState = {
   area: string
   regiao: "urbano" | "rural"
   alqueres: string
+  hectares: string
   casas: number | string
   quartos: number | string
   banheiros: number | string
@@ -97,6 +98,7 @@ const EMPTY: FormState = {
   area: "",
   regiao: "urbano",
   alqueres: "",
+  hectares: "",
   casas: 0,
   quartos: 0,
   banheiros: 0,
@@ -411,6 +413,7 @@ export function AdminPropertyFormPage() {
       area: formatAreaValue(raw.area || ""),
       regiao: raw.regiao === "rural" ? "rural" : "urbano",
       alqueres: raw.alqueres && Number(raw.alqueres) > 0 ? String(raw.alqueres).replace(".", ",") : "",
+      hectares: raw.hectares && Number(raw.hectares) > 0 ? String(raw.hectares).replace(".", ",") : "",
       casas: raw.casas ?? 0,
       quartos: raw.quartos ?? 0,
       banheiros: raw.banheiros ?? 0,
@@ -674,6 +677,7 @@ export function AdminPropertyFormPage() {
       area,
       regiao: form.regiao,
       alqueres: isRural ? form.alqueres : "0",
+      hectares: isRural ? form.hectares : "0",
       casas: ruralHouses,
       quartos: !isRural || hasRuralHouse ? counterValue(form.quartos) : 0,
       banheiros: !isRural || hasRuralHouse ? counterValue(form.banheiros) : 0,
@@ -866,6 +870,7 @@ export function AdminPropertyFormPage() {
                       ...current,
                       regiao: value === "rural" ? "rural" : "urbano",
                       alqueres: value === "rural" ? current.alqueres : "",
+                      hectares: value === "rural" ? current.hectares : "",
                       casas: value === "rural" ? current.casas : 0,
                     }))}
                   >
@@ -874,7 +879,7 @@ export function AdminPropertyFormPage() {
                   </Select>
                 </Field>
                 {form.regiao === "rural" ? (
-                  <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-3">
                     <Field label="Quantidade de alqueires">
                       <Input
                         className="h-11"
@@ -882,6 +887,15 @@ export function AdminPropertyFormPage() {
                         value={form.alqueres}
                         onChange={(event) => setForm((current) => ({ ...current, alqueres: event.target.value.replace(/[^\d,.]/g, "") }))}
                         placeholder="Ex: 12,5"
+                      />
+                    </Field>
+                    <Field label="Quantidade de hectares">
+                      <Input
+                        className="h-11"
+                        inputMode="decimal"
+                        value={form.hectares}
+                        onChange={(event) => setForm((current) => ({ ...current, hectares: event.target.value.replace(/[^\d,.]/g, "") }))}
+                        placeholder="Ex: 30"
                       />
                     </Field>
                     <CounterField label="Casas no terreno" value={form.casas} onChange={(value) => setForm((current) => ({ ...current, casas: value }))} />

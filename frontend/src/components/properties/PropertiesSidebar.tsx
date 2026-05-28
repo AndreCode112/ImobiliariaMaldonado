@@ -401,6 +401,7 @@ function buildSidebarMetrics(imovel: Imovel) {
     const metrics: Array<{ icon: LucideIcon; label: string }> = [
       { icon: Building2, label: "Rural" },
       { icon: Ruler, label: `${formatDecimal(imovel.ruralArea)} alq.` },
+      { icon: Ruler, label: `${formatDecimal(imovel.ruralHectares)} ha` },
       { icon: Home, label: `${imovel.houses} casa${imovel.houses === 1 ? "" : "s"}` },
     ]
 

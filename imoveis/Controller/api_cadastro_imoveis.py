@@ -68,6 +68,7 @@ def _imovel_dict(imovel):
         "area": str(imovel.area),
         "regiao": imovel.regiao,
         "alqueres": str(imovel.alqueres),
+        "hectares": str(imovel.hectares),
         "casas": imovel.casas,
         "quartos": imovel.quartos,
         "banheiros": imovel.banheiros,
@@ -119,6 +120,7 @@ def _imovel_list_dict(imovel):
         "area": str(imovel.area),
         "regiao": imovel.regiao,
         "alqueres": str(imovel.alqueres),
+        "hectares": str(imovel.hectares),
         "casas": imovel.casas,
         "quartos": imovel.quartos,
         "banheiros": imovel.banheiros,
@@ -429,6 +431,7 @@ def _normalize_imovel_regiao(imovel):
     if imovel.regiao != "rural":
         imovel.regiao = "urbano"
         imovel.alqueres = Decimal("0")
+        imovel.hectares = Decimal("0")
         imovel.casas = 0
         return
 
@@ -460,6 +463,9 @@ def _set_imovel_fields(imovel, data):
     alqueres = _data_get(data, "alqueres")
     if alqueres is not None and alqueres != "":
         imovel.alqueres = _decimal_input(alqueres, "Alqueires")
+    hectares = _data_get(data, "hectares")
+    if hectares is not None and hectares != "":
+        imovel.hectares = _decimal_input(hectares, "Hectares")
     casas = _data_get(data, "casas")
     if casas is not None and casas != "":
         imovel.casas = _non_negative_int(casas)
@@ -582,6 +588,7 @@ class ApiImoveis(BaseController):
                     area=_decimal_input(_data_get(data, "area") or 0, "Área"),
                     regiao=_data_get(data, "regiao", "urbano") if _data_get(data, "regiao", "urbano") in {"urbano", "rural"} else "urbano",
                     alqueres=_decimal_input(_data_get(data, "alqueres") or 0, "Alqueires"),
+                    hectares=_decimal_input(_data_get(data, "hectares") or 0, "Hectares"),
                     casas=_non_negative_int(_data_get(data, "casas")),
                     quartos=_non_negative_int(_data_get(data, "quartos")),
                     banheiros=_non_negative_int(_data_get(data, "banheiros")),

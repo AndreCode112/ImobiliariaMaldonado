@@ -429,6 +429,7 @@ function buildDetailMetrics(imovel: Imovel) {
     const metrics: Array<{ icon: LucideIcon; label: string; value: string }> = [
       { icon: Building2, label: "Região", value: "Rural" },
       { icon: Ruler, label: "Alqueires", value: formatDecimal(imovel.ruralArea) },
+      { icon: Ruler, label: "Hectares", value: formatDecimal(imovel.ruralHectares) },
       { icon: Home, label: "Casas", value: String(imovel.houses) },
     ]
 
