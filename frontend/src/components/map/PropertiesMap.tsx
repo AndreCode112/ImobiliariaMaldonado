@@ -121,7 +121,7 @@ export function PropertiesMap({
             updateWhenZooming
           />
           <MapTileLayerSegmentedControl
-            position="bottom-40 right-3 md:bottom-auto md:top-20 md:right-6"
+            position="bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-3 md:bottom-auto md:top-20 md:right-6"
           />
         </MapLayers>
         <MapWheelZoomController enabled={scrollWheelZoom && isHoveringMap} />
@@ -135,7 +135,7 @@ export function PropertiesMap({
           className="rounded-full bg-white/90"
         />
         {cityTarget?.city ? (
-          <div className="pointer-events-none absolute left-3 top-[92px] z-[760] rounded-full border border-border/70 bg-white/94 px-4 py-2 text-sm font-bold text-foreground md:left-5 md:top-5">
+          <div className="pointer-events-none absolute left-3 top-[126px] z-[760] max-w-[calc(100vw-1.5rem)] truncate rounded-full border border-border/70 bg-white/94 px-4 py-2 text-sm font-bold text-foreground max-[380px]:top-[114px] max-[380px]:px-3 max-[380px]:py-1.5 max-[380px]:text-xs md:left-5 md:top-5">
             {cityTarget.city}
           </div>
         ) : null}

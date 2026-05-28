@@ -841,27 +841,28 @@ export function PropertiesPage() {
                   </Button>
 
                   {!sidebarOpen && !selected ? (
-                    <div className="absolute bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-1/2 z-[760] flex -translate-x-1/2 items-center gap-2 md:hidden">
+                    <div className="absolute bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-3 right-[136px] z-[760] flex items-center justify-end gap-2 max-[380px]:right-[124px] md:hidden">
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-12 rounded-full border-border/70 bg-white/94 px-4 text-sm"
+                        className="h-12 rounded-full border-border/70 bg-white/94 px-4 text-sm max-[380px]:h-9 max-[380px]:px-2.5 max-[380px]:text-xs"
                         onClick={() => setSidebarOpen(true)}
                       >
-                        <List className="size-4" />
-                        Ver {visibleImoveis.length} {visibleImoveis.length === 1 ? "imóvel" : "imóveis"}
+                        <List className="size-4 max-[380px]:size-3.5" />
+                        <span>Ver {visibleImoveis.length}</span>
+                        <span className="max-[380px]:hidden">{visibleImoveis.length === 1 ? "imóvel" : "imóveis"}</span>
                       </Button>
                       <Button
                         type="button"
                         variant={mobileMapExplore ? "default" : "outline"}
                         className={cn(
-                          "h-12 rounded-full px-4 text-sm",
+                          "h-12 rounded-full px-4 text-sm max-[380px]:h-9 max-[380px]:px-2.5 max-[380px]:text-xs",
                           mobileMapExplore ? "bg-foreground text-white hover:bg-foreground/90" : "border-border/70 bg-white/94 hover:bg-white",
                         )}
                         onClick={() => setMobileMapExplore((enabled) => !enabled)}
                       >
-                        <Hand className="size-4" />
-                        {mobileMapExplore ? "Concluir" : "Explorar"}
+                        <Hand className="size-4 max-[380px]:size-3.5" />
+                        <span className="max-[340px]:sr-only">{mobileMapExplore ? "Concluir" : "Explorar"}</span>
                       </Button>
                     </div>
                   ) : null}
@@ -914,13 +915,13 @@ function MapFloatingTop({
   const showResults = value.trim().length >= 3 && (results.length > 0 || hasSearched || isSearching)
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-3 z-[780] flex justify-center px-3 md:top-5 md:px-4">
+    <div className="pointer-events-none absolute inset-x-0 top-3 z-[780] flex justify-center px-3 max-[380px]:top-2 max-[380px]:px-2 md:top-5 md:px-4">
       <div className="pointer-events-auto flex w-full max-w-[760px] flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1">
-          <div className="flex h-12 items-center rounded-full border border-border/70 bg-white px-3 transition duration-200 focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/10 sm:h-11 md:focus-within:scale-[1.01]">
-            <Search className="ml-1 size-4 shrink-0 text-muted-foreground" />
+          <div className="flex h-12 items-center rounded-full border border-border/70 bg-white px-3 transition duration-200 focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/10 max-[380px]:h-10 max-[380px]:px-2 sm:h-11 md:focus-within:scale-[1.01]">
+            <Search className="ml-1 size-4 shrink-0 text-muted-foreground max-[380px]:size-3.5" />
             <Input
-              className="h-full border-0 bg-transparent px-2 text-base placeholder:text-muted-foreground/80 focus-visible:ring-0 sm:text-sm"
+              className="h-full border-0 bg-transparent px-2 text-base placeholder:text-muted-foreground/80 focus-visible:ring-0 max-[380px]:text-sm sm:text-sm"
               placeholder="Pesquisar endereço, bairro ou cidade"
               value={value}
               onChange={(event) => onChange(event.target.value)}
@@ -958,7 +959,7 @@ function MapFloatingTop({
           ) : null}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+        <div className="grid grid-cols-2 gap-2 max-[380px]:gap-1.5 sm:flex sm:items-center">
           <MapFiltersPopover
             filters={filters}
             setFilters={setFilters}
@@ -967,10 +968,10 @@ function MapFloatingTop({
             activeCount={activeFilterCount}
             isMobile={isMobile}
             onOpenChange={onFiltersOpenChange}
-            triggerClassName="h-11 w-full sm:w-auto"
+            triggerClassName="h-11 w-full max-[380px]:h-9 max-[380px]:px-2 max-[380px]:text-xs sm:w-auto"
           />
-          <Button type="button" variant="outline" className="h-11 rounded-full border-border/70 bg-white px-3 text-sm hover:bg-secondary sm:px-4" onClick={onCenter}>
-            <LocateFixed className="size-4" />
+          <Button type="button" variant="outline" className="h-11 rounded-full border-border/70 bg-white px-3 text-sm hover:bg-secondary max-[380px]:h-9 max-[380px]:px-2 max-[380px]:text-xs sm:px-4" onClick={onCenter}>
+            <LocateFixed className="size-4 max-[380px]:size-3.5" />
             <span>Centralizar</span>
           </Button>
         </div>

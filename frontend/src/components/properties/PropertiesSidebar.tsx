@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion"
-import { Bath, BedDouble, Car, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Eye, Filter, Images, LoaderCircle, MapPin, Minimize2, Ruler, Search, Share2, X } from "lucide-react"
+import { Bath, BedDouble, Building2, Car, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Eye, Filter, Home, Images, LoaderCircle, MapPin, Minimize2, Ruler, Search, Share2, Utensils, X, type LucideIcon } from "lucide-react"
 import type { MouseEvent, ReactNode } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Link, useLocation } from "react-router-dom"
@@ -307,6 +307,7 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
   const propertyUrl = buildPropertyUrl(imovel.uuid)
   const location = useLocation()
   const returnToMap = buildMapReturnPath(location.search)
+  const metrics = buildSidebarMetrics(imovel)
 
   async function shareProperty(event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault()
@@ -368,11 +369,10 @@ function SidebarPropertyItem({ imovel, active, onFocus }: { imovel: Imovel; acti
           <span className="mt-1 inline-flex rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold text-foreground">
             {imovel.type || "Residencial"}
           </span>
-          <div className="mt-3 grid grid-cols-2 gap-1.5 text-[11px] text-muted-foreground min-[390px]:grid-cols-4">
-            <Mini icon={Ruler} label={`${imovel.area || 0} m²`} />
-            <Mini icon={BedDouble} label={`${imovel.bedrooms}`} />
-            <Mini icon={Bath} label={`${imovel.bathrooms}`} />
-            <Mini icon={Car} label={`${imovel.parking}`} />
+          <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+            {metrics.map(({ icon, label }) => (
+              <Mini key={label} icon={icon} label={label} />
+            ))}
           </div>
           <p className="mt-2 text-sm font-bold text-primary">{imovel.priceLabel}</p>
         </div>
@@ -392,9 +392,41 @@ function buildMapReturnPath(search: string) {
   return `/imoveis?${params.toString()}`
 }
 
-function Mini({ icon: Icon, label }: { icon: typeof Ruler; label: string }) {
+function formatDecimal(value: number) {
+  return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(value)
+}
+
+function buildSidebarMetrics(imovel: Imovel) {
+  if (imovel.propertyRegion === "rural") {
+    const metrics: Array<{ icon: LucideIcon; label: string }> = [
+      { icon: Building2, label: "Rural" },
+      { icon: Ruler, label: `${formatDecimal(imovel.ruralArea)} alq.` },
+      { icon: Home, label: `${imovel.houses} casa${imovel.houses === 1 ? "" : "s"}` },
+    ]
+
+    if (imovel.houses > 0) {
+      metrics.push(
+        { icon: BedDouble, label: `${imovel.bedrooms}` },
+        { icon: Bath, label: `${imovel.bathrooms}` },
+        { icon: Car, label: `${imovel.parking}` },
+        { icon: Utensils, label: `${imovel.kitchens}` },
+      )
+    }
+
+    return metrics
+  }
+
+  return [
+    { icon: Ruler, label: `${imovel.area || 0} m²` },
+    { icon: BedDouble, label: `${imovel.bedrooms}` },
+    { icon: Bath, label: `${imovel.bathrooms}` },
+    { icon: Car, label: `${imovel.parking}` },
+  ]
+}
+
+function Mini({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
-    <span className="flex min-w-0 items-center justify-center gap-1 rounded-full bg-secondary px-2 py-1.5">
+    <span className="flex min-w-0 max-w-full items-center justify-center gap-1 rounded-full bg-secondary px-2 py-1.5">
       <Icon className="size-3 shrink-0" />
       <span className="truncate">{label}</span>
     </span>

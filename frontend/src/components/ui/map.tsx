@@ -487,7 +487,7 @@ function MapTileLayerSegmentedControl({
     return (
         <div
             className={cn(
-                "absolute z-1000 inline-flex rounded-full border border-border/70 bg-white/94 p-1",
+                "absolute z-1000 inline-flex rounded-full border border-border/70 bg-white/94 p-1 max-[380px]:p-0.5",
                 position,
                 className
             )}>
@@ -498,7 +498,7 @@ function MapTileLayerSegmentedControl({
                         key={tileLayer.name}
                         type="button"
                         className={cn(
-                            "h-9 rounded-full px-3 text-xs font-bold text-muted-foreground transition-colors",
+                            "h-9 rounded-full px-3 text-xs font-bold text-muted-foreground transition-colors max-[380px]:h-8 max-[380px]:px-2 max-[380px]:text-[11px]",
                             selected && "bg-foreground text-white"
                         )}
                         onClick={() => setSelectedTileLayer(tileLayer.name)}
