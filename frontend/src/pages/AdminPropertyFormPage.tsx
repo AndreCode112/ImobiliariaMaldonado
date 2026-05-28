@@ -31,6 +31,11 @@ const FINALIDADE_OPTIONS = [
   { value: "industrial", label: "Industrial" },
 ]
 
+const REGIAO_OPTIONS = [
+  { value: "urbano", label: "Urbano" },
+  { value: "rural", label: "Rural" },
+]
+
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"]
 const ACCEPTED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"]
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024
@@ -49,6 +54,9 @@ type FormState = {
   latitude: string
   longitude: string
   area: string
+  regiao: "urbano" | "rural"
+  alqueres: string
+  casas: number | string
   quartos: number | string
   banheiros: number | string
   vagas: number | string
@@ -87,6 +95,9 @@ const EMPTY: FormState = {
   latitude: "",
   longitude: "",
   area: "",
+  regiao: "urbano",
+  alqueres: "",
+  casas: 0,
   quartos: 0,
   banheiros: 0,
   vagas: 0,
@@ -398,6 +409,9 @@ export function AdminPropertyFormPage() {
       latitude: raw.latitude || "",
       longitude: raw.longitude || "",
       area: formatAreaValue(raw.area || ""),
+      regiao: raw.regiao === "rural" ? "rural" : "urbano",
+      alqueres: raw.alqueres && Number(raw.alqueres) > 0 ? String(raw.alqueres).replace(".", ",") : "",
+      casas: raw.casas ?? 0,
       quartos: raw.quartos ?? 0,
       banheiros: raw.banheiros ?? 0,
       vagas: raw.vagas ?? 0,
@@ -647,6 +661,10 @@ export function AdminPropertyFormPage() {
       return
     }
 
+    const isRural = form.regiao === "rural"
+    const ruralHouses = isRural ? counterValue(form.casas) : 0
+    const hasRuralHouse = isRural && ruralHouses > 0
+
     const payload: ImovelPayload = {
       titulo: form.titulo,
       descricao: form.descricao,
@@ -654,12 +672,15 @@ export function AdminPropertyFormPage() {
       cep: formatCep(cep),
       endereco: form.endereco,
       area,
-      quartos: counterValue(form.quartos),
-      banheiros: counterValue(form.banheiros),
-      vagas: counterValue(form.vagas),
-      cozinhas: counterValue(form.cozinhas),
-      salas: counterValue(form.salas),
-      varandas: counterValue(form.varandas),
+      regiao: form.regiao,
+      alqueres: isRural ? form.alqueres : "0",
+      casas: ruralHouses,
+      quartos: !isRural || hasRuralHouse ? counterValue(form.quartos) : 0,
+      banheiros: !isRural || hasRuralHouse ? counterValue(form.banheiros) : 0,
+      vagas: !isRural || hasRuralHouse ? counterValue(form.vagas) : 0,
+      cozinhas: !isRural || hasRuralHouse ? counterValue(form.cozinhas) : 0,
+      salas: !isRural || hasRuralHouse ? counterValue(form.salas) : 0,
+      varandas: !isRural || hasRuralHouse ? counterValue(form.varandas) : 0,
       status: form.status,
       destaque: form.destaque,
       finalidade: form.finalidade,
@@ -838,14 +859,44 @@ export function AdminPropertyFormPage() {
                     <Input className="h-11" value={form.longitude} onChange={(event) => setForm((current) => ({ ...current, longitude: event.target.value }))} placeholder="-46.6333080" />
                   </Field>
                 </div>
-                <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  <CounterField label="Quartos" value={form.quartos} onChange={(value) => setForm((current) => ({ ...current, quartos: value }))} />
-                  <CounterField label="Banheiros" value={form.banheiros} onChange={(value) => setForm((current) => ({ ...current, banheiros: value }))} />
-                  <CounterField label="Vagas" value={form.vagas} onChange={(value) => setForm((current) => ({ ...current, vagas: value }))} />
-                  <CounterField label="Cozinhas" value={form.cozinhas} onChange={(value) => setForm((current) => ({ ...current, cozinhas: value }))} />
-                  <CounterField label="Salas" value={form.salas} onChange={(value) => setForm((current) => ({ ...current, salas: value }))} />
-                  <CounterField label="Varandas" value={form.varandas} onChange={(value) => setForm((current) => ({ ...current, varandas: value }))} />
-                </div>
+                <Field label="Região do imóvel">
+                  <Select
+                    value={form.regiao}
+                    onValueChange={(value) => setForm((current) => ({
+                      ...current,
+                      regiao: value === "rural" ? "rural" : "urbano",
+                      alqueres: value === "rural" ? current.alqueres : "",
+                      casas: value === "rural" ? current.casas : 0,
+                    }))}
+                  >
+                    <SelectTrigger className="h-11 w-full"><SelectValue /></SelectTrigger>
+                    <SelectContent>{REGIAO_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                </Field>
+                {form.regiao === "rural" ? (
+                  <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Field label="Quantidade de alqueires">
+                      <Input
+                        className="h-11"
+                        inputMode="decimal"
+                        value={form.alqueres}
+                        onChange={(event) => setForm((current) => ({ ...current, alqueres: event.target.value.replace(/[^\d,.]/g, "") }))}
+                        placeholder="Ex: 12,5"
+                      />
+                    </Field>
+                    <CounterField label="Casas no terreno" value={form.casas} onChange={(value) => setForm((current) => ({ ...current, casas: value }))} />
+                  </div>
+                ) : null}
+                {form.regiao === "urbano" || counterValue(form.casas) > 0 ? (
+                  <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    <CounterField label="Quartos" value={form.quartos} onChange={(value) => setForm((current) => ({ ...current, quartos: value }))} />
+                    <CounterField label="Banheiros" value={form.banheiros} onChange={(value) => setForm((current) => ({ ...current, banheiros: value }))} />
+                    <CounterField label="Vagas" value={form.vagas} onChange={(value) => setForm((current) => ({ ...current, vagas: value }))} />
+                    <CounterField label="Cozinhas" value={form.cozinhas} onChange={(value) => setForm((current) => ({ ...current, cozinhas: value }))} />
+                    <CounterField label="Salas" value={form.salas} onChange={(value) => setForm((current) => ({ ...current, salas: value }))} />
+                    <CounterField label="Varandas" value={form.varandas} onChange={(value) => setForm((current) => ({ ...current, varandas: value }))} />
+                  </div>
+                ) : null}
                 <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Status">
                     <Select value={form.status} onValueChange={(value) => setForm((current) => ({ ...current, status: value }))}>

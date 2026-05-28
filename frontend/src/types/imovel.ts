@@ -64,6 +64,9 @@ export interface ImovelApi {
   cep?: string
   endereco: string
   area: string
+  regiao?: "urbano" | "rural" | string
+  alqueres?: string
+  casas?: number
   quartos: number
   banheiros: number
   vagas: number
@@ -102,6 +105,9 @@ export interface Imovel {
   livingRooms: number
   balconies: number
   area: number
+  propertyRegion: "urbano" | "rural"
+  ruralArea: number
+  houses: number
   type: string
   images: string[]
   isFeatured: boolean
@@ -139,6 +145,9 @@ export interface ImovelPayload {
   cep?: string
   endereco: string
   area: string
+  regiao: "urbano" | "rural"
+  alqueres: string
+  casas: number
   quartos: number
   banheiros: number
   vagas: number

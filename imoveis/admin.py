@@ -67,6 +67,7 @@ class ImovelAdmin(admin.ModelAdmin):
         "cidade",
         "bairro",
         "preco_formatado_admin",
+        "regiao",
         "quartos",
         "area",
         "status",
@@ -74,7 +75,7 @@ class ImovelAdmin(admin.ModelAdmin):
         "corretor",
         "criado_em",
     )
-    list_filter = ("status", "destaque", "tipo", "cidade", "bairro", "corretor")
+    list_filter = ("status", "destaque", "regiao", "tipo", "cidade", "bairro", "corretor")
     search_fields = ("titulo", "descricao", "endereco", "cidade__nome", "bairro__nome")
     list_editable = ("status", "destaque")
     list_per_page = 20
@@ -85,7 +86,7 @@ class ImovelAdmin(admin.ModelAdmin):
     fieldsets = (
         ("Informacoes Basicas", {"fields": ("titulo", "descricao", "tipo", "finalidade", "status", "destaque", "corretor")}),
         ("Localizacao", {"fields": ("cep", "endereco", "cidade", "bairro", "latitude", "longitude"), "classes": ("collapse",)}),
-        ("Caracteristicas", {"fields": ("preco", "area", "quartos", "banheiros", "vagas", "cozinhas", "salas", "varandas")}),
+        ("Caracteristicas", {"fields": ("preco", "area", "regiao", "alqueres", "casas", "quartos", "banheiros", "vagas", "cozinhas", "salas", "varandas")}),
     )
 
     def preco_formatado_admin(self, obj):

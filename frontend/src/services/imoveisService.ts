@@ -23,7 +23,9 @@ function assetUrl(url?: string | null) {
 
 export function normalizeImovel(api: ImovelApi): Imovel {
   const imagens = api.imagens.map((image) => ({ ...image, url: assetUrl(image.url) })).filter((image) => image.url)
+  const propertyRegion = api.regiao === "rural" ? "rural" : "urbano"
   const amenities = [
+    propertyRegion === "rural" ? "Imóvel rural" : "Imóvel urbano",
     api.finalidade,
     api.status === "disponivel" ? "Disponivel para compra" : api.status,
   ].filter(Boolean) as string[]
@@ -46,6 +48,9 @@ export function normalizeImovel(api: ImovelApi): Imovel {
     livingRooms: api.salas ?? 0,
     balconies: api.varandas ?? 0,
     area: numberFrom(api.area),
+    propertyRegion,
+    ruralArea: numberFrom(api.alqueres),
+    houses: api.casas ?? 0,
     type: api.tipo?.nome ?? "",
     images: imagens.map((image) => image.url),
     isFeatured: api.destaque,

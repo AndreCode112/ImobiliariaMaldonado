@@ -40,6 +40,7 @@ export function filterImoveis(imoveis: Imovel[], filters: ImoveisFilters) {
     if (filters.cidade && imovel.city !== filters.cidade) return false
     if (filters.bairro && imovel.neighborhood !== filters.bairro) return false
     if (filters.tipo && imovel.type !== filters.tipo) return false
+    if (filters.regiao && imovel.propertyRegion !== filters.regiao) return false
     if (filters.quartos && imovel.bedrooms < Number(filters.quartos)) return false
     if (filters.banheiros && imovel.bathrooms < Number(filters.banheiros)) return false
     if (filters.vagas && imovel.parking < Number(filters.vagas)) return false

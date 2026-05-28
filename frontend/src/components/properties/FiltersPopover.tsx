@@ -90,6 +90,13 @@ export function FiltersPopover({ filters, setFilters, imoveis, open: controlledO
                     {tipos.map((tipo) => <option key={tipo}>{tipo}</option>)}
                   </select>
                 </Field>
+                <Field label="Região">
+                  <select className="h-11 rounded-xl border border-input bg-white px-3 text-sm" value={filters.regiao} onChange={(event) => update("regiao", event.target.value)}>
+                    <option value="">Todas</option>
+                    <option value="urbano">Urbana</option>
+                    <option value="rural">Rural</option>
+                  </select>
+                </Field>
                 <Field label="Quartos">
                   <Input className="h-11 rounded-xl" inputMode="numeric" value={filters.quartos} onChange={(event) => update("quartos", event.target.value)} />
                 </Field>

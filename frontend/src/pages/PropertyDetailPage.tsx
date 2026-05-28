@@ -147,6 +147,7 @@ export function PropertyDetailPage() {
   }
 
   const structureFeatures = buildStructureFeatures(imovel)
+  const detailMetrics = buildDetailMetrics(imovel)
 
   return (
     <motion.section {...pageTransition} className="relative min-h-svh bg-white">
@@ -244,18 +245,14 @@ export function PropertyDetailPage() {
             </nav>
             <section>
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
-                <Metric icon={Ruler} label="Área" value={`${imovel.area} m²`} />
-                <Metric icon={BedDouble} label="Quartos" value={String(imovel.bedrooms)} />
-                <Metric icon={Bath} label="Banheiros" value={String(imovel.bathrooms)} />
-                <Metric icon={Car} label="Garagem" value={String(imovel.parking)} />
-                <Metric icon={Utensils} label="Cozinhas" value={String(imovel.kitchens)} />
-                <Metric icon={Sofa} label="Salas" value={String(imovel.livingRooms)} />
-                <Metric icon={Home} label="Varandas" value={String(imovel.balconies)} />
+                {detailMetrics.map(({ icon, label, value }) => (
+                  <Metric key={label} icon={icon} label={label} value={value} />
+                ))}
               </div>
             </section>
 
             <Section id="sobre" title="Sobre o imóvel">
-              <p className="max-w-3xl text-lg leading-8 text-[#3f3f3f]">{imovel.description}</p>
+              <p className="max-w-3xl whitespace-pre-wrap text-lg leading-8 text-[#3f3f3f]">{imovel.description}</p>
             </Section>
 
             <Section id="estrutura" title="Estrutura e diferenciais">
@@ -421,6 +418,43 @@ function buildStructureFeatures(imovel: Imovel) {
     items.push({ label, icon: item.icon })
     return items
   }, [])
+}
+
+function formatDecimal(value: number) {
+  return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(value)
+}
+
+function buildDetailMetrics(imovel: Imovel) {
+  if (imovel.propertyRegion === "rural") {
+    const metrics: Array<{ icon: LucideIcon; label: string; value: string }> = [
+      { icon: Building2, label: "Região", value: "Rural" },
+      { icon: Ruler, label: "Alqueires", value: formatDecimal(imovel.ruralArea) },
+      { icon: Home, label: "Casas", value: String(imovel.houses) },
+    ]
+
+    if (imovel.houses > 0) {
+      metrics.push(
+        { icon: BedDouble, label: "Quartos", value: String(imovel.bedrooms) },
+        { icon: Bath, label: "Banheiros", value: String(imovel.bathrooms) },
+        { icon: Car, label: "Garagem", value: String(imovel.parking) },
+        { icon: Utensils, label: "Cozinhas", value: String(imovel.kitchens) },
+        { icon: Sofa, label: "Salas", value: String(imovel.livingRooms) },
+        { icon: Home, label: "Varandas", value: String(imovel.balconies) },
+      )
+    }
+
+    return metrics
+  }
+
+  return [
+    { icon: Ruler, label: "Área", value: `${imovel.area} m²` },
+    { icon: BedDouble, label: "Quartos", value: String(imovel.bedrooms) },
+    { icon: Bath, label: "Banheiros", value: String(imovel.bathrooms) },
+    { icon: Car, label: "Garagem", value: String(imovel.parking) },
+    { icon: Utensils, label: "Cozinhas", value: String(imovel.kitchens) },
+    { icon: Sofa, label: "Salas", value: String(imovel.livingRooms) },
+    { icon: Home, label: "Varandas", value: String(imovel.balconies) },
+  ]
 }
 
 function WhatsappIcon({ className }: { className?: string }) {
@@ -650,7 +684,7 @@ function PhotoViewer({
   )
 }
 
-function Metric({ icon: Icon, label, value }: { icon: typeof Ruler; label: string; value: string }) {
+function Metric({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
     <div className="rounded-[22px] border bg-white p-5">
       <Icon className="mb-3 size-5 text-primary" />

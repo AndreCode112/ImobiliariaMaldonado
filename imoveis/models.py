@@ -149,6 +149,11 @@ class Imovel(models.Model):
         ("industrial", "Industrial"),
     ]
 
+    REGIAO_CHOICES = [
+        ("urbano", "Urbano"),
+        ("rural", "Rural"),
+    ]
+
     uuid = models.UUIDField("UUID publico", default=uuid_lib.uuid4, unique=True, editable=False, db_index=True)
     titulo = models.CharField("Titulo", max_length=200)
     descricao = models.TextField("Descricao")
@@ -160,6 +165,9 @@ class Imovel(models.Model):
     latitude = models.DecimalField("Latitude", max_digits=10, decimal_places=7, null=True, blank=True)
     longitude = models.DecimalField("Longitude", max_digits=10, decimal_places=7, null=True, blank=True)
     tipo = models.ForeignKey(TipoImovel, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Tipo")
+    regiao = models.CharField("Regiao", max_length=20, choices=REGIAO_CHOICES, default="urbano")
+    alqueres = models.DecimalField("Alqueres", max_digits=10, decimal_places=2, default=0)
+    casas = models.PositiveIntegerField("Casas no terreno", default=0)
     quartos = models.PositiveIntegerField("Quartos", default=0)
     banheiros = models.PositiveIntegerField("Banheiros", default=0)
     vagas = models.PositiveIntegerField("Vagas de garagem", default=0)
@@ -221,6 +229,9 @@ class Imovel(models.Model):
             "cozinhas": self.cozinhas,
             "salas": self.salas,
             "varandas": self.varandas,
+            "regiao": self.regiao,
+            "alqueres": float(self.alqueres),
+            "casas": self.casas,
             "area": float(self.area),
             "tipo": self.tipo.nome if self.tipo else "",
             "finalidade": self.get_finalidade_display() if self.finalidade else "",

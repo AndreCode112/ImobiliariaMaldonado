@@ -224,6 +224,7 @@ export function PropertiesPage() {
       filters.valorMin,
       filters.valorMax,
       filters.tipo,
+      filters.regiao,
       filters.quartos,
       filters.banheiros,
       filters.vagas,
@@ -1143,6 +1144,13 @@ function FiltersPanel({
           <select className="h-11 min-w-0 rounded-[14px] border border-input bg-white px-3 text-sm outline-none transition focus:border-primary/45 focus:ring-4 focus:ring-primary/10" value={filters.tipo} onChange={(event) => update("tipo", event.target.value)}>
             <option value="">Todos</option>
             {tipos.map((tipo) => <option key={tipo}>{tipo}</option>)}
+          </select>
+        </Field>
+        <Field label="Região">
+          <select className="h-11 min-w-0 rounded-[14px] border border-input bg-white px-3 text-sm outline-none transition focus:border-primary/45 focus:ring-4 focus:ring-primary/10" value={filters.regiao} onChange={(event) => update("regiao", event.target.value)}>
+            <option value="">Todas</option>
+            <option value="urbano">Urbana</option>
+            <option value="rural">Rural</option>
           </select>
         </Field>
         <CounterField label="Quartos" value={filters.quartos} onChange={(value) => update("quartos", value)} />

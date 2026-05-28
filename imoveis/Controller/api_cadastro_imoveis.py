@@ -66,6 +66,9 @@ def _imovel_dict(imovel):
         "cep": imovel.cep,
         "endereco": imovel.endereco,
         "area": str(imovel.area),
+        "regiao": imovel.regiao,
+        "alqueres": str(imovel.alqueres),
+        "casas": imovel.casas,
         "quartos": imovel.quartos,
         "banheiros": imovel.banheiros,
         "vagas": imovel.vagas,
@@ -114,6 +117,9 @@ def _imovel_list_dict(imovel):
         "cep": imovel.cep,
         "endereco": imovel.endereco,
         "area": str(imovel.area),
+        "regiao": imovel.regiao,
+        "alqueres": str(imovel.alqueres),
+        "casas": imovel.casas,
         "quartos": imovel.quartos,
         "banheiros": imovel.banheiros,
         "vagas": imovel.vagas,
@@ -419,11 +425,30 @@ def _require_confirmed_coordinates(imovel):
         )
 
 
+def _normalize_imovel_regiao(imovel):
+    if imovel.regiao != "rural":
+        imovel.regiao = "urbano"
+        imovel.alqueres = Decimal("0")
+        imovel.casas = 0
+        return
+
+    if imovel.casas <= 0:
+        imovel.quartos = 0
+        imovel.banheiros = 0
+        imovel.vagas = 0
+        imovel.cozinhas = 0
+        imovel.salas = 0
+        imovel.varandas = 0
+
+
 def _set_imovel_fields(imovel, data):
     for field in ("titulo", "descricao", "endereco", "status", "finalidade"):
         value = _data_get(data, field)
         if value is not None:
             setattr(imovel, field, value)
+    regiao = _data_get(data, "regiao")
+    if regiao is not None:
+        imovel.regiao = regiao if regiao in {"urbano", "rural"} else "urbano"
     if _data_get(data, "cep") is not None:
         imovel.cep = _format_cep(_data_get(data, "cep"))
     if _data_get(data, "destaque") is not None:
@@ -432,6 +457,12 @@ def _set_imovel_fields(imovel, data):
         value = _data_get(data, field)
         if value is not None and value != "":
             setattr(imovel, field, _decimal_input(value, label))
+    alqueres = _data_get(data, "alqueres")
+    if alqueres is not None and alqueres != "":
+        imovel.alqueres = _decimal_input(alqueres, "Alqueires")
+    casas = _data_get(data, "casas")
+    if casas is not None and casas != "":
+        imovel.casas = _non_negative_int(casas)
     for field in ("quartos", "banheiros", "vagas", "cozinhas", "salas", "varandas"):
         value = _data_get(data, field)
         if value is not None and value != "":
@@ -444,6 +475,7 @@ def _set_imovel_fields(imovel, data):
     if bairro_nome is not None:
         imovel.bairro = _ensure_bairro(imovel.cidade, bairro_nome)
     _set_manual_coordinates(imovel, data)
+    _normalize_imovel_regiao(imovel)
 
 
 def _set_corretor_fields(corretor, data, files=None):
@@ -548,6 +580,9 @@ class ApiImoveis(BaseController):
                     cep=_format_cep(_data_get(data, "cep", "")),
                     endereco=_data_get(data, "endereco", ""),
                     area=_decimal_input(_data_get(data, "area") or 0, "Área"),
+                    regiao=_data_get(data, "regiao", "urbano") if _data_get(data, "regiao", "urbano") in {"urbano", "rural"} else "urbano",
+                    alqueres=_decimal_input(_data_get(data, "alqueres") or 0, "Alqueires"),
+                    casas=_non_negative_int(_data_get(data, "casas")),
                     quartos=_non_negative_int(_data_get(data, "quartos")),
                     banheiros=_non_negative_int(_data_get(data, "banheiros")),
                     vagas=_non_negative_int(_data_get(data, "vagas")),
@@ -561,6 +596,7 @@ class ApiImoveis(BaseController):
                     cidade_id=_data_get(data, "cidade_id") or None,
                     corretor_id=_data_get(data, "corretor_id") or None,
                 )
+                _normalize_imovel_regiao(imovel)
                 imovel.save()
                 bairro_nome = _data_get(data, "bairro_nome")
                 if bairro_nome:
