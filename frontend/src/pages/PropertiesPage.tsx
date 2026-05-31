@@ -841,11 +841,11 @@ export function PropertiesPage() {
                   </Button>
 
                   {!sidebarOpen && !selected ? (
-                    <div className="absolute bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-3 right-[136px] z-[760] flex items-center justify-end gap-2 max-[380px]:right-[124px] md:hidden">
+                    <div className="absolute bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-3 right-[calc((100vw_-_40px)/3_+_20px)] z-[760] grid grid-cols-2 gap-2 md:hidden">
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-12 rounded-full border-border/70 bg-white/94 px-4 text-sm max-[380px]:h-9 max-[380px]:px-2.5 max-[380px]:text-xs"
+                        className="h-12 min-w-0 rounded-full border-border/70 bg-white/94 px-2 text-sm max-[380px]:h-10 max-[380px]:px-1.5 max-[380px]:text-xs"
                         onClick={() => setSidebarOpen(true)}
                       >
                         <List className="size-4 max-[380px]:size-3.5" />
@@ -856,7 +856,7 @@ export function PropertiesPage() {
                         type="button"
                         variant={mobileMapExplore ? "default" : "outline"}
                         className={cn(
-                          "h-12 rounded-full px-4 text-sm max-[380px]:h-9 max-[380px]:px-2.5 max-[380px]:text-xs",
+                          "h-12 min-w-0 rounded-full px-2 text-sm max-[380px]:h-10 max-[380px]:px-1.5 max-[380px]:text-xs",
                           mobileMapExplore ? "bg-foreground text-white hover:bg-foreground/90" : "border-border/70 bg-white/94 hover:bg-white",
                         )}
                         onClick={() => setMobileMapExplore((enabled) => !enabled)}

@@ -498,7 +498,7 @@ function MapTileLayerSegmentedControl({
                         key={tileLayer.name}
                         type="button"
                         className={cn(
-                            "h-9 rounded-full px-3 text-xs font-bold text-muted-foreground transition-colors max-[380px]:h-8 max-[380px]:px-2 max-[380px]:text-[11px]",
+                            "h-full min-w-0 flex-1 rounded-full px-2 text-xs font-bold text-muted-foreground transition-colors max-[380px]:px-1 max-[380px]:text-[10px] md:h-9 md:flex-none md:px-3",
                             selected && "bg-foreground text-white"
                         )}
                         onClick={() => setSelectedTileLayer(tileLayer.name)}

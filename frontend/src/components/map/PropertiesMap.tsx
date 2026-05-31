@@ -122,6 +122,7 @@ export function PropertiesMap({
           />
           <MapTileLayerSegmentedControl
             position="bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-3 md:bottom-auto md:top-20 md:right-6"
+            className="h-12 w-[calc((100vw_-_40px)/3)] justify-stretch max-[380px]:h-10 md:h-auto md:w-auto"
           />
         </MapLayers>
         <MapWheelZoomController enabled={scrollWheelZoom && isHoveringMap} />
